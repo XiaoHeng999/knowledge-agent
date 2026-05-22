@@ -21,34 +21,6 @@ AgentClaw 是一个基于 Agent 的智能知识库应用，核心理念是"理�
 
 **禁止**：除非任务明确涉及 UI/UX 和页面布局的设计与排版配置和颜色配置和圆角配置和间距配置和组件配置具体的数值搭配选择，否则 **不要读取** `docs/design-UI-UX-reuslt/` 目录下的任何内容。
 
-## 代码规范
-
-### 通用规范
-
-- 使用 TypeScript，禁止 `any` 类型（泛型除外）
-- 变量和函数使用 camelCase，组件使用 PascalCase，常量使用 UPPER_SNAKE_CASE
-- 文件命名：组件 `PascalCase.tsx`，工具/服务 `camelCase.ts`，样式 `kebab-case.css`
-- 每个 Pull Request 保持单一职责，提交信息使用英文
-
-### React / Next.js 规范
-
-- 函数组件 + Hooks，禁止 class 组件
-- 组件拆分原则：单一职责，props 类型明确
-- 状态管理优先使用 React Context，复杂场景再引入状态库
-- 样式方案跟随项目已有方案（CSS Modules / Tailwind 等），不自创新方案
-
-### Electron 规范
-
-- 主进程与渲染进程通过 IPC 通信，使用 `contextBridge` 暴露安全 API
-- 禁止在渲染进程中直接使用 Node.js API
-- IPC 通道命名：`module:action`（如 `knowledge:import`）
-
-### Agent 相关规范
-
-- Agent 模块应保持独立，通过明确定义的接口与其他模块交互
-- Agent 之间的通信优先使用事件驱动模式
-- 每个 Agent 应有清晰的输入/输出类型定义
-
 ## Build & Development
 
 ```bash
@@ -80,3 +52,5 @@ npm run typecheck
 ## 事项
 
 1. 每次完成一个小任务或多个小任务的编码后，需将执行过程和结果以 md 文件形式中文记录到 docs/history/，内容至少包含目标、实现摘要和基础元数据。
+2. 每完成一个小功能就进行 git commit，消息使用英文，格式如 `feat: add xxx` 或 `fix: resolve xxx`，与通用规范中的"提交信息使用英文"保持一致。
+3. 编码完成后运行项目，验证核心功能可正常工作，控制台无明显报错。
