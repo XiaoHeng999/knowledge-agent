@@ -2,6 +2,7 @@ import { app, BrowserWindow, globalShortcut } from "electron";
 import path from "path";
 import { createWindow } from "./window";
 import { registerAllIpcHandlers } from "../server/ipc/register";
+import { initializeDatabase, shutdownDatabase } from "../server/db/index";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -18,6 +19,7 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(async () => {
+    initializeDatabase();
     registerAllIpcHandlers();
     mainWindow = createWindow();
 
@@ -39,6 +41,7 @@ if (!gotTheLock) {
   });
 
   app.on("will-quit", () => {
+    shutdownDatabase();
     globalShortcut.unregisterAll();
   });
 }

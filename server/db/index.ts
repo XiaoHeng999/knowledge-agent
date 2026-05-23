@@ -1,0 +1,76 @@
+import type { BetterSqlite3Database } from "./connection";
+import { createConnection, closeConnection, getConnection, backupDatabase } from "./connection";
+import { MigrationRunner, loadMigrations } from "./migrations";
+import { DomainsRepository } from "./repositories/domains";
+import { KnowledgeNodesRepository } from "./repositories/knowledge-nodes";
+import { KnowledgeEdgesRepository } from "./repositories/knowledge-edges";
+import { SourcesRepository } from "./repositories/sources";
+import { TimelineEntriesRepository } from "./repositories/timeline-entries";
+import { ModelConfigsRepository } from "./repositories/model-configs";
+import { ApiKeysRepository } from "./repositories/api-keys";
+import { InboxRepository } from "./repositories/inbox";
+import { DecisionRecordsRepository } from "./repositories/decision-records";
+import { VectorIndex } from "./vector";
+
+export interface DatabaseService {
+  db: BetterSqlite3Database;
+  migrations: MigrationRunner;
+  domains: DomainsRepository;
+  knowledgeNodes: KnowledgeNodesRepository;
+  knowledgeEdges: KnowledgeEdgesRepository;
+  sources: SourcesRepository;
+  timelineEntries: TimelineEntriesRepository;
+  modelConfigs: ModelConfigsRepository;
+  apiKeys: ApiKeysRepository;
+  inbox: InboxRepository;
+  decisionRecords: DecisionRecordsRepository;
+  vectorIndex: VectorIndex;
+}
+
+let service: DatabaseService | null = null;
+
+export function initializeDatabase(dbPath?: string): DatabaseService {
+  if (service) return service;
+
+  const db = createConnection(dbPath);
+  const migrations = new MigrationRunner(db);
+  const allMigrations = loadMigrations();
+
+  const result = migrations.run(allMigrations);
+  if (result.applied > 0) {
+    console.log(`[DB] Applied ${result.applied} migrations. Current version: ${result.currentVersion}`);
+  } else {
+    console.log(`[DB] Schema up to date. Version: ${result.currentVersion}`);
+  }
+
+  service = {
+    db,
+    migrations,
+    domains: new DomainsRepository(db),
+    knowledgeNodes: new KnowledgeNodesRepository(db),
+    knowledgeEdges: new KnowledgeEdgesRepository(db),
+    sources: new SourcesRepository(db),
+    timelineEntries: new TimelineEntriesRepository(db),
+    modelConfigs: new ModelConfigsRepository(db),
+    apiKeys: new ApiKeysRepository(db),
+    inbox: new InboxRepository(db),
+    decisionRecords: new DecisionRecordsRepository(db),
+    vectorIndex: new VectorIndex(db),
+  };
+
+  return service;
+}
+
+export function getDatabaseService(): DatabaseService {
+  if (!service) {
+    throw new Error("Database not initialized. Call initializeDatabase() first.");
+  }
+  return service;
+}
+
+export function shutdownDatabase(): void {
+  closeConnection();
+  service = null;
+}
+
+export { backupDatabase, getConnection };

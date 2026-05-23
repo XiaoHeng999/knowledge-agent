@@ -1,6 +1,13 @@
 import { APP_CHANNELS, DB_CHANNELS, WINDOW_CHANNELS } from "../../src/lib/ipc/channels";
 import { BrowserWindow } from "electron";
 import { registerHandler } from "./handler";
+import {
+  initializeDatabase,
+  getDatabaseService,
+  shutdownDatabase,
+  backupDatabase,
+} from "../db/index";
+import { loadMigrations } from "../db/migrations/index";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -21,23 +28,26 @@ function registerAppHandlers(): void {
 }
 
 function registerDbHandlers(): void {
-  registerHandler(DB_CHANNELS.INITIALIZE, async (_event, _req) => {
-    // TODO: replace with real database initialization (task 1.5.2)
-    return { success: true, version: 0 };
+  registerHandler(DB_CHANNELS.INITIALIZE, async (_event, req) => {
+    const svc = initializeDatabase(req.dbPath);
+    const version = svc.migrations.getCurrentVersion();
+    return { success: true, version };
   });
 
   registerHandler(DB_CHANNELS.MIGRATE, async () => {
-    // TODO: replace with real migration runner (task 1.5.3)
-    return { success: true, fromVersion: 0, toVersion: 0 };
+    const svc = getDatabaseService();
+    const fromVersion = svc.migrations.getCurrentVersion();
+    const result = svc.migrations.run(loadMigrations());
+    return { success: true, fromVersion, toVersion: result.currentVersion };
   });
 
   registerHandler(DB_CHANNELS.GET_VERSION, async () => {
-    // TODO: replace with real version query (task 1.5.3)
-    return { version: 0 };
+    const svc = getDatabaseService();
+    return { version: svc.migrations.getCurrentVersion() };
   });
 
   registerHandler(DB_CHANNELS.BACKUP, async (_event, req) => {
-    // TODO: replace with real backup logic
+    backupDatabase(req.targetPath);
     return { success: true, path: req.targetPath };
   });
 }
