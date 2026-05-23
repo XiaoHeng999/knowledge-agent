@@ -166,4 +166,16 @@ export function unregisterAll(): void {
   ipcMain.removeHandler("window:close");
   ipcMain.removeHandler("window:isMaximized");
   ipcMain.removeHandler("window:toggleMaximize");
+  // Version Control
+  ipcMain.removeHandler("vc:init");
+  ipcMain.removeHandler("vc:getStatus");
+  ipcMain.removeHandler("vc:getHistory");
+  ipcMain.removeHandler("vc:getDiff");
+  ipcMain.removeHandler("vc:rollback");
+  // Security
+  ipcMain.removeHandler("security:assessWrite");
+  ipcMain.removeHandler("security:getPendingAudits");
+  ipcMain.removeHandler("security:resolveAudit");
+  ipcMain.removeHandler("security:bulkResolve");
+  ipcMain.removeHandler("security:getAuditLog");
 }

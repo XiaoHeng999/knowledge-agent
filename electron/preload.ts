@@ -109,6 +109,24 @@ const api = {
     toggleMaximize: () => invoke("window:toggleMaximize"),
   },
 
+  // --- Version Control ---
+  vc: {
+    init: () => invoke("vc:init"),
+    getStatus: () => invoke("vc:getStatus"),
+    getHistory: (req: ChannelRequest<"vc:getHistory">) => invoke("vc:getHistory", req),
+    getDiff: (req: ChannelRequest<"vc:getDiff">) => invoke("vc:getDiff", req),
+    rollback: (req: ChannelRequest<"vc:rollback">) => invoke("vc:rollback", req),
+  },
+
+  // --- Security ---
+  security: {
+    assessWrite: (req: ChannelRequest<"security:assessWrite">) => invoke("security:assessWrite", req),
+    getPendingAudits: () => invoke("security:getPendingAudits"),
+    resolveAudit: (req: ChannelRequest<"security:resolveAudit">) => invoke("security:resolveAudit", req),
+    bulkResolve: (req: ChannelRequest<"security:bulkResolve">) => invoke("security:bulkResolve", req),
+    getAuditLog: (req: ChannelRequest<"security:getAuditLog"> = {}) => invoke("security:getAuditLog", req),
+  },
+
   // --- Event subscription (main → renderer pushes) ---
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args);

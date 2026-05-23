@@ -10,6 +10,8 @@ import {
 import { loadMigrations } from "../db/migrations/index";
 import { registerModelHandlers as registerModelHandlersFromModule } from "./handlers/model-handler";
 import { registerDomainHandlers as registerDomainHandlersFromModule } from "./handlers/domain-handler";
+import { registerVersionControlHandlers } from "./handlers/version-control-handler";
+import { registerSecurityHandlers } from "./handlers/security-handler";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -89,6 +91,14 @@ function registerImportHandlers(): void {
   // TODO: task 4.2.5
 }
 
+function registerVersionControlHandlers(): void {
+  registerVersionControlHandlersFromModule();
+}
+
+function registerSecurityHandlers(): void {
+  registerSecurityHandlersFromModule();
+}
+
 function registerWindowHandlers(): void {
   registerHandler(WINDOW_CHANNELS.MINIMIZE, async (event) => {
     BrowserWindow.fromWebContents(event.sender)?.minimize();
@@ -131,6 +141,8 @@ export function registerAllIpcHandlers(): void {
   registerDbHandlers();
   registerModelHandlers();
   registerDomainHandlers();
+  registerVersionControlHandlers();
+  registerSecurityHandlers();
   registerKnowledgeHandlers();
   registerInboxHandlers();
   registerResearchHandlers();

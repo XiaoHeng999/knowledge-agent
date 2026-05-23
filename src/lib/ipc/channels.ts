@@ -92,6 +92,22 @@ export const WINDOW_CHANNELS = {
   TOGGLE_MAXIMIZE: "window:toggleMaximize",
 } as const;
 
+export const VC_CHANNELS = {
+  INIT: "vc:init",
+  GET_STATUS: "vc:getStatus",
+  GET_HISTORY: "vc:getHistory",
+  GET_DIFF: "vc:getDiff",
+  ROLLBACK: "vc:rollback",
+} as const;
+
+export const SECURITY_CHANNELS = {
+  ASSESS_WRITE: "security:assessWrite",
+  GET_PENDING: "security:getPendingAudits",
+  RESOLVE_AUDIT: "security:resolveAudit",
+  BULK_RESOLVE: "security:bulkResolve",
+  GET_AUDIT_LOG: "security:getAuditLog",
+} as const;
+
 // ---------------------------------------------------------------------------
 // Domain data types (shared between request/response)
 // ---------------------------------------------------------------------------
@@ -412,6 +428,142 @@ export interface ImportStatusResponse {
   progress: number;
 }
 
+// --- Version Control ---
+export interface CommitInfo {
+  hash: string;
+  shortHash: string;
+  message: string;
+  author: string;
+  date: string;
+}
+
+export interface DiffLine {
+  type: "add" | "remove" | "context";
+  content: string;
+  oldLineNumber?: number;
+  newLineNumber?: number;
+}
+
+export interface DiffHunk {
+  header: string;
+  oldStart: number;
+  oldCount: number;
+  newStart: number;
+  newCount: number;
+  lines: DiffLine[];
+}
+
+export interface FileDiff {
+  oldPath: string;
+  newPath: string;
+  hunks: DiffHunk[];
+}
+
+export interface VcGetHistoryRequest {
+  filePath: string;
+  limit?: number;
+}
+
+export interface VcGetHistoryResponse {
+  commits: CommitInfo[];
+}
+
+export interface VcGetDiffRequest {
+  fromHash: string;
+  toHash: string;
+  filePath?: string;
+}
+
+export interface VcGetDiffResponse {
+  diffs: FileDiff[];
+  hasChanges: boolean;
+}
+
+export interface VcRollbackRequest {
+  filePath: string;
+  targetHash: string;
+}
+
+export interface VcRollbackResponse {
+  success: boolean;
+  newCommitHash: string;
+}
+
+export interface VcStatusResponse {
+  initialized: boolean;
+  branch: string;
+  uncommittedChanges: number;
+}
+
+// --- Security ---
+export type RiskLevel = "low" | "medium" | "high" | "blocked";
+
+export interface WriteOperation {
+  type: "create" | "update" | "delete";
+  targetPath: string;
+  domainId: string;
+  newContent?: string;
+  bulkCount?: number;
+}
+
+export interface RiskAssessment {
+  level: RiskLevel;
+  reasons: string[];
+  autoApprove: boolean;
+  requireExplicit: boolean;
+}
+
+export interface SecurityAssessWriteRequest {
+  operation: WriteOperation;
+}
+
+export interface SecurityAssessWriteResponse {
+  risk: RiskAssessment;
+}
+
+export interface PendingAudit {
+  id: string;
+  operation: WriteOperation;
+  risk: RiskAssessment;
+  createdAt: string;
+}
+
+export interface SecurityGetPendingResponse {
+  audits: PendingAudit[];
+  count: number;
+}
+
+export interface SecurityResolveAuditRequest {
+  auditId: string;
+  action: "approve" | "reject" | "edit_and_approve";
+  editedContent?: string;
+}
+
+export interface SecurityBulkResolveRequest {
+  auditIds: string[];
+  action: "approve_all" | "reject_all";
+}
+
+export interface AuditTrailEntry {
+  id: string;
+  timestamp: string;
+  operation: WriteOperation;
+  riskLevel: RiskLevel;
+  decision: "auto_approved" | "user_approved" | "user_rejected" | "blocked";
+  reviewer?: string;
+  commitHash?: string;
+}
+
+export interface SecurityGetAuditLogRequest {
+  limit?: number;
+  offset?: number;
+}
+
+export interface SecurityGetAuditLogResponse {
+  entries: AuditTrailEntry[];
+  total: number;
+}
+
 // ---------------------------------------------------------------------------
 // Channel → { request, response } type map
 // ---------------------------------------------------------------------------
@@ -479,6 +631,18 @@ export interface IpcChannelMap {
   [WINDOW_CHANNELS.CLOSE]: { request: void; response: WindowSimpleResponse };
   [WINDOW_CHANNELS.IS_MAXIMIZED]: { request: void; response: WindowIsMaximizedResponse };
   [WINDOW_CHANNELS.TOGGLE_MAXIMIZE]: { request: void; response: WindowSimpleResponse };
+  // Version Control
+  [VC_CHANNELS.INIT]: { request: void; response: VcStatusResponse };
+  [VC_CHANNELS.GET_STATUS]: { request: void; response: VcStatusResponse };
+  [VC_CHANNELS.GET_HISTORY]: { request: VcGetHistoryRequest; response: VcGetHistoryResponse };
+  [VC_CHANNELS.GET_DIFF]: { request: VcGetDiffRequest; response: VcGetDiffResponse };
+  [VC_CHANNELS.ROLLBACK]: { request: VcRollbackRequest; response: VcRollbackResponse };
+  // Security
+  [SECURITY_CHANNELS.ASSESS_WRITE]: { request: SecurityAssessWriteRequest; response: SecurityAssessWriteResponse };
+  [SECURITY_CHANNELS.GET_PENDING]: { request: void; response: SecurityGetPendingResponse };
+  [SECURITY_CHANNELS.RESOLVE_AUDIT]: { request: SecurityResolveAuditRequest; response: void };
+  [SECURITY_CHANNELS.BULK_RESOLVE]: { request: SecurityBulkResolveRequest; response: void };
+  [SECURITY_CHANNELS.GET_AUDIT_LOG]: { request: SecurityGetAuditLogRequest; response: SecurityGetAuditLogResponse };
 }
 
 // ---------------------------------------------------------------------------
