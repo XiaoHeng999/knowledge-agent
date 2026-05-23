@@ -1,0 +1,44 @@
+import { app, BrowserWindow, globalShortcut } from "electron";
+import path from "path";
+import { createWindow } from "./window";
+import { registerIpcHandlers } from "./ipc-register";
+
+let mainWindow: BrowserWindow | null = null;
+
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+
+  app.whenReady().then(async () => {
+    registerIpcHandlers();
+    mainWindow = createWindow();
+
+    mainWindow.on("closed", () => {
+      mainWindow = null;
+    });
+  });
+
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
+  });
+
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      mainWindow = createWindow();
+    }
+  });
+
+  app.on("will-quit", () => {
+    globalShortcut.unregisterAll();
+  });
+}

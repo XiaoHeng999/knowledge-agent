@@ -1,0 +1,38 @@
+{
+  "name": "agentclaw",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent-based intelligent knowledge base — comprehension over retrieval",
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"npm run dev:next\" \"npm run dev:electron\"",
+    "dev:next": "next dev --turbopack",
+    "dev:electron": "tsc -p electron/tsconfig.json && electron .",
+    "build": "next build && tsc -p electron/tsconfig.json",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.0",
+    "eslint": "^9.16.0",
+    "eslint-config-next": "^15.1.0",
+    "typescript": "^5.7.0"
+  }
+}
