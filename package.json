@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json"
   },
   "dependencies": {
+    "@mariozechner/pi-coding-agent": "^0.73.1",
     "better-sqlite3": "^11.7.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
