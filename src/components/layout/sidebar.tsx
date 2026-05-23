@@ -2,16 +2,11 @@
 
 import { useState, useCallback } from 'react';
 import { useLayout } from './layout-context';
-
-const PLACEHOLDER_DOMAINS = [
-  { id: '1', name: 'AI / Machine Learning', color: '#5b5fc7', count: 0 },
-  { id: '2', name: 'Web Development', color: '#2da44e', count: 0 },
-];
+import { DomainList } from '@/components/domain/domain-list';
 
 export function Sidebar() {
   const { isSidebarCollapsed } = useLayout();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeDomainId, setActiveDomainId] = useState<string | null>(null);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value),
@@ -22,20 +17,7 @@ export function Sidebar() {
     return (
       <aside className="sidebar sidebar--collapsed" aria-label="Sidebar collapsed">
         <div className="sidebar__collapsed-icons">
-          {PLACEHOLDER_DOMAINS.map(d => (
-            <button
-              key={d.id}
-              className={`sidebar__collapsed-item ${activeDomainId === d.id ? 'sidebar__collapsed-item--active' : ''}`}
-              onClick={() => setActiveDomainId(d.id)}
-              title={d.name}
-              aria-label={d.name}
-            >
-              <span
-                className="sidebar__domain-dot"
-                style={{ backgroundColor: d.color }}
-              />
-            </button>
-          ))}
+          <DomainList collapsed />
           <button className="sidebar__collapsed-item" title="Settings" aria-label="Settings">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z" />
@@ -63,23 +45,7 @@ export function Sidebar() {
       </div>
 
       <nav className="sidebar__domains" aria-label="Domain navigation">
-        {PLACEHOLDER_DOMAINS.map(domain => (
-          <button
-            key={domain.id}
-            className={`sidebar__domain-item ${activeDomainId === domain.id ? 'sidebar__domain-item--active' : ''}`}
-            onClick={() => setActiveDomainId(domain.id)}
-            aria-current={activeDomainId === domain.id ? 'page' : undefined}
-          >
-            <span
-              className="sidebar__domain-dot"
-              style={{ backgroundColor: domain.color }}
-            />
-            <span className="sidebar__domain-name">{domain.name}</span>
-            {domain.count > 0 && (
-              <span className="sidebar__domain-count">{domain.count}</span>
-            )}
-          </button>
-        ))}
+        <DomainList />
       </nav>
 
       <div className="sidebar__actions">

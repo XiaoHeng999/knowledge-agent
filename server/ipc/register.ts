@@ -9,6 +9,7 @@ import {
 } from "../db/index";
 import { loadMigrations } from "../db/migrations/index";
 import { registerModelHandlers as registerModelHandlersFromModule } from "./handlers/model-handler";
+import { registerDomainHandlers as registerDomainHandlersFromModule } from "./handlers/domain-handler";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -65,7 +66,7 @@ function registerModelHandlers(): void {
 }
 
 function registerDomainHandlers(): void {
-  // TODO: task 2.2.2
+  registerDomainHandlersFromModule();
 }
 
 function registerKnowledgeHandlers(): void {
