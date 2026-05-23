@@ -59,7 +59,7 @@ export function serializeMarkdown<T = Record<string, unknown>>(
   frontmatter: T,
   content: string,
 ): string {
-  return matter.stringify(content, frontmatter);
+  return matter.stringify(content, frontmatter as object);
 }
 
 /**
