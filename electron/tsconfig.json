@@ -9,10 +9,10 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "outDir": "../dist/electron",
-    "rootDir": ".",
-    "baseUrl": "."
+    "outDir": "../dist",
+    "rootDir": "..",
+    "baseUrl": ".."
   },
-  "include": ["./**/*.ts"],
+  "include": ["./**/*.ts", "../server/**/*.ts", "../src/lib/ipc/**/*.ts"],
   "exclude": ["../node_modules", "../dist", "../out", "../.next", "../src"]
 }

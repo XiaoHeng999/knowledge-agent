@@ -1,14 +1,116 @@
 import { contextBridge, ipcRenderer } from "electron";
+import type { ChannelName, ChannelRequest, ChannelResponse } from "../src/lib/ipc/channels";
+
+// ---------------------------------------------------------------------------
+// Type-safe invoke wrapper
+// ---------------------------------------------------------------------------
+
+function invoke<C extends ChannelName>(
+  channel: C,
+  ...args: ChannelRequest<C> extends void ? [] : [ChannelRequest<C>]
+): Promise<ChannelResponse<C>> {
+  return ipcRenderer.invoke(channel, ...args) as Promise<ChannelResponse<C>>;
+}
+
+// ---------------------------------------------------------------------------
+// Public API exposed to the renderer via contextBridge
+// ---------------------------------------------------------------------------
 
 const api = {
-  ping: () => ipcRenderer.invoke("ping"),
+  // --- App ---
+  app: {
+    ping: () => invoke("app:ping"),
+    getVersion: () => invoke("app:getVersion"),
+    getPlatform: () => invoke("app:getPlatform"),
+  },
 
+  // --- Database ---
+  db: {
+    initialize: (req: ChannelRequest<"db:initialize">) => invoke("db:initialize", req),
+    migrate: () => invoke("db:migrate"),
+    getVersion: () => invoke("db:getVersion"),
+    backup: (req: ChannelRequest<"db:backup">) => invoke("db:backup", req),
+  },
+
+  // --- Models ---
+  model: {
+    listProviders: () => invoke("model:listProviders"),
+    listModels: (req: ChannelRequest<"model:listModels"> = {}) => invoke("model:listModels", req),
+    addApiKey: (req: ChannelRequest<"model:addApiKey">) => invoke("model:addApiKey", req),
+    validateApiKey: (req: ChannelRequest<"model:validateApiKey">) => invoke("model:validateApiKey", req),
+    removeApiKey: (req: ChannelRequest<"model:removeApiKey">) => invoke("model:removeApiKey", req),
+    setDefault: (req: ChannelRequest<"model:setDefault">) => invoke("model:setDefault", req),
+    getDefault: (req: ChannelRequest<"model:getDefault">) => invoke("model:getDefault", req),
+  },
+
+  // --- Domains ---
+  domain: {
+    create: (req: ChannelRequest<"domain:create">) => invoke("domain:create", req),
+    list: () => invoke("domain:list"),
+    get: (req: ChannelRequest<"domain:get">) => invoke("domain:get", req),
+    update: (req: ChannelRequest<"domain:update">) => invoke("domain:update", req),
+    delete: (req: ChannelRequest<"domain:delete">) => invoke("domain:delete", req),
+    getConfig: (req: ChannelRequest<"domain:getConfig">) => invoke("domain:getConfig", req),
+    updateConfig: (req: ChannelRequest<"domain:updateConfig">) => invoke("domain:updateConfig", req),
+  },
+
+  // --- Knowledge ---
+  knowledge: {
+    createNode: (req: ChannelRequest<"knowledge:createNode">) => invoke("knowledge:createNode", req),
+    updateNode: (req: ChannelRequest<"knowledge:updateNode">) => invoke("knowledge:updateNode", req),
+    deleteNode: (req: ChannelRequest<"knowledge:deleteNode">) => invoke("knowledge:deleteNode", req),
+    getNode: (req: ChannelRequest<"knowledge:getNode">) => invoke("knowledge:getNode", req),
+    listNodes: (req: ChannelRequest<"knowledge:listNodes">) => invoke("knowledge:listNodes", req),
+    createEdge: (req: ChannelRequest<"knowledge:createEdge">) => invoke("knowledge:createEdge", req),
+    deleteEdge: (req: ChannelRequest<"knowledge:deleteEdge">) => invoke("knowledge:deleteEdge", req),
+    getGraph: (req: ChannelRequest<"knowledge:getGraph">) => invoke("knowledge:getGraph", req),
+    search: (req: ChannelRequest<"knowledge:search">) => invoke("knowledge:search", req),
+  },
+
+  // --- Inbox ---
+  inbox: {
+    addItem: (req: ChannelRequest<"inbox:addItem">) => invoke("inbox:addItem", req),
+    listItems: (req: ChannelRequest<"inbox:listItems"> = {}) => invoke("inbox:listItems", req),
+    processItem: (req: ChannelRequest<"inbox:processItem">) => invoke("inbox:processItem", req),
+    rejectItem: (req: ChannelRequest<"inbox:rejectItem">) => invoke("inbox:rejectItem", req),
+    getStats: () => invoke("inbox:getStats"),
+  },
+
+  // --- Research ---
+  research: {
+    trigger: (req: ChannelRequest<"research:trigger">) => invoke("research:trigger", req),
+    getStatus: (req: ChannelRequest<"research:getStatus">) => invoke("research:getStatus", req),
+    listHistory: (req: ChannelRequest<"research:listHistory">) => invoke("research:listHistory", req),
+    getDashboard: () => invoke("research:getDashboard"),
+    cancel: (req: ChannelRequest<"research:cancel">) => invoke("research:cancel", req),
+  },
+
+  // --- Settings ---
+  settings: {
+    get: (req: ChannelRequest<"settings:get">) => invoke("settings:get", req),
+    set: (req: ChannelRequest<"settings:set">) => invoke("settings:set", req),
+    getTheme: () => invoke("settings:getTheme"),
+    setTheme: (req: ChannelRequest<"settings:setTheme">) => invoke("settings:setTheme", req),
+  },
+
+  // --- Import ---
+  import: {
+    importUrl: (req: ChannelRequest<"import:importUrl">) => invoke("import:importUrl", req),
+    importFile: (req: ChannelRequest<"import:importFile">) => invoke("import:importFile", req),
+    getStatus: (req: ChannelRequest<"import:getStatus">) => invoke("import:getStatus", req),
+  },
+
+  // --- Event subscription (main → renderer pushes) ---
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args);
     ipcRenderer.on(channel, subscription);
     return () => {
       ipcRenderer.removeListener(channel, subscription);
     };
+  },
+
+  removeListener: (channel: string, callback: (...args: unknown[]) => void) => {
+    ipcRenderer.removeListener(channel, callback);
   },
 };
 

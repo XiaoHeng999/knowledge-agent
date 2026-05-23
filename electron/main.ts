@@ -1,7 +1,7 @@
 import { app, BrowserWindow, globalShortcut } from "electron";
 import path from "path";
 import { createWindow } from "./window";
-import { registerIpcHandlers } from "./ipc-register";
+import { registerAllIpcHandlers } from "../server/ipc/register";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -18,7 +18,7 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(async () => {
-    registerIpcHandlers();
+    registerAllIpcHandlers();
     mainWindow = createWindow();
 
     mainWindow.on("closed", () => {
