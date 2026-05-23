@@ -161,4 +161,9 @@ export function unregisterAll(): void {
   ipcMain.removeHandler("import:importUrl");
   ipcMain.removeHandler("import:importFile");
   ipcMain.removeHandler("import:getStatus");
+  ipcMain.removeHandler("window:minimize");
+  ipcMain.removeHandler("window:maximize");
+  ipcMain.removeHandler("window:close");
+  ipcMain.removeHandler("window:isMaximized");
+  ipcMain.removeHandler("window:toggleMaximize");
 }

@@ -1,4 +1,5 @@
-import { APP_CHANNELS, DB_CHANNELS } from "../../src/lib/ipc/channels";
+import { APP_CHANNELS, DB_CHANNELS, WINDOW_CHANNELS } from "../../src/lib/ipc/channels";
+import { BrowserWindow } from "electron";
 import { registerHandler } from "./handler";
 
 // ---------------------------------------------------------------------------
@@ -75,6 +76,39 @@ function registerImportHandlers(): void {
   // TODO: task 4.2.5
 }
 
+function registerWindowHandlers(): void {
+  registerHandler(WINDOW_CHANNELS.MINIMIZE, async (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.minimize();
+    return { success: true };
+  });
+
+  registerHandler(WINDOW_CHANNELS.MAXIMIZE, async (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.maximize();
+    return { success: true };
+  });
+
+  registerHandler(WINDOW_CHANNELS.CLOSE, async (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.close();
+    return { success: true };
+  });
+
+  registerHandler(WINDOW_CHANNELS.IS_MAXIMIZED, async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    return { maximized: win?.isMaximized() ?? false };
+  });
+
+  registerHandler(WINDOW_CHANNELS.TOGGLE_MAXIMIZE, async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return { success: true };
+    if (win.isMaximized()) {
+      win.unmaximize();
+    } else {
+      win.maximize();
+    }
+    return { success: true };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Public entry point — called once from electron/main.ts
 // ---------------------------------------------------------------------------
@@ -89,4 +123,5 @@ export function registerAllIpcHandlers(): void {
   registerResearchHandlers();
   registerSettingsHandlers();
   registerImportHandlers();
+  registerWindowHandlers();
 }

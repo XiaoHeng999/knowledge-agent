@@ -100,6 +100,15 @@ const api = {
     getStatus: (req: ChannelRequest<"import:getStatus">) => invoke("import:getStatus", req),
   },
 
+  // --- Window ---
+  window: {
+    minimize: () => invoke("window:minimize"),
+    maximize: () => invoke("window:maximize"),
+    close: () => invoke("window:close"),
+    isMaximized: () => invoke("window:isMaximized"),
+    toggleMaximize: () => invoke("window:toggleMaximize"),
+  },
+
   // --- Event subscription (main → renderer pushes) ---
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args);

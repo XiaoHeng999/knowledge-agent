@@ -84,6 +84,14 @@ export const IMPORT_CHANNELS = {
   GET_STATUS: "import:getStatus",
 } as const;
 
+export const WINDOW_CHANNELS = {
+  MINIMIZE: "window:minimize",
+  MAXIMIZE: "window:maximize",
+  CLOSE: "window:close",
+  IS_MAXIMIZED: "window:isMaximized",
+  TOGGLE_MAXIMIZE: "window:toggleMaximize",
+} as const;
+
 // ---------------------------------------------------------------------------
 // Domain data types (shared between request/response)
 // ---------------------------------------------------------------------------
@@ -384,6 +392,10 @@ export interface SettingsSetRequest {
 }
 
 // --- Import ---
+// --- Window ---
+export interface WindowSimpleResponse { success: boolean }
+export interface WindowIsMaximizedResponse { maximized: boolean }
+
 export interface ImportUrlRequest {
   url: string;
   domainId?: string;
@@ -459,6 +471,12 @@ export interface IpcChannelMap {
   [IMPORT_CHANNELS.IMPORT_URL]: { request: ImportUrlRequest; response: ImportStatusResponse };
   [IMPORT_CHANNELS.IMPORT_FILE]: { request: ImportFileRequest; response: ImportStatusResponse };
   [IMPORT_CHANNELS.GET_STATUS]: { request: Pick<ImportStatusResponse, "id">; response: ImportStatusResponse };
+  // Window
+  [WINDOW_CHANNELS.MINIMIZE]: { request: void; response: WindowSimpleResponse };
+  [WINDOW_CHANNELS.MAXIMIZE]: { request: void; response: WindowSimpleResponse };
+  [WINDOW_CHANNELS.CLOSE]: { request: void; response: WindowSimpleResponse };
+  [WINDOW_CHANNELS.IS_MAXIMIZED]: { request: void; response: WindowIsMaximizedResponse };
+  [WINDOW_CHANNELS.TOGGLE_MAXIMIZE]: { request: void; response: WindowSimpleResponse };
 }
 
 // ---------------------------------------------------------------------------
