@@ -107,6 +107,8 @@ export interface ModelInfo {
   name: string;
   provider: string;
   costPerMillion: number;
+  available: boolean;
+  contextWindow: number;
 }
 
 export interface DomainInfo {

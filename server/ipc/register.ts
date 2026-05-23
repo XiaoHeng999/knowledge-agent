@@ -8,6 +8,7 @@ import {
   backupDatabase,
 } from "../db/index";
 import { loadMigrations } from "../db/migrations/index";
+import { registerModelHandlers as registerModelHandlersFromModule } from "./handlers/model-handler";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -59,7 +60,8 @@ function registerDbHandlers(): void {
 // ---------------------------------------------------------------------------
 
 function registerModelHandlers(): void {
-  // TODO: task 2.1.2
+  // Delegated to handlers/model-handler.ts
+  registerModelHandlersFromModule();
 }
 
 function registerDomainHandlers(): void {

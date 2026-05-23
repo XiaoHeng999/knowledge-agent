@@ -3,6 +3,7 @@ import path from "path";
 import { createWindow } from "./window";
 import { registerAllIpcHandlers } from "../server/ipc/register";
 import { initializeDatabase, shutdownDatabase } from "../server/db/index";
+import { initializePiMono, shutdownPiMono } from "../server/pi-mono/instance";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -20,6 +21,14 @@ if (!gotTheLock) {
 
   app.whenReady().then(async () => {
     initializeDatabase();
+
+    try {
+      await initializePiMono();
+      console.log("[PiMono] Initialized successfully");
+    } catch (err) {
+      console.error("[PiMono] Initialization failed:", err);
+    }
+
     registerAllIpcHandlers();
     mainWindow = createWindow();
 
@@ -41,6 +50,7 @@ if (!gotTheLock) {
   });
 
   app.on("will-quit", () => {
+    shutdownPiMono();
     shutdownDatabase();
     globalShortcut.unregisterAll();
   });
