@@ -3926,3 +3926,298 @@ body {
   font-size: var(--font-size-xs);
   color: var(--text-tertiary);
 }
+
+/* ========================================================================== */
+/* Graph View                                                                 */
+/* ========================================================================== */
+
+.graph-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+}
+
+.graph-view__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.graph-view__header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.graph-view__domain-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.graph-view__title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.graph-view__count {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  margin-left: var(--spacing-xs);
+}
+
+.graph-view__canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.graph-view__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md) var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.graph-view__loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+}
+
+.graph-view__a11y-notice {
+  position: absolute;
+  bottom: var(--spacing-sm);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: var(--bg-secondary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* ========================================================================== */
+/* Force Graph                                                                */
+/* ========================================================================== */
+
+.force-graph {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  overflow: hidden;
+}
+
+.force-graph--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.force-graph__empty-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-tertiary);
+}
+
+.force-graph__empty-msg svg {
+  opacity: 0.5;
+}
+
+.force-graph__zoom-controls {
+  position: absolute;
+  bottom: var(--spacing-md);
+  right: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.force-graph__zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--font-sans);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.force-graph__zoom-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* Graph tooltip */
+.graph-tooltip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  box-shadow: var(--shadow-md);
+  max-width: 240px;
+}
+
+.graph-tooltip__title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.graph-tooltip__meta {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+}
+
+.graph-tooltip__type {
+  text-transform: capitalize;
+  color: var(--accent);
+}
+
+/* ========================================================================== */
+/* WebGL Graph                                                                */
+/* ========================================================================== */
+
+.webgl-graph {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+}
+
+/* ========================================================================== */
+/* Graph Control Panel                                                        */
+/* ========================================================================== */
+
+.graph-controls {
+  position: absolute;
+  top: var(--spacing-md);
+  left: var(--spacing-md);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  min-width: 180px;
+}
+
+.graph-controls__stats {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--border);
+}
+
+.graph-controls__stat {
+  font-variant-numeric: tabular-nums;
+}
+
+.graph-controls__divider {
+  color: var(--border);
+}
+
+.graph-controls__section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.graph-controls__label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.graph-controls__layout-btns {
+  display: flex;
+  gap: 2px;
+}
+
+.graph-controls__layout-btn {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  transition: all var(--transition-fast);
+}
+
+.graph-controls__layout-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.graph-controls__layout-btn--active {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.graph-controls__select {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  outline: none;
+}
+
+.graph-controls__select:focus {
+  border-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .force-graph,
+  .webgl-graph,
+  .graph-controls,
+  .graph-tooltip {
+    transition: none !important;
+    animation: none !important;
+  }
+}
