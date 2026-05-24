@@ -112,6 +112,7 @@ export const SECURITY_CHANNELS = {
   RESOLVE_AUDIT: "security:resolveAudit",
   BULK_RESOLVE: "security:bulkResolve",
   GET_AUDIT_LOG: "security:getAuditLog",
+  GENERATE_DIFF: "security:generateDiff",
 } as const;
 
 export const CHAT_CHANNELS = {
@@ -657,6 +658,31 @@ export interface SecurityGetAuditLogResponse {
   total: number;
 }
 
+export interface DiffGenerateRequest {
+  oldContent: string | null;
+  newContent: string | null;
+}
+
+export interface DiffLineResult {
+  type: "add" | "remove" | "context";
+  content: string;
+  oldLineNumber?: number;
+  newLineNumber?: number;
+}
+
+export interface DiffHunkResult {
+  oldStart: number;
+  oldCount: number;
+  newStart: number;
+  newCount: number;
+  lines: DiffLineResult[];
+}
+
+export interface DiffGenerateResponse {
+  hunks: DiffHunkResult[];
+  stats: { added: number; removed: number; unchanged: number };
+}
+
 // --- Chat ---
 export interface ChatCreateConversationRequest {
   domainId: string;
@@ -776,6 +802,7 @@ export interface IpcChannelMap {
   [SECURITY_CHANNELS.RESOLVE_AUDIT]: { request: SecurityResolveAuditRequest; response: void };
   [SECURITY_CHANNELS.BULK_RESOLVE]: { request: SecurityBulkResolveRequest; response: void };
   [SECURITY_CHANNELS.GET_AUDIT_LOG]: { request: SecurityGetAuditLogRequest; response: SecurityGetAuditLogResponse };
+  [SECURITY_CHANNELS.GENERATE_DIFF]: { request: DiffGenerateRequest; response: DiffGenerateResponse };
   // Chat
   [CHAT_CHANNELS.CREATE_CONVERSATION]: { request: ChatCreateConversationRequest; response: ConversationInfo };
   [CHAT_CHANNELS.LIST_CONVERSATIONS]: { request: ChatListConversationsRequest; response: ChatListConversationsResponse };

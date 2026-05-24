@@ -126,6 +126,7 @@ const api = {
     resolveAudit: (req: ChannelRequest<"security:resolveAudit">) => invoke("security:resolveAudit", req),
     bulkResolve: (req: ChannelRequest<"security:bulkResolve">) => invoke("security:bulkResolve", req),
     getAuditLog: (req: ChannelRequest<"security:getAuditLog"> = {}) => invoke("security:getAuditLog", req),
+    generateDiff: (req: ChannelRequest<"security:generateDiff">) => invoke("security:generateDiff", req),
   },
 
   // --- Chat ---

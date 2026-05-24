@@ -23,6 +23,8 @@ agentclaw/
 │   │       │   │   └── page.tsx  # 知识图谱可视化（?id=xxx 查询参数）
 │   │       │   └── [id]/chat/
 │   │       │       └── page.tsx  # 专家对话页（动态路由）
+│   │       ├── inbox/
+│   │       │   └── page.tsx      # 收件箱列表（待处理/已处理/已拒绝筛选）
 │   │       └── settings/         # 设置页
 │   │           ├── page.tsx      # 设置主页
 │   │           ├── models/       # 模型管理
@@ -71,6 +73,17 @@ agentclaw/
 │   │   │   ├── search-bar.tsx            # 搜索栏 + 下拉结果
 │   │   │   └── search-results.tsx        # 搜索结果列表 + 高亮
 │   │   │
+│   │   ├── inbox/                # 收件箱组件
+│   │   │   ├── inbox-item.tsx            # 收件箱项目卡片（来源+摘要+确认/拒绝/编辑）
+│   │   │   └── quick-record-dialog.tsx   # 快速记录对话框
+│   │   │
+│   │   ├── security/              # 安全审核组件
+│   │   │   ├── diff-review-card.tsx      # 单个 diff 审核卡片
+│   │   │   ├── diff-review-stack.tsx     # 待审核 diff 堆栈列表
+│   │   │   ├── edit-and-apply.tsx        # 编辑后应用编辑器
+│   │   │   ├── approve-confirm.tsx       # 高风险操作确认（输入 APPROVE）
+│   │   │   └── pending-badge.tsx         # 输入区域待审核徽标
+│   │   │
 │   │   ├── diff/                 # 版本对比组件
 │   │   │   ├── diff-viewer.tsx
 │   │   │   └── version-history.tsx
@@ -90,14 +103,16 @@ agentclaw/
 │   │   ├── domain-store.ts       # 域列表与当前域状态
 │   │   ├── knowledge-store.ts    # 知识节点/边状态
 │   │   ├── chat-store.ts         # 对话、消息、流式状态
-│   │   └── onboarding-store.ts   # 引导流程状态
+│   │   ├── onboarding-store.ts   # 引导流程状态
+│   │   └── security-store.ts     # 安全审核状态（待审核队列）
 │   │
 │   ├── lib/
 │   │   ├── ipc/
 │   │   │   └── channels.ts       # IPC 通道注册表（类型安全的 channel 定义）
 │   │   ├── hooks/
 │   │   │   ├── use-ipc.ts        # IPC 调用 hook
-│   │   │   └── use-theme.ts      # 主题切换 hook
+│   │   │   ├── use-theme.ts      # 主题切换 hook
+│   │   │   └── use-security-gate.ts # 安全网关 hook（审核/生成 diff）
 │   │   └── commands/
 │   │       ├── index.ts           # 统一导出 + builtins 自动注册
 │   │       ├── types.ts           # 命令类型定义（CommandDefinition, ParsedCommand 等）
@@ -156,6 +171,7 @@ agentclaw/
 │   │       ├── knowledge-handler.ts
 │   │       ├── chat-handler.ts          # 对话 IPC handler
 │   │       ├── search-handler.ts        # 搜索 IPC handler（混合搜索）
+│   │       ├── inbox-handler.ts         # 收件箱 IPC handler
 │   │       ├── security-handler.ts
 │   │       └── version-control-handler.ts
 │   │
@@ -180,9 +196,11 @@ agentclaw/
 │       ├── knowledge-graph.ts    # 知识图谱服务（节点/边 CRUD、图遍历）
 │       ├── conversation-service.ts # 对话服务（会话管理、流式响应、领域上下文）
 │       ├── search-engine.ts      # 混合搜索引擎（向量 + BM25 + RRF）
+│       ├── inbox-processor.ts    # 收件箱处理（AI 摘要 + 领域建议 + 确认/拒绝）
 │       ├── embedding-service.ts  # 嵌入向量生成服务
 │       ├── version-control.ts    # 版本控制服务
-│       ├── security-gate.ts      # 安全网关
+│       ├── diff-service.ts       # Diff 生成服务（行级内容比较）
+│       ├── security-gate.ts      # 安全网关（风险评估 + 审核队列）
 │       └── pi-mono-wrapper.ts    # Pi Mono 服务包装
 
 ├── docs/                         # 文档

@@ -179,4 +179,5 @@ export function unregisterAll(): void {
   ipcMain.removeHandler("security:resolveAudit");
   ipcMain.removeHandler("security:bulkResolve");
   ipcMain.removeHandler("security:getAuditLog");
+  ipcMain.removeHandler("security:generateDiff");
 }

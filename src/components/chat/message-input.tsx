@@ -6,6 +6,8 @@ import type { CommandDefinition, CommandResult } from "@/lib/commands/types";
 import { executeCommand } from "@/lib/commands/registry";
 import { CommandAutocomplete } from "./command-autocomplete";
 import type { CommandAutocompleteHandle } from "./command-autocomplete";
+import { PendingBadge } from "@/components/security/pending-badge";
+import { usePendingAuditPoller } from "@/lib/hooks/use-security-gate";
 
 interface MessageInputProps {
   onSend: (content: string) => void;
@@ -32,6 +34,8 @@ export function MessageInput({
   const [autocompleteVisible, setAutocompleteVisible] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autocompleteRef = useRef<CommandAutocompleteHandle>(null);
+
+  usePendingAuditPoller();
 
   useEffect(() => {
     const trimmed = content.trimStart();
@@ -160,6 +164,7 @@ export function MessageInput({
               </svg>
             </button>
           )}
+          <PendingBadge />
         </div>
       </div>
     </div>

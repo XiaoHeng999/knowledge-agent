@@ -11,6 +11,7 @@ import {
 
 export type PanelContentType =
   | 'diff-preview'
+  | 'diff-review'
   | 'knowledge-detail'
   | 'event-detail'
   | 'inbox-detail'
@@ -45,6 +46,7 @@ export function useLayout(): LayoutContextValue {
 
 const PANEL_DEFAULT_WIDTHS: Record<PanelContentType, number> = {
   'diff-preview': 400,
+  'diff-review': 420,
   'knowledge-detail': 320,
   'event-detail': 280,
   'inbox-detail': 280,
