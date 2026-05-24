@@ -152,6 +152,21 @@ const api = {
     reindexDomain: (req: ChannelRequest<"search:reindexDomain">) => invoke("search:reindexDomain", req),
   },
 
+  // --- Framework ---
+  framework: {
+    listFrameworks: () => invoke("framework:listFrameworks"),
+    execute: (req: ChannelRequest<"framework:execute">) => invoke("framework:execute", req),
+    listResults: (req: ChannelRequest<"framework:listResults">) => invoke("framework:listResults", req),
+    getResult: (req: ChannelRequest<"framework:getResult">) => invoke("framework:getResult", req),
+    generateSummary: (req: ChannelRequest<"framework:generateSummary">) => invoke("framework:generateSummary", req),
+    getMemoryStats: (req: ChannelRequest<"framework:getMemoryStats">) => invoke("framework:getMemoryStats", req),
+    listDecisions: (req: ChannelRequest<"framework:listDecisions">) => invoke("framework:listDecisions", req),
+    getDecision: (req: ChannelRequest<"framework:getDecision">) => invoke("framework:getDecision", req),
+    createDecision: (req: ChannelRequest<"framework:createDecision">) => invoke("framework:createDecision", req),
+    updateDecision: (req: ChannelRequest<"framework:updateDecision">) => invoke("framework:updateDecision", req),
+    retrieveRelatedDecisions: (req: ChannelRequest<"framework:retrieveRelatedDecisions">) => invoke("framework:retrieveRelatedDecisions", req),
+  },
+
   // --- Event subscription (main → renderer pushes) ---
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args);

@@ -77,6 +77,15 @@ export function Sidebar() {
             </svg>
             <span>Research</span>
           </button>
+          <button className="sidebar__action-btn" aria-label="Frameworks" onClick={() => router.push('/framework')}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <rect x="1" y="1" width="5" height="5" rx="1" />
+              <rect x="10" y="1" width="5" height="5" rx="1" />
+              <rect x="1" y="10" width="5" height="5" rx="1" />
+              <rect x="10" y="10" width="5" height="5" rx="1" />
+            </svg>
+            <span>Frameworks</span>
+          </button>
           <div className="sidebar__action-row">
             <button className="sidebar__action-btn" aria-label="Settings" onClick={() => router.push('/settings')}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">

@@ -17,7 +17,9 @@ export type PanelContentType =
   | 'inbox-detail'
   | 'domain-overview'
   | 'settings-section'
-  | 'source-detail';
+  | 'source-detail'
+  | 'framework-result'
+  | 'decision-detail';
 
 type ViewportBreakpoint = 'compact' | 'medium' | 'full';
 
@@ -53,6 +55,8 @@ const PANEL_DEFAULT_WIDTHS: Record<PanelContentType, number> = {
   'domain-overview': 280,
   'settings-section': 320,
   'source-detail': 280,
+  'framework-result': 400,
+  'decision-detail': 400,
 };
 
 function useViewportBreakpoint(): ViewportBreakpoint {

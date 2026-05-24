@@ -89,6 +89,20 @@ export const IMPORT_CHANNELS = {
   POLL_RSS: "import:pollRss",
 } as const;
 
+export const FRAMEWORK_CHANNELS = {
+  LIST_FRAMEWORKS: "framework:listFrameworks",
+  EXECUTE: "framework:execute",
+  LIST_RESULTS: "framework:listResults",
+  GET_RESULT: "framework:getResult",
+  GENERATE_SUMMARY: "framework:generateSummary",
+  GET_MEMORY_STATS: "framework:getMemoryStats",
+  LIST_DECISIONS: "framework:listDecisions",
+  GET_DECISION: "framework:getDecision",
+  CREATE_DECISION: "framework:createDecision",
+  UPDATE_DECISION: "framework:updateDecision",
+  RETRIEVE_RELATED: "framework:retrieveRelatedDecisions",
+} as const;
+
 export const WINDOW_CHANNELS = {
   MINIMIZE: "window:minimize",
   MAXIMIZE: "window:maximize",
@@ -746,6 +760,102 @@ export interface ChatAddMessageRequest {
   modelId?: string;
 }
 
+// --- Framework ---
+export interface FrameworkInfo {
+  type: string;
+  name: string;
+  description: string;
+  minNodes: number;
+}
+
+export interface FrameworkAnalysisResult {
+  id: string;
+  domainId: string;
+  frameworkType: string;
+  title: string;
+  analysisData: string;
+  sourceNodeIds: string[];
+  knowledgeNodeIds: string[];
+  modelId: string | null;
+  costUsd: number;
+  createdAt: string;
+}
+
+export interface FrameworkExecuteRequest {
+  domainId: string;
+  frameworkType: string;
+  modelId?: string;
+}
+
+export interface FrameworkListResultsRequest {
+  domainId: string;
+  frameworkType?: string;
+}
+
+export interface FrameworkListResultsResponse {
+  items: FrameworkAnalysisResult[];
+  total: number;
+}
+
+export interface DecisionRecordResult {
+  id: string;
+  domainId: string;
+  title: string;
+  decisionNumber: number;
+  context: string;
+  decisionText: string;
+  rationale: string | null;
+  expectedOutcome: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface CreateDecisionRequest {
+  domainId: string;
+  title: string;
+  context: string;
+  decisionText: string;
+  rationale?: string;
+  expectedOutcome?: string;
+}
+
+export interface UpdateDecisionRequest {
+  decisionId: string;
+  status: string;
+  supersededBy?: string;
+}
+
+export interface DomainSummaryResult {
+  domainId: string;
+  domainName: string;
+  executiveSummary: string;
+  keyFindings: string[];
+  activePredictions: string[];
+  decisionLog: string[];
+  recommendedActions: string[];
+  hotLayerCount: number;
+  warmLayerCount: number;
+  coldLayerCount: number;
+  generatedAt: string;
+}
+
+export interface MemoryLayerStats {
+  hot: number;
+  warm: number;
+  cold: number;
+  total: number;
+}
+
+export interface RetrieveRelatedDecisionsRequest {
+  domainId: string;
+  queryText: string;
+  limit?: number;
+}
+
+export interface RetrieveRelatedDecisionsResponse {
+  decisions: DecisionRecordResult[];
+}
+
 // ---------------------------------------------------------------------------
 // Channel → { request, response } type map
 // ---------------------------------------------------------------------------
@@ -844,6 +954,18 @@ export interface IpcChannelMap {
   [CHAT_CHANNELS.ABORT_STREAM]: { request: Pick<ConversationInfo, "id">; response: void };
   [CHAT_CHANNELS.ADD_MESSAGE]: { request: ChatAddMessageRequest; response: MessageInfo };
   [CHAT_CHANNELS.BRANCH_FROM_MESSAGE]: { request: ChatBranchRequest; response: MessageInfo };
+  // Framework
+  [FRAMEWORK_CHANNELS.LIST_FRAMEWORKS]: { request: void; response: { frameworks: FrameworkInfo[] } };
+  [FRAMEWORK_CHANNELS.EXECUTE]: { request: FrameworkExecuteRequest; response: FrameworkAnalysisResult };
+  [FRAMEWORK_CHANNELS.LIST_RESULTS]: { request: FrameworkListResultsRequest; response: FrameworkListResultsResponse };
+  [FRAMEWORK_CHANNELS.GET_RESULT]: { request: Pick<FrameworkAnalysisResult, "id">; response: FrameworkAnalysisResult };
+  [FRAMEWORK_CHANNELS.GENERATE_SUMMARY]: { request: Pick<DomainSummaryResult, "domainId">; response: DomainSummaryResult };
+  [FRAMEWORK_CHANNELS.GET_MEMORY_STATS]: { request: Pick<DomainSummaryResult, "domainId">; response: MemoryLayerStats };
+  [FRAMEWORK_CHANNELS.LIST_DECISIONS]: { request: Pick<DecisionRecordResult, "domainId">; response: { items: DecisionRecordResult[]; total: number } };
+  [FRAMEWORK_CHANNELS.GET_DECISION]: { request: Pick<DecisionRecordResult, "id">; response: DecisionRecordResult };
+  [FRAMEWORK_CHANNELS.CREATE_DECISION]: { request: CreateDecisionRequest; response: DecisionRecordResult };
+  [FRAMEWORK_CHANNELS.UPDATE_DECISION]: { request: UpdateDecisionRequest; response: DecisionRecordResult };
+  [FRAMEWORK_CHANNELS.RETRIEVE_RELATED]: { request: RetrieveRelatedDecisionsRequest; response: RetrieveRelatedDecisionsResponse };
 }
 
 // ---------------------------------------------------------------------------

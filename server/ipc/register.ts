@@ -18,6 +18,7 @@ import { registerSearchHandlers as registerSearchHandlersFromModule } from "./ha
 import { registerInboxHandlers as registerInboxHandlersFromModule } from "./handlers/inbox-handler";
 import { registerResearchHandlers as registerResearchHandlersFromModule } from "./handlers/research-handler";
 import { registerImportHandlers as registerImportHandlersFromModule } from "./handlers/import-handler";
+import { registerFrameworkHandlers as registerFrameworkHandlersFromModule } from "./handlers/framework-handler";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -105,6 +106,10 @@ function registerImportHandlers(): void {
   registerImportHandlersFromModule();
 }
 
+function registerFrameworkHandlers(): void {
+  registerFrameworkHandlersFromModule();
+}
+
 function registerVersionControlHandlers(): void {
   registerVersionControlHandlersFromModule();
 }
@@ -164,5 +169,6 @@ export function registerAllIpcHandlers(): void {
   registerResearchHandlers();
   registerSettingsHandlers();
   registerImportHandlers();
+  registerFrameworkHandlers();
   registerWindowHandlers();
 }
