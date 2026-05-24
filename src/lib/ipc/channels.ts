@@ -83,6 +83,10 @@ export const IMPORT_CHANNELS = {
   IMPORT_URL: "import:importUrl",
   IMPORT_FILE: "import:importFile",
   GET_STATUS: "import:getStatus",
+  LIST: "import:list",
+  RETRY: "import:retry",
+  CANCEL: "import:cancel",
+  POLL_RSS: "import:pollRss",
 } as const;
 
 export const WINDOW_CHANNELS = {
@@ -491,10 +495,6 @@ export interface SettingsSetRequest {
 }
 
 // --- Import ---
-// --- Window ---
-export interface WindowSimpleResponse { success: boolean }
-export interface WindowIsMaximizedResponse { maximized: boolean }
-
 export interface ImportUrlRequest {
   url: string;
   domainId?: string;
@@ -508,6 +508,33 @@ export interface ImportStatusResponse {
   status: "pending" | "processing" | "completed" | "failed";
   progress: number;
 }
+export interface ImportListRequest {
+  domainId?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+}
+export interface ImportListResponse {
+  items: ImportStatusResponse[];
+  total: number;
+}
+export interface ImportRetryRequest {
+  id: string;
+}
+export interface ImportCancelRequest {
+  id: string;
+}
+export interface ImportPollRssRequest {
+  feedUrl: string;
+  domainId: string;
+}
+export interface ImportPollRssResponse {
+  newItems: number;
+  errors: number;
+}
+// --- Window ---
+export interface WindowSimpleResponse { success: boolean }
+export interface WindowIsMaximizedResponse { maximized: boolean }
 
 // --- Version Control ---
 export interface CommitInfo {
@@ -781,6 +808,10 @@ export interface IpcChannelMap {
   [IMPORT_CHANNELS.IMPORT_URL]: { request: ImportUrlRequest; response: ImportStatusResponse };
   [IMPORT_CHANNELS.IMPORT_FILE]: { request: ImportFileRequest; response: ImportStatusResponse };
   [IMPORT_CHANNELS.GET_STATUS]: { request: Pick<ImportStatusResponse, "id">; response: ImportStatusResponse };
+  [IMPORT_CHANNELS.LIST]: { request: ImportListRequest; response: ImportListResponse };
+  [IMPORT_CHANNELS.RETRY]: { request: ImportRetryRequest; response: ImportStatusResponse };
+  [IMPORT_CHANNELS.CANCEL]: { request: ImportCancelRequest; response: void };
+  [IMPORT_CHANNELS.POLL_RSS]: { request: ImportPollRssRequest; response: ImportPollRssResponse };
   // Window
   [WINDOW_CHANNELS.MINIMIZE]: { request: void; response: WindowSimpleResponse };
   [WINDOW_CHANNELS.MAXIMIZE]: { request: void; response: WindowSimpleResponse };

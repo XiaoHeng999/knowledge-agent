@@ -99,6 +99,10 @@ const api = {
     importUrl: (req: ChannelRequest<"import:importUrl">) => invoke("import:importUrl", req),
     importFile: (req: ChannelRequest<"import:importFile">) => invoke("import:importFile", req),
     getStatus: (req: ChannelRequest<"import:getStatus">) => invoke("import:getStatus", req),
+    list: (req: ChannelRequest<"import:list"> = {}) => invoke("import:list", req),
+    retry: (req: ChannelRequest<"import:retry">) => invoke("import:retry", req),
+    cancel: (req: ChannelRequest<"import:cancel">) => invoke("import:cancel", req),
+    pollRss: (req: ChannelRequest<"import:pollRss">) => invoke("import:pollRss", req),
   },
 
   // --- Window ---
