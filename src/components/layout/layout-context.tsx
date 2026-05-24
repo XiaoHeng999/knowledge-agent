@@ -27,9 +27,11 @@ interface LayoutContextValue {
   panelOpen: boolean;
   panelWidth: number;
   panelContentType: PanelContentType | null;
-  openPanel: (type: PanelContentType, width?: number) => void;
+  panelContent: ReactNode | null;
+  openPanel: (type: PanelContentType, width?: number, content?: ReactNode) => void;
   closePanel: () => void;
   setPanelWidth: (width: number) => void;
+  setPanelContent: (content: ReactNode | null) => void;
   viewportBreakpoint: ViewportBreakpoint;
 }
 
@@ -74,21 +76,24 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelWidth, setPanelWidth] = useState(320);
   const [panelContentType, setPanelContentType] = useState<PanelContentType | null>(null);
+  const [panelContent, setPanelContent] = useState<ReactNode | null>(null);
   const viewportBreakpoint = useViewportBreakpoint();
 
   const isSidebarCollapsed = sidebarCollapsed || viewportBreakpoint === 'compact';
 
   const toggleSidebar = useCallback(() => setSidebarCollapsed(c => !c), []);
 
-  const openPanel = useCallback((type: PanelContentType, width?: number) => {
+  const openPanel = useCallback((type: PanelContentType, width?: number, content?: ReactNode) => {
     setPanelContentType(type);
     setPanelWidth(width ?? PANEL_DEFAULT_WIDTHS[type]);
+    setPanelContent(content ?? null);
     setPanelOpen(true);
   }, []);
 
   const closePanel = useCallback(() => {
     setPanelOpen(false);
     setPanelContentType(null);
+    setPanelContent(null);
   }, []);
 
   return (
@@ -100,9 +105,11 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
         panelOpen,
         panelWidth,
         panelContentType,
+        panelContent,
         openPanel,
         closePanel,
         setPanelWidth,
+        setPanelContent,
         viewportBreakpoint,
       }}
     >

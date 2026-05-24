@@ -6,7 +6,7 @@ import { useLayout } from './layout-context';
 const MAIN_CONTENT_MIN_WIDTH = 640;
 
 export function DetailPanel() {
-  const { panelOpen, panelWidth, panelContentType, closePanel, setPanelWidth, viewportBreakpoint } =
+  const { panelOpen, panelWidth, panelContentType, panelContent, closePanel, setPanelWidth, viewportBreakpoint } =
     useLayout();
   const [isDragging, setIsDragging] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -93,9 +93,11 @@ export function DetailPanel() {
       </div>
 
       <div className="detail-panel__content">
-        <div className="detail-panel__empty">
-          <p className="detail-panel__empty-text">Select an item to view details</p>
-        </div>
+        {panelContent ?? (
+          <div className="detail-panel__empty">
+            <p className="detail-panel__empty-text">Select an item to view details</p>
+          </div>
+        )}
       </div>
     </aside>
   );

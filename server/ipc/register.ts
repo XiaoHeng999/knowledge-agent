@@ -12,6 +12,7 @@ import { registerModelHandlers as registerModelHandlersFromModule } from "./hand
 import { registerDomainHandlers as registerDomainHandlersFromModule } from "./handlers/domain-handler";
 import { registerVersionControlHandlers } from "./handlers/version-control-handler";
 import { registerSecurityHandlers } from "./handlers/security-handler";
+import { registerKnowledgeHandlers as registerKnowledgeHandlersFromModule } from "./handlers/knowledge-handler";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -72,7 +73,7 @@ function registerDomainHandlers(): void {
 }
 
 function registerKnowledgeHandlers(): void {
-  // TODO: task 3.1.2
+  registerKnowledgeHandlersFromModule();
 }
 
 function registerInboxHandlers(): void {
