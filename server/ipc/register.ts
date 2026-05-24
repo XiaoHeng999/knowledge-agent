@@ -15,6 +15,7 @@ import { registerSecurityHandlers as registerSecurityHandlersFromModule } from "
 import { registerKnowledgeHandlers as registerKnowledgeHandlersFromModule } from "./handlers/knowledge-handler";
 import { registerChatHandlers as registerChatHandlersFromModule } from "./handlers/chat-handler";
 import { registerSearchHandlers as registerSearchHandlersFromModule } from "./handlers/search-handler";
+import { registerInboxHandlers as registerInboxHandlersFromModule } from "./handlers/inbox-handler";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -87,7 +88,7 @@ function registerSearchHandlers(): void {
 }
 
 function registerInboxHandlers(): void {
-  // TODO: task 3.6.2
+  registerInboxHandlersFromModule();
 }
 
 function registerResearchHandlers(): void {

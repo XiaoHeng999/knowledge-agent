@@ -61,6 +61,7 @@ export const INBOX_CHANNELS = {
   PROCESS_ITEM: "inbox:processItem",
   REJECT_ITEM: "inbox:rejectItem",
   GET_STATS: "inbox:getStats",
+  SUGGEST_DOMAINS: "inbox:suggestDomains",
 } as const;
 
 export const RESEARCH_CHANNELS = {
@@ -446,6 +447,21 @@ export interface InboxStatsResponse {
   rejected: number;
 }
 
+export interface DomainSuggestion {
+  domainId: string;
+  domainName: string;
+  domainColor: string;
+  confidence: number;
+}
+
+export interface InboxSuggestDomainsRequest {
+  itemId: string;
+}
+
+export interface InboxSuggestDomainsResponse {
+  suggestions: DomainSuggestion[];
+}
+
 // --- Research ---
 export interface ResearchTriggerRequest {
   domainId: string;
@@ -723,6 +739,7 @@ export interface IpcChannelMap {
   [INBOX_CHANNELS.PROCESS_ITEM]: { request: InboxProcessRequest; response: InboxItem };
   [INBOX_CHANNELS.REJECT_ITEM]: { request: InboxRejectRequest; response: void };
   [INBOX_CHANNELS.GET_STATS]: { request: void; response: InboxStatsResponse };
+  [INBOX_CHANNELS.SUGGEST_DOMAINS]: { request: InboxSuggestDomainsRequest; response: InboxSuggestDomainsResponse };
   // Research
   [RESEARCH_CHANNELS.TRIGGER]: { request: ResearchTriggerRequest; response: ResearchStatus };
   [RESEARCH_CHANNELS.GET_STATUS]: { request: Pick<ResearchStatus, "id">; response: ResearchStatus };

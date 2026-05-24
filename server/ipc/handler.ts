@@ -149,6 +149,7 @@ export function unregisterAll(): void {
   ipcMain.removeHandler("inbox:processItem");
   ipcMain.removeHandler("inbox:rejectItem");
   ipcMain.removeHandler("inbox:getStats");
+  ipcMain.removeHandler("inbox:suggestDomains");
   ipcMain.removeHandler("research:trigger");
   ipcMain.removeHandler("research:getStatus");
   ipcMain.removeHandler("research:listHistory");

@@ -74,6 +74,7 @@ const api = {
     processItem: (req: ChannelRequest<"inbox:processItem">) => invoke("inbox:processItem", req),
     rejectItem: (req: ChannelRequest<"inbox:rejectItem">) => invoke("inbox:rejectItem", req),
     getStats: () => invoke("inbox:getStats"),
+    suggestDomains: (req: ChannelRequest<"inbox:suggestDomains">) => invoke("inbox:suggestDomains", req),
   },
 
   // --- Research ---
