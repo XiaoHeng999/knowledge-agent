@@ -67,6 +67,10 @@ agentclaw/
 │   │   │   ├── graph-controls.tsx        # 图谱控制面板（布局/筛选）
 │   │   │   └── graph-view.tsx            # 图谱/列表视图切换容器
 │   │   │
+│   │   ├── search/               # 混合搜索引擎
+│   │   │   ├── search-bar.tsx            # 搜索栏 + 下拉结果
+│   │   │   └── search-results.tsx        # 搜索结果列表 + 高亮
+│   │   │
 │   │   ├── diff/                 # 版本对比组件
 │   │   │   ├── diff-viewer.tsx
 │   │   │   └── version-history.tsx
@@ -151,6 +155,7 @@ agentclaw/
 │   │       ├── model-handler.ts
 │   │       ├── knowledge-handler.ts
 │   │       ├── chat-handler.ts          # 对话 IPC handler
+│   │       ├── search-handler.ts        # 搜索 IPC handler（混合搜索）
 │   │       ├── security-handler.ts
 │   │       └── version-control-handler.ts
 │   │
@@ -174,6 +179,8 @@ agentclaw/
 │       ├── model-manager.ts      # 模型管理服务
 │       ├── knowledge-graph.ts    # 知识图谱服务（节点/边 CRUD、图遍历）
 │       ├── conversation-service.ts # 对话服务（会话管理、流式响应、领域上下文）
+│       ├── search-engine.ts      # 混合搜索引擎（向量 + BM25 + RRF）
+│       ├── embedding-service.ts  # 嵌入向量生成服务
 │       ├── version-control.ts    # 版本控制服务
 │       ├── security-gate.ts      # 安全网关
 │       └── pi-mono-wrapper.ts    # Pi Mono 服务包装

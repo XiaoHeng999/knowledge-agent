@@ -4,6 +4,7 @@
 import { KNOWLEDGE_CHANNELS } from "../../../src/lib/ipc/channels";
 import { registerHandler } from "../handler";
 import * as KnowledgeGraph from "../../services/knowledge-graph";
+import * as SearchEngine from "../../services/search-engine";
 
 export function registerKnowledgeHandlers(): void {
   registerHandler(KNOWLEDGE_CHANNELS.CREATE_NODE, async (_event, req) => {
@@ -45,7 +46,7 @@ export function registerKnowledgeHandlers(): void {
   });
 
   registerHandler(KNOWLEDGE_CHANNELS.SEARCH, async (_event, req) => {
-    const results = KnowledgeGraph.searchNodes(req.query, req.domainId, req.limit);
-    return { results };
+    const result = await SearchEngine.search(req);
+    return { results: result.results };
   });
 }

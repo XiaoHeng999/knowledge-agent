@@ -14,6 +14,7 @@ import { registerVersionControlHandlers as registerVersionControlHandlersFromMod
 import { registerSecurityHandlers as registerSecurityHandlersFromModule } from "./handlers/security-handler";
 import { registerKnowledgeHandlers as registerKnowledgeHandlersFromModule } from "./handlers/knowledge-handler";
 import { registerChatHandlers as registerChatHandlersFromModule } from "./handlers/chat-handler";
+import { registerSearchHandlers as registerSearchHandlersFromModule } from "./handlers/search-handler";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -79,6 +80,10 @@ function registerKnowledgeHandlers(): void {
 
 function registerChatHandlers(): void {
   registerChatHandlersFromModule();
+}
+
+function registerSearchHandlers(): void {
+  registerSearchHandlersFromModule();
 }
 
 function registerInboxHandlers(): void {
@@ -151,6 +156,7 @@ export function registerAllIpcHandlers(): void {
   registerSecurityHandlers();
   registerKnowledgeHandlers();
   registerChatHandlers();
+  registerSearchHandlers();
   registerInboxHandlers();
   registerResearchHandlers();
   registerSettingsHandlers();

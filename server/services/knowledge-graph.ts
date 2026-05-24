@@ -18,12 +18,13 @@ import type {
   KnowledgeCreateEdgeRequest,
   KnowledgeListRequest,
 } from "../../src/lib/ipc/channels";
+import { indexNode, removeFromIndex } from "./search-engine";
 
 // ---------------------------------------------------------------------------
 // Row → IPC type mapping
 // ---------------------------------------------------------------------------
 
-function rowToNode(row: KnowledgeNodeRow): KnowledgeNode {
+export function rowToNode(row: KnowledgeNodeRow): KnowledgeNode {
   const sourceIds: string[] = row.source_ids ? JSON.parse(row.source_ids) : [];
   return {
     id: row.id,
@@ -67,7 +68,15 @@ export function createNode(req: KnowledgeCreateNodeRequest): KnowledgeNode {
     source_ids: sourceIds,
   } as unknown as Partial<KnowledgeNodeRow> & Record<string, unknown>);
 
-  return rowToNode(row);
+  const node = rowToNode(row);
+
+  // Auto-index for vector search (fire-and-forget)
+  const indexText = [req.title, req.content].filter(Boolean).join(" ");
+  indexNode(node.id, indexText).catch((err) => {
+    console.warn(`[Search] Failed to index node ${node.id}:`, err.message);
+  });
+
+  return node;
 }
 
 // ---------------------------------------------------------------------------
@@ -88,7 +97,17 @@ export function updateNode(req: KnowledgeUpdateNodeRequest): KnowledgeNode {
   }
 
   const updated = db.knowledgeNodes.update(req.id, updateData);
-  return rowToNode(updated!);
+  const node = rowToNode(updated!);
+
+  // Re-index for vector search if content changed
+  if (req.title !== undefined || req.content !== undefined) {
+    const indexText = [node.title, node.content].filter(Boolean).join(" ");
+    indexNode(node.id, indexText).catch((err) => {
+      console.warn(`[Search] Failed to re-index node ${node.id}:`, err.message);
+    });
+  }
+
+  return node;
 }
 
 // ---------------------------------------------------------------------------
@@ -106,6 +125,11 @@ export function deleteNode(id: string): void {
 
   // Delete the node
   db.knowledgeNodes.delete(id);
+
+  // Remove from vector index
+  removeFromIndex(id).catch((err) => {
+    console.warn(`[Search] Failed to remove node ${id} from index:`, err.message);
+  });
 }
 
 // ---------------------------------------------------------------------------

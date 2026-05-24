@@ -100,6 +100,11 @@ export const VC_CHANNELS = {
   ROLLBACK: "vc:rollback",
 } as const;
 
+export const SEARCH_CHANNELS = {
+  SEARCH: "search:search",
+  REINDEX_DOMAIN: "search:reindexDomain",
+} as const;
+
 export const SECURITY_CHANNELS = {
   ASSESS_WRITE: "security:assessWrite",
   GET_PENDING: "security:getPendingAudits",
@@ -391,10 +396,18 @@ export interface KnowledgeGraphResponse {
   nodes: KnowledgeNode[];
   edges: KnowledgeEdge[];
 }
+export interface KnowledgeSearchFilters {
+  tags?: string[];
+  source?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
 export interface KnowledgeSearchRequest {
   query: string;
   domainId?: string;
   limit?: number;
+  offset?: number;
+  filters?: KnowledgeSearchFilters;
 }
 export interface KnowledgeSearchResult {
   node: KnowledgeNode;
@@ -544,6 +557,19 @@ export interface VcStatusResponse {
   initialized: boolean;
   branch: string;
   uncommittedChanges: number;
+}
+
+// --- Search ---
+export type SearchRequest = KnowledgeSearchRequest;
+export interface SearchResponse {
+  results: KnowledgeSearchResult[];
+  total: number;
+}
+export interface SearchReindexRequest {
+  domainId: string;
+}
+export interface SearchReindexResponse {
+  indexed: number;
 }
 
 // --- Security ---
@@ -724,6 +750,9 @@ export interface IpcChannelMap {
   [VC_CHANNELS.GET_HISTORY]: { request: VcGetHistoryRequest; response: VcGetHistoryResponse };
   [VC_CHANNELS.GET_DIFF]: { request: VcGetDiffRequest; response: VcGetDiffResponse };
   [VC_CHANNELS.ROLLBACK]: { request: VcRollbackRequest; response: VcRollbackResponse };
+  // Search
+  [SEARCH_CHANNELS.SEARCH]: { request: SearchRequest; response: SearchResponse };
+  [SEARCH_CHANNELS.REINDEX_DOMAIN]: { request: SearchReindexRequest; response: SearchReindexResponse };
   // Security
   [SECURITY_CHANNELS.ASSESS_WRITE]: { request: SecurityAssessWriteRequest; response: SecurityAssessWriteResponse };
   [SECURITY_CHANNELS.GET_PENDING]: { request: void; response: SecurityGetPendingResponse };

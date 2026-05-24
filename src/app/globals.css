@@ -4810,3 +4810,197 @@ body {
   font-family: var(--font-mono);
   font-size: 12px;
 }
+
+/* =================================================================== */
+/* Search Bar                                                          */
+/* =================================================================== */
+
+.search-bar {
+  position: relative;
+  width: 100%;
+}
+
+.search-bar__input-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.search-bar__icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.search-bar__input {
+  width: 100%;
+  height: 32px;
+  padding: 0 var(--spacing-sm) 0 30px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.search-bar__input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.search-bar__input:focus {
+  border-color: var(--accent);
+}
+
+.search-bar__spinner {
+  position: absolute;
+  right: 10px;
+  color: var(--text-tertiary);
+}
+
+.search-bar__spinner-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.search-bar--compact .search-bar__input {
+  height: 28px;
+  font-size: 12px;
+}
+
+/* Dropdown */
+.search-bar__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* =================================================================== */
+/* Search Results                                                      */
+/* =================================================================== */
+
+.search-results__header {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border);
+}
+
+.search-results__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.search-results__item {
+  padding: var(--spacing-sm);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition-fast);
+}
+
+.search-results__item:last-child {
+  border-bottom: none;
+}
+
+.search-results__item:hover,
+.search-results__item:focus {
+  background: var(--bg-tertiary);
+  outline: none;
+}
+
+.search-results__item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
+  margin-bottom: 2px;
+}
+
+.search-results__item-title {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-results__item-content {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 2px 0;
+}
+
+.search-results__item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.search-results__item-type {
+  text-transform: capitalize;
+}
+
+.search-results__item-score {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.search-results__highlight {
+  background: var(--accent-muted);
+  color: var(--accent);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.search-results__empty {
+  padding: var(--spacing-md);
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+/* Badges */
+.search-results__badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.search-results__badge--vector {
+  background: rgba(99, 179, 237, 0.15);
+  color: #63b3ed;
+}
+
+.search-results__badge--fulltext {
+  background: rgba(104, 211, 145, 0.15);
+  color: #68d391;
+}
+
+.search-results__badge--hybrid {
+  background: rgba(214, 188, 250, 0.15);
+  color: #d6bcfa;
+}

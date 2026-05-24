@@ -140,6 +140,12 @@ const api = {
     branchFromMessage: (req: ChannelRequest<"chat:branchFromMessage">) => invoke("chat:branchFromMessage", req),
   },
 
+  // --- Search ---
+  search: {
+    search: (req: ChannelRequest<"search:search">) => invoke("search:search", req),
+    reindexDomain: (req: ChannelRequest<"search:reindexDomain">) => invoke("search:reindexDomain", req),
+  },
+
   // --- Event subscription (main → renderer pushes) ---
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args);
