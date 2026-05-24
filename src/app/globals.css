@@ -4360,6 +4360,7 @@ body {
 }
 
 .message-input__container {
+  position: relative;
   display: flex;
   align-items: flex-end;
   gap: var(--spacing-sm);
@@ -4436,6 +4437,67 @@ body {
 .message-input__btn--abort:hover {
   background: var(--error);
   color: #fff;
+}
+
+/* ========================================================================== */
+/* Command Autocomplete                                                       */
+/* ========================================================================== */
+
+.command-autocomplete {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+.command-autocomplete__item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.command-autocomplete__item:hover,
+.command-autocomplete__item--active {
+  background: var(--bg-tertiary);
+}
+
+.command-autocomplete__name {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+.command-autocomplete__desc {
+  flex: 1;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-autocomplete__params {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
 }
 
 /* ========================================================================== */

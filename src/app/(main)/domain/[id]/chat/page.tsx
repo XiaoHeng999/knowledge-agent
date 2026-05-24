@@ -155,6 +155,9 @@ export default function ChatPage() {
             disabled={streaming || !selectedModelId}
             streaming={streaming}
             onAbort={useChatStore.getState().abortStream}
+            domainId={domainId}
+            conversationId={currentConversationId ?? undefined}
+            modelId={selectedModelId}
           />
         </div>
       )}
