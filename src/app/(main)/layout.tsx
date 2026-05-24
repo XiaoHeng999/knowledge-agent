@@ -5,6 +5,7 @@ import { Titlebar } from '@/components/layout/titlebar';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Statusbar } from '@/components/layout/statusbar';
 import { DetailPanel } from '@/components/layout/detail-panel';
+import { OnboardingOverlay } from '@/components/onboarding/onboarding-overlay';
 
 function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <DetailPanel />
       </div>
       <Statusbar />
+      <OnboardingOverlay />
     </div>
   );
 }
