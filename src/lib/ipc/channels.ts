@@ -108,6 +108,18 @@ export const SECURITY_CHANNELS = {
   GET_AUDIT_LOG: "security:getAuditLog",
 } as const;
 
+export const CHAT_CHANNELS = {
+  CREATE_CONVERSATION: "chat:createConversation",
+  LIST_CONVERSATIONS: "chat:listConversations",
+  GET_CONVERSATION: "chat:getConversation",
+  DELETE_CONVERSATION: "chat:deleteConversation",
+  GET_TREE: "chat:getTree",
+  SEND_MESSAGE: "chat:sendMessage",
+  ABORT_STREAM: "chat:abortStream",
+  ADD_MESSAGE: "chat:addMessage",
+  BRANCH_FROM_MESSAGE: "chat:branchFromMessage",
+} as const;
+
 // ---------------------------------------------------------------------------
 // Domain data types (shared between request/response)
 // ---------------------------------------------------------------------------
@@ -184,6 +196,45 @@ export interface ResearchStatus {
   progress: number;
   startedAt: string;
   completedAt: string | null;
+}
+
+export interface ConversationInfo {
+  id: string;
+  domainId: string;
+  title: string | null;
+  modelId: string | null;
+  sessionType: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MessageInfo {
+  id: string;
+  conversationId: string;
+  parentId: string | null;
+  role: "user" | "assistant" | "system";
+  content: string;
+  modelId: string | null;
+  tokenCount: number | null;
+  costUsd: number | null;
+  metadata: Record<string, unknown> | null;
+  branchIndex: number;
+  createdAt: string;
+}
+
+export interface ConversationTree {
+  conversation: ConversationInfo;
+  messages: MessageInfo[];
+  rootId: string | null;
+}
+
+export interface StreamChunk {
+  type: "start" | "token" | "tool_call" | "tool_result" | "done" | "error";
+  content: string;
+  userMessageId?: string;
+  assistantMessageId?: string;
+  messageId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -564,6 +615,42 @@ export interface SecurityGetAuditLogResponse {
   total: number;
 }
 
+// --- Chat ---
+export interface ChatCreateConversationRequest {
+  domainId: string;
+  modelId?: string;
+  title?: string;
+}
+export interface ChatListConversationsRequest {
+  domainId: string;
+  status?: string;
+  limit?: number;
+  offset?: number;
+}
+export interface ChatListConversationsResponse {
+  conversations: ConversationInfo[];
+  total: number;
+}
+export interface ChatGetTreeRequest {
+  conversationId: string;
+}
+export interface ChatSendMessageRequest {
+  conversationId: string;
+  content: string;
+  modelId: string;
+}
+export interface ChatBranchRequest {
+  parentMessageId: string;
+  content: string;
+}
+export interface ChatAddMessageRequest {
+  conversationId: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  parentId?: string;
+  modelId?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Channel → { request, response } type map
 // ---------------------------------------------------------------------------
@@ -643,6 +730,16 @@ export interface IpcChannelMap {
   [SECURITY_CHANNELS.RESOLVE_AUDIT]: { request: SecurityResolveAuditRequest; response: void };
   [SECURITY_CHANNELS.BULK_RESOLVE]: { request: SecurityBulkResolveRequest; response: void };
   [SECURITY_CHANNELS.GET_AUDIT_LOG]: { request: SecurityGetAuditLogRequest; response: SecurityGetAuditLogResponse };
+  // Chat
+  [CHAT_CHANNELS.CREATE_CONVERSATION]: { request: ChatCreateConversationRequest; response: ConversationInfo };
+  [CHAT_CHANNELS.LIST_CONVERSATIONS]: { request: ChatListConversationsRequest; response: ChatListConversationsResponse };
+  [CHAT_CHANNELS.GET_CONVERSATION]: { request: Pick<ConversationInfo, "id">; response: ConversationInfo };
+  [CHAT_CHANNELS.DELETE_CONVERSATION]: { request: Pick<ConversationInfo, "id">; response: void };
+  [CHAT_CHANNELS.GET_TREE]: { request: ChatGetTreeRequest; response: ConversationTree };
+  [CHAT_CHANNELS.SEND_MESSAGE]: { request: ChatSendMessageRequest; response: void };
+  [CHAT_CHANNELS.ABORT_STREAM]: { request: Pick<ConversationInfo, "id">; response: void };
+  [CHAT_CHANNELS.ADD_MESSAGE]: { request: ChatAddMessageRequest; response: MessageInfo };
+  [CHAT_CHANNELS.BRANCH_FROM_MESSAGE]: { request: ChatBranchRequest; response: MessageInfo };
 }
 
 // ---------------------------------------------------------------------------

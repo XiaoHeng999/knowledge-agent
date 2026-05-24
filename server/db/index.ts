@@ -10,6 +10,8 @@ import { ModelConfigsRepository } from "./repositories/model-configs";
 import { ApiKeysRepository } from "./repositories/api-keys";
 import { InboxRepository } from "./repositories/inbox";
 import { DecisionRecordsRepository } from "./repositories/decision-records";
+import { ConversationsRepository } from "./repositories/conversations";
+import { MessagesRepository } from "./repositories/messages";
 import { VectorIndex } from "./vector";
 
 export interface DatabaseService {
@@ -24,6 +26,8 @@ export interface DatabaseService {
   apiKeys: ApiKeysRepository;
   inbox: InboxRepository;
   decisionRecords: DecisionRecordsRepository;
+  conversations: ConversationsRepository;
+  messages: MessagesRepository;
   vectorIndex: VectorIndex;
 }
 
@@ -55,6 +59,8 @@ export function initializeDatabase(dbPath?: string): DatabaseService {
     apiKeys: new ApiKeysRepository(db),
     inbox: new InboxRepository(db),
     decisionRecords: new DecisionRecordsRepository(db),
+    conversations: new ConversationsRepository(db),
+    messages: new MessagesRepository(db),
     vectorIndex: new VectorIndex(db),
   };
 

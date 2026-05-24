@@ -10,9 +10,10 @@ import {
 import { loadMigrations } from "../db/migrations/index";
 import { registerModelHandlers as registerModelHandlersFromModule } from "./handlers/model-handler";
 import { registerDomainHandlers as registerDomainHandlersFromModule } from "./handlers/domain-handler";
-import { registerVersionControlHandlers } from "./handlers/version-control-handler";
-import { registerSecurityHandlers } from "./handlers/security-handler";
+import { registerVersionControlHandlers as registerVersionControlHandlersFromModule } from "./handlers/version-control-handler";
+import { registerSecurityHandlers as registerSecurityHandlersFromModule } from "./handlers/security-handler";
 import { registerKnowledgeHandlers as registerKnowledgeHandlersFromModule } from "./handlers/knowledge-handler";
+import { registerChatHandlers as registerChatHandlersFromModule } from "./handlers/chat-handler";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -74,6 +75,10 @@ function registerDomainHandlers(): void {
 
 function registerKnowledgeHandlers(): void {
   registerKnowledgeHandlersFromModule();
+}
+
+function registerChatHandlers(): void {
+  registerChatHandlersFromModule();
 }
 
 function registerInboxHandlers(): void {
@@ -145,6 +150,7 @@ export function registerAllIpcHandlers(): void {
   registerVersionControlHandlers();
   registerSecurityHandlers();
   registerKnowledgeHandlers();
+  registerChatHandlers();
   registerInboxHandlers();
   registerResearchHandlers();
   registerSettingsHandlers();

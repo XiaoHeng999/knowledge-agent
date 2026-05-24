@@ -127,6 +127,19 @@ const api = {
     getAuditLog: (req: ChannelRequest<"security:getAuditLog"> = {}) => invoke("security:getAuditLog", req),
   },
 
+  // --- Chat ---
+  chat: {
+    createConversation: (req: ChannelRequest<"chat:createConversation">) => invoke("chat:createConversation", req),
+    listConversations: (req: ChannelRequest<"chat:listConversations">) => invoke("chat:listConversations", req),
+    getConversation: (req: ChannelRequest<"chat:getConversation">) => invoke("chat:getConversation", req),
+    deleteConversation: (req: ChannelRequest<"chat:deleteConversation">) => invoke("chat:deleteConversation", req),
+    getTree: (req: ChannelRequest<"chat:getTree">) => invoke("chat:getTree", req),
+    sendMessage: (req: ChannelRequest<"chat:sendMessage">) => invoke("chat:sendMessage", req),
+    abortStream: (req: ChannelRequest<"chat:abortStream">) => invoke("chat:abortStream", req),
+    addMessage: (req: ChannelRequest<"chat:addMessage">) => invoke("chat:addMessage", req),
+    branchFromMessage: (req: ChannelRequest<"chat:branchFromMessage">) => invoke("chat:branchFromMessage", req),
+  },
+
   // --- Event subscription (main → renderer pushes) ---
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args);
