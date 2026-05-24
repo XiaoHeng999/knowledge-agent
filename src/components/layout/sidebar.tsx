@@ -70,6 +70,13 @@ export function Sidebar() {
             </svg>
             <span>Quick Record</span>
           </button>
+          <button className="sidebar__action-btn" aria-label="Research" onClick={() => router.push('/research')}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <circle cx="6.5" cy="6.5" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <path d="m10.5 10.5 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <span>Research</span>
+          </button>
           <div className="sidebar__action-row">
             <button className="sidebar__action-btn" aria-label="Settings" onClick={() => router.push('/settings')}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">

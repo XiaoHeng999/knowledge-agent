@@ -4,6 +4,7 @@ import { createWindow } from "./window";
 import { registerAllIpcHandlers } from "../server/ipc/register";
 import { initializeDatabase, shutdownDatabase } from "../server/db/index";
 import { initializePiMono, shutdownPiMono } from "../server/pi-mono/instance";
+import { startScheduler, stopScheduler } from "../server/services/research-scheduler";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -30,6 +31,7 @@ if (!gotTheLock) {
     }
 
     registerAllIpcHandlers();
+    startScheduler();
     mainWindow = createWindow();
 
     mainWindow.on("closed", () => {
@@ -50,6 +52,7 @@ if (!gotTheLock) {
   });
 
   app.on("will-quit", () => {
+    stopScheduler();
     shutdownPiMono();
     shutdownDatabase();
     globalShortcut.unregisterAll();
