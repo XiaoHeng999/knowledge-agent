@@ -145,6 +145,8 @@ agentclaw/
 │   │   ├── hooks/
 │   │   │   ├── use-ipc.ts        # IPC 调用 hook
 │   │   │   ├── use-theme.ts      # 主题切换 hook
+│   │   │   ├── use-focus-trap.ts # 焦点陷阱与焦点转移 hook
+│   │   │   ├── use-route-focus.ts # 路由切换焦点管理 hook
 │   │   │   └── use-security-gate.ts # 安全网关 hook（审核/生成 diff）
 │   │   └── commands/
 │   │       ├── index.ts           # 统一导出 + builtins 自动注册

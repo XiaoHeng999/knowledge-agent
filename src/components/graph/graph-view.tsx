@@ -178,7 +178,7 @@ export function GraphView() {
             edgeCount={filteredEdges.length}
           />
           {loading ? (
-            <div className="graph-view__loading">
+            <div className="graph-view__loading" role="status" aria-label="Loading graph">
               <Skeleton variant="rect" />
             </div>
           ) : filteredNodes.length === 0 ? (
@@ -193,24 +193,38 @@ export function GraphView() {
               description="Add knowledge to this domain to see the graph visualization."
             />
           ) : useWebGL ? (
-            <WebGLGraph
-              nodes={filteredNodes}
-              edges={filteredEdges}
-              domainColor={currentDomain?.color}
-              onNodeClick={handleNodeClick}
-              selectedNodeId={selectedNodeId}
-            />
+            <div
+              role="img"
+              aria-label={`Knowledge graph visualization showing ${filteredNodes.length} nodes and ${filteredEdges.length} connections. Use list view for keyboard-accessible browsing.`}
+            >
+              <svg aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0 }} />
+              <WebGLGraph
+                nodes={filteredNodes}
+                edges={filteredEdges}
+                domainColor={currentDomain?.color}
+                onNodeClick={handleNodeClick}
+                selectedNodeId={selectedNodeId}
+              />
+            </div>
           ) : (
-            <ForceGraph
+            <div
+              role="img"
+              aria-label={`Knowledge graph visualization showing ${filteredNodes.length} nodes and ${filteredEdges.length} connections. Use list view for keyboard-accessible browsing.`}
+            >
+              <svg aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0 }} />
+              <ForceGraph
               nodes={filteredNodes}
               edges={filteredEdges}
               domainColor={currentDomain?.color}
               onNodeClick={handleNodeClick}
               selectedNodeId={selectedNodeId}
             />
+            </div>
           )}
           <div className="graph-view__a11y-notice" role="note">
-            Graph is visual-only. Use the list view for keyboard-accessible browsing.
+            <a href="#" onClick={(e) => { e.preventDefault(); setViewMode('list'); }}>
+              Switch to list view for keyboard navigation
+            </a>
           </div>
         </div>
       ) : (

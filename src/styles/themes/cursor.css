@@ -1,0 +1,41 @@
+/* Style Pack: Cursor — Dark, developer-focused, purple-accented */
+
+:root[data-theme="cursor"] {
+  /* Background */
+  --bg-primary: #1e1e2e;
+  --bg-secondary: #181825;
+  --bg-tertiary: #252540;
+  --surface: #2a2a3c;
+
+  /* Text */
+  --text-primary: #cdd6f4;
+  --text-secondary: #9398ad;
+  --text-tertiary: #45475a;
+
+  /* Accent */
+  --accent: #cba6f7;
+  --accent-hover: #b4befe;
+  --accent-muted: rgba(203, 166, 247, 0.15);
+
+  /* Status */
+  --error: #f38ba8;
+  --warning: #fab387;
+  --success: #a6e3a1;
+  --info: #89dceb;
+
+  /* Border */
+  --border: #313244;
+  --border-hover: #45475a;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.55);
+
+  /* Typography */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 18px;
+}

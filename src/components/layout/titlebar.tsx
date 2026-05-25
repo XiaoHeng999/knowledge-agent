@@ -27,7 +27,7 @@ export function Titlebar() {
   }, []);
 
   return (
-    <header className="titlebar">
+    <header className="titlebar" role="banner">
       <div className="titlebar__left">
         <button
           className="titlebar__menu-btn"
@@ -41,7 +41,7 @@ export function Titlebar() {
             <rect x="1" y="11" width="14" height="1.5" rx="0.5" />
           </svg>
         </button>
-        <span className="titlebar__domain-dot" />
+        <span className="titlebar__domain-dot" aria-hidden="true" />
         <span className="titlebar__title">AgentClaw</span>
       </div>
 

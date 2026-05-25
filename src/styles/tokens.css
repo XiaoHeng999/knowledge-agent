@@ -1,0 +1,78 @@
+/* AgentClaw Design Tokens — 33 canonical tokens */
+/* Default: Tokyo Night (dark, purple-blue, high contrast) */
+
+:root {
+  /* Background */
+  --bg-primary: #1a1b26;
+  --bg-secondary: #16161e;
+  --bg-tertiary: #1e1e2e;
+  --surface: #24283b;
+
+  /* Text */
+  --text-primary: #a9b1d6;
+  --text-secondary: #8289ac;
+  --text-tertiary: #3b4261;
+
+  /* Accent */
+  --accent: #7aa2f7;
+  --accent-hover: #89b4fa;
+  --accent-muted: rgba(122, 162, 247, 0.15);
+
+  /* Status */
+  --error: #f7768e;
+  --warning: #e0af68;
+  --success: #9ece6a;
+  --info: #7dcfff;
+
+  /* Border */
+  --border: #292e42;
+  --border-hover: #3b4261;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 48px;
+  --titlebar-height: 36px;
+  --statusbar-height: 28px;
+  --chrome-height: calc(var(--titlebar-height) + var(--statusbar-height));
+  --main-content-min-width: 640px;
+
+  /* Typography */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 18px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+}
+
+/* Smooth theme transition */
+:root {
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    transition: none;
+  }
+}

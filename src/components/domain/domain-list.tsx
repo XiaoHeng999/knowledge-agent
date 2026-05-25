@@ -92,7 +92,7 @@ export function DomainList({ collapsed, onDomainSelect }: DomainListProps) {
 
   return (
     <>
-      <div className="domain-list">
+      <div className="domain-list" role="tree" aria-label="Domains">
         {domains.length === 0 ? (
           <div className="domain-list__empty">
             <p className="domain-list__empty-text">No domains yet</p>
@@ -110,14 +110,17 @@ export function DomainList({ collapsed, onDomainSelect }: DomainListProps) {
               className={`domain-list__item ${currentDomainId === domain.id ? 'domain-list__item--active' : ''}`}
               onClick={() => handleSelect(domain)}
               aria-current={currentDomainId === domain.id ? 'page' : undefined}
+              role="treeitem"
+              aria-selected={currentDomainId === domain.id}
             >
               <span
                 className="domain-list__dot"
                 style={{ backgroundColor: domain.color }}
+                aria-hidden="true"
               />
               <span className="domain-list__name">{domain.name}</span>
               {domain.knowledgeCount > 0 && (
-                <span className="domain-list__count">{domain.knowledgeCount}</span>
+                <span className="domain-list__count" aria-label={`${domain.knowledgeCount} knowledge nodes`}>{domain.knowledgeCount}</span>
               )}
             </button>
           ))

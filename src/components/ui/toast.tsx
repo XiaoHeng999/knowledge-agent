@@ -72,7 +72,7 @@ function ToastContainer({
   onRemove: (id: string) => void;
 }) {
   return (
-    <div className="ui-toast-container" aria-live="polite" aria-atomic="true">
+    <div className="ui-toast-container" aria-label="Notifications" role="region">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
@@ -106,7 +106,12 @@ function ToastItem({
   };
 
   return (
-    <div className={`ui-toast ui-toast--${toast.type}`} role="alert">
+    <div
+      className={`ui-toast ui-toast--${toast.type}`}
+      role="status"
+      aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
+      aria-atomic="true"
+    >
       <span className="ui-toast__icon" aria-hidden="true">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
           <path d={iconMap[toast.type]} />
@@ -117,6 +122,7 @@ function ToastItem({
         <button
           className="ui-toast__action"
           onClick={toast.action.onClick}
+          aria-label={toast.action.label}
           type="button"
         >
           {toast.action.label}
@@ -125,7 +131,7 @@ function ToastItem({
       <button
         className="ui-toast__close"
         onClick={() => onRemove(toast.id)}
-        aria-label="Dismiss"
+        aria-label={`Dismiss ${toast.type} notification`}
         type="button"
       >
         <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">

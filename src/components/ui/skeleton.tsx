@@ -19,7 +19,7 @@ export function Skeleton({
 }: SkeletonProps) {
   if (variant === 'line' && lines && lines > 1) {
     return (
-      <div className={`ui-skeleton-group ${className}`}>
+      <div className={`ui-skeleton-group ${className}`} role="status" aria-label="Loading content">
         {Array.from({ length: lines }).map((_, i) => (
           <div
             key={i}
@@ -27,6 +27,7 @@ export function Skeleton({
             style={{
               width: i === lines! - 1 ? '70%' : '100%',
             }}
+            aria-hidden="true"
           />
         ))}
       </div>
@@ -45,7 +46,10 @@ export function Skeleton({
     <div
       className={`ui-skeleton ui-skeleton--${variant} ${className}`}
       style={style}
-      aria-hidden="true"
-    />
+      role="status"
+      aria-label="Loading content"
+    >
+      <span aria-hidden="true" className="ui-skeleton__shape" />
+    </div>
   );
 }

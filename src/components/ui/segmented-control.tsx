@@ -35,6 +35,7 @@ export function SegmentedControl<T extends string>({
     <div
       className={`ui-segmented ${className}`}
       role="radiogroup"
+      aria-label="View mode"
       aria-disabled={disabled}
     >
       {segments.map((seg) => {

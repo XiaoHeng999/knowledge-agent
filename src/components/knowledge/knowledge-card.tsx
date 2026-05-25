@@ -28,6 +28,7 @@ export function KnowledgeCard({ node, selected, domainColor, onClick }: Knowledg
       className={`knowledge-card ${selected ? 'knowledge-card--selected' : ''}`}
       onClick={onClick}
       aria-pressed={selected}
+      aria-label={`${node.title}, ${TYPE_LABELS[node.type] ?? node.type}`}
     >
       <div className="knowledge-card__header">
         {domainColor && (
@@ -37,14 +38,14 @@ export function KnowledgeCard({ node, selected, domainColor, onClick }: Knowledg
             aria-hidden="true"
           />
         )}
-        <span className="knowledge-card__title">{node.title}</span>
+        <span className="knowledge-card__title" id={`kn-title-${node.id}`}>{node.title}</span>
       </div>
 
       <div className="knowledge-card__meta">
-        <span className="knowledge-card__type-badge">{TYPE_LABELS[node.type] ?? node.type}</span>
+        <span className="knowledge-card__type-badge" aria-label={`Type: ${TYPE_LABELS[node.type] ?? node.type}`}>{TYPE_LABELS[node.type] ?? node.type}</span>
         <ComprehensionIndicator level={node.comprehensionLevel} size="sm" />
         {node.sources.length > 0 && (
-          <span className="knowledge-card__source-count">{node.sources.length} sources</span>
+          <span className="knowledge-card__source-count" aria-label={`${node.sources.length} sources`}>{node.sources.length} sources</span>
         )}
       </div>
 

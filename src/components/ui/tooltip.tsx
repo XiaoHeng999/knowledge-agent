@@ -31,6 +31,7 @@ export function Tooltip({
   const triggerRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const tooltipId = useRef(`tooltip-${Math.random().toString(36).slice(2, 9)}`).current;
 
   const updatePosition = useCallback(() => {
     if (!triggerRef.current || !tooltipRef.current) return;
@@ -93,6 +94,7 @@ export function Tooltip({
         onMouseLeave={hide}
         onFocus={show}
         onBlur={hide}
+        aria-describedby={visible ? tooltipId : undefined}
       >
         {children}
       </span>
@@ -102,6 +104,7 @@ export function Tooltip({
           className={`ui-tooltip ui-tooltip--${position} ${className}`}
           style={coords}
           role="tooltip"
+          id={tooltipId}
         >
           <span className="ui-tooltip__content">{content}</span>
         </div>

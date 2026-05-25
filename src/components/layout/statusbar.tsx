@@ -2,7 +2,7 @@
 
 export function Statusbar() {
   return (
-    <footer className="statusbar">
+    <footer className="statusbar" role="contentinfo" aria-label="Application status">
       <div className="statusbar__left">
         <span className="statusbar__model">No model</span>
       </div>

@@ -7,11 +7,13 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusTrap, useFocusTransfer } from '@/lib/hooks/use-focus-trap';
 
 interface DialogProps {
   open: boolean;
   onClose: () => void;
   title?: string;
+  description?: string;
   children: ReactNode;
   footer?: ReactNode;
   width?: number;
@@ -23,6 +25,7 @@ export function Dialog({
   open,
   onClose,
   title,
+  description,
   children,
   footer,
   width = 420,
@@ -30,58 +33,24 @@ export function Dialog({
   className = '',
 }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  useFocusTrap(dialogRef, open && modal);
+  useFocusTransfer(dialogRef, open);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         onClose();
-        return;
-      }
-
-      if (!modal) return;
-
-      if (e.key === 'Tab' && dialogRef.current) {
-        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusable.length === 0) return;
-
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-
-        if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          }
-        } else {
-          if (document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
-        }
       }
     },
-    [onClose, modal],
+    [onClose],
   );
 
   useEffect(() => {
     if (!open) return;
 
-    previousFocusRef.current = document.activeElement as HTMLElement;
-
     document.addEventListener('keydown', handleKeyDown);
-
-    const timer = setTimeout(() => {
-      if (dialogRef.current) {
-        const firstFocusable = dialogRef.current.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        firstFocusable?.focus();
-      }
-    }, 50);
 
     if (modal) {
       document.body.style.overflow = 'hidden';
@@ -90,10 +59,6 @@ export function Dialog({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
-      clearTimeout(timer);
-      if (previousFocusRef.current) {
-        previousFocusRef.current.focus();
-      }
     };
   }, [open, handleKeyDown, modal]);
 
@@ -103,7 +68,6 @@ export function Dialog({
     <div
       className={`ui-dialog-overlay ${modal ? 'ui-dialog-overlay--modal' : ''}`}
       onClick={modal ? (e) => e.target === e.currentTarget && onClose() : undefined}
-      aria-hidden={!modal}
     >
       <div
         ref={dialogRef}
@@ -112,10 +76,11 @@ export function Dialog({
         role={modal ? 'dialog' : undefined}
         aria-modal={modal || undefined}
         aria-label={title}
+        aria-describedby={description ? `${title}-desc` : undefined}
       >
         {title && (
           <div className="ui-dialog__header">
-            <h2 className="ui-dialog__title">{title}</h2>
+            <h2 className="ui-dialog__title" id={`${title}-heading`}>{title}</h2>
             <button
               className="ui-dialog__close"
               onClick={onClose}
@@ -127,6 +92,11 @@ export function Dialog({
               </svg>
             </button>
           </div>
+        )}
+        {description && (
+          <p id={`${title}-desc`} className="ui-dialog__description" hidden>
+            {description}
+          </p>
         )}
         <div className="ui-dialog__body">{children}</div>
         {footer && <div className="ui-dialog__footer">{footer}</div>}

@@ -7,14 +7,18 @@ import { Statusbar } from '@/components/layout/statusbar';
 import { DetailPanel } from '@/components/layout/detail-panel';
 import { OnboardingOverlay } from '@/components/onboarding/onboarding-overlay';
 import { CommandPalette } from '@/components/cmd-palette/cmd-palette';
+import { useRouteFocus } from '@/lib/hooks/use-route-focus';
 
 function AppShell({ children }: { children: React.ReactNode }) {
+  useRouteFocus();
+
   return (
     <div className="app-layout">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <Titlebar />
       <div className="app-layout__body">
         <Sidebar />
-        <main className="app-layout__main">{children}</main>
+        <main id="main-content" className="app-layout__main" tabIndex={-1}>{children}</main>
         <DetailPanel />
       </div>
       <Statusbar />

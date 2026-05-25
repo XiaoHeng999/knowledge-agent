@@ -10,6 +10,8 @@ export function DetailPanel() {
     useLayout();
   const [isDragging, setIsDragging] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const handleDragStart = useCallback(
     (e: React.MouseEvent) => {
@@ -47,11 +49,22 @@ export function DetailPanel() {
 
   useEffect(() => {
     if (!panelOpen) return;
+    previousFocusRef.current = document.activeElement as HTMLElement;
+
+    requestAnimationFrame(() => {
+      closeButtonRef.current?.focus({ preventScroll: true });
+    });
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closePanel();
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus({ preventScroll: true });
+      }
+    };
   }, [panelOpen, closePanel]);
 
   if (!panelOpen) return null;
@@ -67,6 +80,7 @@ export function DetailPanel() {
       className={`detail-panel ${isDragging ? 'detail-panel--dragging' : ''} ${isOverlay ? 'detail-panel--overlay' : ''}`}
       style={isOverlay ? undefined : { width: `${panelWidth}px` }}
       aria-label="Detail panel"
+      aria-hidden={false}
     >
       {!isOverlay && (
         <div
@@ -84,8 +98,8 @@ export function DetailPanel() {
 
       <div className="detail-panel__header">
         <span className="detail-panel__title">{title}</span>
-        <button className="detail-panel__close" onClick={closePanel} aria-label="Close panel">
-          <svg width="16" height="16" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
+        <button ref={closeButtonRef} className="detail-panel__close" onClick={closePanel} aria-label="Close panel">
+          <svg width="16" height="16" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <line x1="3" y1="3" x2="13" y2="13" />
             <line x1="13" y1="3" x2="3" y2="13" />
           </svg>
