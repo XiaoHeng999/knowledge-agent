@@ -4,15 +4,20 @@ import { useEffect, useCallback, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useChatStore } from "@/stores/chat-store";
 import { useModelStore } from "@/stores/model-store";
+import { useOnboardingStore } from "@/stores/onboarding-store";
 import { MessageInput } from "@/components/chat/message-input";
 import { ModelSwitcher } from "@/components/chat/model-switcher";
 import { ConversationTree } from "@/components/chat/conversation-tree";
+import { NoApiKeyBlocker } from "@/components/onboarding/no-api-key-blocker";
 import { EmptyState } from "@/components/ui";
 import type { ModelInfo } from "@/lib/ipc/channels";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
   const domainId = searchParams.get("id");
+
+  const hasApiKey = useOnboardingStore((s) => s.hasApiKey);
+  const setHasApiKey = useOnboardingStore((s) => s.setHasApiKey);
 
   // All hooks must be called unconditionally
   const {
@@ -68,17 +73,27 @@ export default function ChatPage() {
     [openConversation],
   );
 
+  const handleApiKeyConnected = useCallback(() => {
+    setHasApiKey(true);
+  }, [setHasApiKey]);
+
   const hasConversation = !!currentConversationId;
 
   if (!domainId) {
     return (
       <div className="chat-page__empty">
         <EmptyState
+          emoji="💬"
           title="No domain selected"
-          description="Select a domain from the sidebar to start a conversation."
+          description="Select a domain from the sidebar to start a conversation with its expert agent."
         />
       </div>
     );
+  }
+
+  // API key blocker — full-screen guidance card
+  if (!hasApiKey) {
+    return <NoApiKeyBlocker onConnected={handleApiKeyConnected} />;
   }
 
   return (
@@ -109,10 +124,29 @@ export default function ChatPage() {
         {!hasConversation ? (
           <div className="chat-page__welcome">
             <EmptyState
-              title="Start a conversation"
-              description="Create a new conversation to chat with the domain expert agent."
-              action={{ label: "New Conversation", onClick: handleNewConversation }}
-            />
+              emoji="💬"
+              title="Ask anything about this domain"
+              description="Your AI expert is ready to discuss topics, answer questions, and help you explore deeper."
+            >
+              <div className="chat-page__starters">
+                <p className="chat-page__starters-title">Suggested starters:</p>
+                {[
+                  'What are the key concepts in this domain?',
+                  'Summarize recent developments',
+                  'What should I learn next?',
+                ].map((prompt) => (
+                  <button
+                    key={prompt}
+                    className="chat-page__starter-btn"
+                    onClick={() => {
+                      handleNewConversation();
+                    }}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </EmptyState>
             {conversations.length > 0 && (
               <div className="chat-page__history">
                 <h2 className="chat-page__history-title">Recent conversations</h2>

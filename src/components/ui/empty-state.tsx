@@ -3,7 +3,10 @@
 import type { ReactNode } from 'react';
 
 interface EmptyStateProps {
+  /** SVG icon or emoji string for the illustration area */
   icon?: ReactNode;
+  /** Emoji-only illustration (renders as large decorative text) */
+  emoji?: string;
   title: string;
   description?: string;
   action?: {
@@ -15,20 +18,29 @@ interface EmptyStateProps {
     label: string;
     onClick: () => void;
   };
+  /** Extra content rendered below actions (e.g. starter prompts) */
+  children?: ReactNode;
   className?: string;
 }
 
 export function EmptyState({
   icon,
+  emoji,
   title,
   description,
   action,
   secondaryAction,
+  children,
   className = '',
 }: EmptyStateProps) {
   return (
     <div className={`ui-empty-state ${className}`}>
-      {icon && (
+      {emoji && (
+        <div className="ui-empty-state__emoji" aria-hidden="true">
+          {emoji}
+        </div>
+      )}
+      {!emoji && icon && (
         <div className="ui-empty-state__icon" aria-hidden="true">
           {icon}
         </div>
@@ -62,6 +74,7 @@ export function EmptyState({
           )}
         </div>
       )}
+      {children}
     </div>
   );
 }

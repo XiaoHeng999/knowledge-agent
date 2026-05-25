@@ -3998,10 +3998,17 @@ body {
   gap: var(--spacing-sm);
 }
 
+.ui-empty-state__emoji {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: var(--spacing-xs);
+}
+
 .ui-empty-state__icon {
   font-size: 40px;
   line-height: 1;
   margin-bottom: var(--spacing-xs);
+  color: var(--text-tertiary);
 }
 
 .ui-empty-state__title {
@@ -5106,6 +5113,41 @@ input[type="radio"],
   justify-content: center;
   padding: var(--spacing-xl);
   gap: var(--spacing-lg);
+}
+
+.chat-page__starters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  width: 100%;
+  max-width: 400px;
+}
+
+.chat-page__starters-title {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  margin: var(--spacing-sm) 0 0;
+  text-align: center;
+}
+
+.chat-page__starter-btn {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.chat-page__starter-btn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: var(--accent-bg);
 }
 
 .chat-page__history {

@@ -3,11 +3,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useResearchStore } from '@/stores/research-store';
 import { useDomainStore } from '@/stores/domain-store';
+import { useOnboardingStore } from '@/stores/onboarding-store';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ViewLoadingState } from '@/components/skeleton/view-loading';
 import { Progress } from '@/components/ui/progress';
+import { NoApiKeyBlocker } from '@/components/onboarding/no-api-key-blocker';
 
 export default function ResearchPage() {
+  const hasApiKey = useOnboardingStore((s) => s.hasApiKey);
+  const setHasApiKey = useOnboardingStore((s) => s.setHasApiKey);
+
   const {
     loading,
     error,
@@ -61,6 +66,11 @@ export default function ResearchPage() {
 
   const recentResearch = dashboard?.recentResearch ?? [];
   const costTracking = dashboard?.costTracking;
+
+  // API key blocker — research requires AI
+  if (!hasApiKey) {
+    return <NoApiKeyBlocker onConnected={() => setHasApiKey(true)} />;
+  }
 
   return (
     <ViewLoadingState
@@ -143,17 +153,18 @@ export default function ResearchPage() {
 
         {recentResearch.length === 0 ? (
           <EmptyState
-            icon={
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-            }
+            emoji="🔬"
             title="No research runs yet"
-            description="Trigger a research run manually or wait for scheduled runs to appear here."
+            description="Set up automated research or trigger a manual run to start discovering."
             action={{
-              label: 'Run Research Now',
+              label: 'Run research now',
               onClick: handleTrigger,
+            }}
+            secondaryAction={{
+              label: 'or schedule first research →',
+              onClick: () => {
+                // Navigate to domain settings for schedule config — future enhancement
+              },
             }}
           />
         ) : (

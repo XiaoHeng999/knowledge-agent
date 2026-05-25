@@ -128,22 +128,40 @@ export default function InboxPage() {
         <div className="inbox-page__list">
           {items.length === 0 ? (
           <EmptyState
-            icon={
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8l8 5 8-5v10zm-8-7L4 6h16l-8 5z" />
-              </svg>
-            }
+            emoji="📥"
             title={
               filter === 'pending'
-                ? 'Inbox is empty'
+                ? 'Your inbox is clear'
                 : filter === 'processed'
-                  ? 'No processed items'
+                  ? 'No processed items yet'
                   : 'No rejected items'
             }
             description={
               filter === 'pending'
-                ? 'Import content or use Quick Record to add items to your inbox for processing.'
+                ? 'New research findings and imported content will appear here for review.'
                 : 'Items will appear here after you process or reject them.'
+            }
+            action={
+              filter === 'pending'
+                ? {
+                    label: 'Import your first source',
+                    onClick: () => {
+                      if (typeof window !== 'undefined' && window.api) {
+                        window.api.import.importUrl({ url: '', domainId: '' }).catch(() => {});
+                      }
+                    },
+                  }
+                : undefined
+            }
+            secondaryAction={
+              filter === 'pending'
+                ? {
+                    label: 'or try a quick note ↓',
+                    onClick: () => {
+                      // Quick note entry — future enhancement
+                    },
+                  }
+                : undefined
             }
           />
         ) : (
