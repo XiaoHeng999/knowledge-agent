@@ -591,6 +591,334 @@ body {
 }
 
 /* =========================================================================
+   Dashboard
+   ========================================================================= */
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.dashboard__row1 {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.dashboard__row1--stacked {
+  flex-direction: column;
+}
+
+/* --- Today's Overview (60%) --- */
+
+.dashboard-overview {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.dashboard-overview__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.dashboard-overview__summary {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* --- Stat Card --- */
+
+.dashboard-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-stat__value {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  color: var(--text-primary);
+}
+
+.dashboard-stat__label {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.dashboard-stat__subtext {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* --- Section Eyebrow --- */
+
+.dashboard-eyebrow {
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+/* --- Inbox Preview (40%) --- */
+
+.dashboard-inbox-container {
+  flex: 2;
+}
+
+.dashboard-inbox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  height: 100%;
+}
+
+.dashboard-inbox__header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.dashboard-inbox__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--error);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+}
+
+.dashboard-inbox__empty {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  padding: var(--spacing-sm) 0;
+}
+
+.dashboard-inbox__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.dashboard-inbox__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-xs) 0;
+}
+
+.dashboard-inbox__summary {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+.dashboard-inbox__source {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.dashboard-inbox__action {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--success);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-top: auto;
+}
+
+.dashboard-inbox__action:hover {
+  text-decoration: underline;
+}
+
+/* --- Domain Cards Grid --- */
+
+.dashboard__domains {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.dashboard-domain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.dashboard-domain-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.dashboard-domain-card:hover {
+  border-color: color-mix(in srgb, var(--domain-color, var(--accent)) 30%, transparent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.dashboard-domain-card__header {
+  height: 4px;
+  background: var(--domain-color, var(--accent));
+}
+
+.dashboard-domain-card__body {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.dashboard-domain-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.dashboard-domain-card__info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.dashboard-domain-card__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.dashboard-domain-card__name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.dashboard-domain-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* --- Activity Feed --- */
+
+.dashboard__activity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.dashboard-activity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.dashboard-activity__item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+}
+
+.dashboard-activity__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.dashboard-activity__dot--research {
+  background: var(--accent);
+}
+
+.dashboard-activity__dot--import {
+  background: var(--info);
+}
+
+.dashboard-activity__dot--knowledge {
+  background: var(--success);
+}
+
+.dashboard-activity__text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.dashboard-activity__time {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* --- Comprehension Ring --- */
+
+.comprehension-ring {
+  flex-shrink: 0;
+}
+
+/* --- Responsive --- */
+
+@media (min-width: 900px) and (max-width: 1199px) {
+  .dashboard-domain-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 899px) {
+  .dashboard-overview__stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dashboard-domain-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* =========================================================================
    Responsive Breakpoints — Width
    ========================================================================= */
 
