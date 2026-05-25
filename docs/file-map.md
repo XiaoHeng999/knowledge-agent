@@ -57,6 +57,16 @@ agentclaw/
 │   │   │   ├── domain-list.tsx
 │   │   │   └── create-domain-dialog.tsx
 │   │   │
+│   │   ├── cmd-palette/          # 命令面板组件（5.1）
+│   │   │   ├── cmd-palette.tsx   # 主命令面板（搜索+命令+导航+知识搜索）
+│   │   │   ├── search.ts         # 模糊匹配算法
+│   │   │   ├── types.ts          # 类型定义
+│   │   │   ├── result-list.tsx   # 分组结果列表
+│   │   │   ├── result-group.tsx  # 单分组（header+items）
+│   │   │   ├── result-item.tsx   # 单个结果项
+│   │   │   ├── parameter-input.tsx # 参数输入模式
+│   │   │   └── empty-state.tsx   # 无结果状态
+│   │   │
 │   │   ├── chat/                 # 对话组件
 │   │   │   ├── model-switcher.tsx        # 模型切换下拉
 │   │   │   ├── message-list.tsx         # 消息列表（Markdown + 流式）

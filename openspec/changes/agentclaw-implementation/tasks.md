@@ -158,70 +158,70 @@
 
 ### 1.2 IPC 通信层
 
-- [ ] **1.2.1** 定义 IPC 通道类型 — `src/lib/ipc/channels.ts`，双向通道类型定义（invoke/handle 模式）
-- [ ] **1.2.2** 实现 IPC 桥接 — `electron/preload.ts` 暴露 `window.electronAPI`，类型安全的方法映射
-- [ ] **1.2.3** 实现 IPC Handler 基类 — `server/ipc/handler.ts`，统一错误处理、请求日志、超时管理
-- [ ] **1.2.4** 注册所有 IPC Handler — `server/ipc/register.ts`，Main 进程启动时注册所有 handler
+- [x] **1.2.1** 定义 IPC 通道类型 — `src/lib/ipc/channels.ts`，双向通道类型定义（invoke/handle 模式）
+- [x] **1.2.2** 实现 IPC 桥接 — `electron/preload.ts` 暴露 `window.electronAPI`，类型安全的方法映射
+- [x] **1.2.3** 实现 IPC Handler 基类 — `server/ipc/handler.ts`，统一错误处理、请求日志、超时管理
+- [x] **1.2.4** 注册所有 IPC Handler — `server/ipc/register.ts`，Main 进程启动时注册所有 handler
 - **依赖**：1.1
 - **验证**：Renderer 调用 `window.electronAPI.ping()` 返回 "pong"
 
 ### 1.3 三栏布局框架
 
-- [ ] **1.3.1** 实现主布局组件 — `src/app/(main)/layout.tsx`，三栏自适应（侧边栏 + 主区域 + 右侧面板）
-- [ ] **1.3.2** 实现侧边栏组件 — `src/components/layout/sidebar.tsx`，领域导航、搜索入口、设置入口
-- [ ] **1.3.3** 实现右侧面板组件 — `src/components/layout/detail-panel.tsx`，可拖拽宽度（0-320px）、内容类型路由
-- [ ] **1.3.4** 实现标题栏组件 — `src/components/layout/titlebar.tsx`，36px 自定义无边框窗口标题栏（领域色点 + 名称 + 面包屑 + Cmd+K 提示 + 窗口控制）
-- [ ] **1.3.5** 实现状态栏组件 — `src/components/layout/statusbar.tsx`，28px 状态栏（模型名 + 费用 + 研究状态）
-- [ ] **1.3.6** 实现响应式断点 — < 900px（侧边栏折叠，右侧面板变覆盖层）、900-1200px（侧边栏 180px，面板 260px）、> 1200px（完整布局）
+- [x] **1.3.1** 实现主布局组件 — `src/app/(main)/layout.tsx`，三栏自适应（侧边栏 + 主区域 + 右侧面板）
+- [x] **1.3.2** 实现侧边栏组件 — `src/components/layout/sidebar.tsx`，领域导航、搜索入口、设置入口
+- [x] **1.3.3** 实现右侧面板组件 — `src/components/layout/detail-panel.tsx`，可拖拽宽度（0-320px）、内容类型路由
+- [x] **1.3.4** 实现标题栏组件 — `src/components/layout/titlebar.tsx`，36px 自定义无边框窗口标题栏（领域色点 + 名称 + 面包屑 + Cmd+K 提示 + 窗口控制）
+- [x] **1.3.5** 实现状态栏组件 — `src/components/layout/statusbar.tsx`，28px 状态栏（模型名 + 费用 + 研究状态）
+- [x] **1.3.6** 实现响应式断点 — < 900px（侧边栏折叠，右侧面板变覆盖层）、900-1200px（侧边栏 180px，面板 260px）、> 1200px（完整布局）
 - **依赖**：1.1
 - **验证**：三栏布局可拖拽调整、响应式断点正确切换
 
 ### 1.4 状态管理基座
 
-- [ ] **1.4.1** 实现 Zustand store 基类 — `src/stores/base.ts`，persist 中间件配置（SQLite 持久化）
-- [ ] **1.4.2** 实现应用全局 store — `src/stores/app-store.ts`，当前领域、当前视图、面板状态、主题
-- [ ] **1.4.3** 实现领域 store — `src/stores/domain-store.ts`，领域列表、当前领域、领域操作
-- [ ] **1.4.4** 实现 IPC 状态同步 Hook — `src/lib/hooks/use-ipc.ts`，封装 IPC 调用为 React Hook
+- [x] **1.4.1** 实现 Zustand store 基类 — `src/stores/base.ts`，persist 中间件配置（SQLite 持久化）
+- [x] **1.4.2** 实现应用全局 store — `src/stores/app-store.ts`，当前领域、当前视图、面板状态、主题
+- [x] **1.4.3** 实现领域 store — `src/stores/domain-store.ts`，领域列表、当前领域、领域操作
+- [x] **1.4.4** 实现 IPC 状态同步 Hook — `src/lib/hooks/use-ipc.ts`，封装 IPC 调用为 React Hook
 - **依赖**：1.2
 - **验证**：Store 可持久化到 SQLite，页面刷新后状态恢复
 
 ### 1.5 SQLite 数据库层
 
-- [ ] **1.5.1** 实现 Schema 定义 — `server/db/schema.ts`，14 张表的 TypeScript 类型定义 + SQL CREATE 语句
-- [ ] **1.5.2** 实现数据库连接管理 — `server/db/connection.ts`，单例连接、WAL 模式配置、连接池
-- [ ] **1.5.3** 实现迁移系统 — `server/db/migrations/`，迁移运行器（`runner.ts`）+ 版本追踪表 + 初始迁移脚本
-- [ ] **1.5.4** 实现 Repository 基类 — `server/db/repositories/base.ts`，泛型 CRUD 操作
-- [ ] **1.5.5** 实现 Domains Repository — `server/db/repositories/domains.ts`
-- [ ] **1.5.6** 实现 KnowledgeNodes Repository — `server/db/repositories/knowledge-nodes.ts`
-- [ ] **1.5.7** 实现 KnowledgeEdges Repository — `server/db/repositories/knowledge-edges.ts`
-- [ ] **1.5.8** 实现 Sources Repository — `server/db/repositories/sources.ts`
-- [ ] **1.5.9** 实现 TimelineEntries Repository — `server/db/repositories/timeline-entries.ts`
-- [ ] **1.5.10** 实现 ModelConfigs Repository — `server/db/repositories/model-configs.ts`
-- [ ] **1.5.11** 实现 ApiKeys Repository — `server/db/repositories/api-keys.ts`（含加密/解密逻辑）
-- [ ] **1.5.12** 实现 Inbox Repository — `server/db/repositories/inbox.ts`
-- [ ] **1.5.13** 实现 DecisionRecords Repository — `server/db/repositories/decision-records.ts`
-- [ ] **1.5.14** 实现向量索引层 — `server/db/vector.ts`，SQLite-vec 嵌入存储、向量搜索、索引管理
+- [x] **1.5.1** 实现 Schema 定义 — `server/db/schema.ts`，14 张表的 TypeScript 类型定义 + SQL CREATE 语句
+- [x] **1.5.2** 实现数据库连接管理 — `server/db/connection.ts`，单例连接、WAL 模式配置、连接池
+- [x] **1.5.3** 实现迁移系统 — `server/db/migrations/`，迁移运行器（`runner.ts`）+ 版本追踪表 + 初始迁移脚本
+- [x] **1.5.4** 实现 Repository 基类 — `server/db/repositories/base.ts`，泛型 CRUD 操作
+- [x] **1.5.5** 实现 Domains Repository — `server/db/repositories/domains.ts`
+- [x] **1.5.6** 实现 KnowledgeNodes Repository — `server/db/repositories/knowledge-nodes.ts`
+- [x] **1.5.7** 实现 KnowledgeEdges Repository — `server/db/repositories/knowledge-edges.ts`
+- [x] **1.5.8** 实现 Sources Repository — `server/db/repositories/sources.ts`
+- [x] **1.5.9** 实现 TimelineEntries Repository — `server/db/repositories/timeline-entries.ts`
+- [x] **1.5.10** 实现 ModelConfigs Repository — `server/db/repositories/model-configs.ts`
+- [x] **1.5.11** 实现 ApiKeys Repository — `server/db/repositories/api-keys.ts`（含加密/解密逻辑）
+- [x] **1.5.12** 实现 Inbox Repository — `server/db/repositories/inbox.ts`
+- [x] **1.5.13** 实现 DecisionRecords Repository — `server/db/repositories/decision-records.ts`
+- [x] **1.5.14** 实现向量索引层 — `server/db/vector.ts`，SQLite-vec 嵌入存储、向量搜索、索引管理
 - **依赖**：1.2
 - **验证**：迁移系统可创建完整 Schema，每个 Repository CRUD 测试通过
 
 ### 1.6 pi-mono SDK 集成
 
-- [ ] **1.6.1** 实现 pi-mono 核心初始化 — `server/pi-mono/core.ts`，AuthStorage + ModelRegistry + SessionManager + ResourceLoader 初始化
-- [ ] **1.6.2** 实现 Provider 注册模块 — `server/pi-mono/providers.ts`，9 个 Provider 注册（Anthropic, OpenAI, DeepSeek, Google, Groq, Ollama, OpenRouter, xAI, Mistral）
-- [ ] **1.6.3** 实现自定义工具 — `server/pi-mono/tools/domain-research.ts`（domain_research 工具）
-- [ ] **1.6.4** 实现自定义工具 — `server/pi-mono/tools/knowledge-write.ts`（knowledge_write 工具）
-- [ ] **1.6.5** 实现自定义工具 — `server/pi-mono/tools/timeline-analyze.ts`（timeline_analyze 工具）
-- [ ] **1.6.6** 实现扩展加载器 — `server/pi-mono/extensions/`，知识管理扩展 + 研究代理扩展 + 导入处理扩展
-- [ ] **1.6.7** 实现 pi-mono 封装层接口 — `server/services/pi-mono-wrapper.ts`，6 大核心接口（IModelManager, IAgentPool, IKnowledgeDB, ISkillEngine, IImportPipe, ISearchEngine）
+- [x] **1.6.1** 实现 pi-mono 核心初始化 — `server/pi-mono/core.ts`，AuthStorage + ModelRegistry + SessionManager + ResourceLoader 初始化
+- [x] **1.6.2** 实现 Provider 注册模块 — `server/pi-mono/providers.ts`，9 个 Provider 注册（Anthropic, OpenAI, DeepSeek, Google, Groq, Ollama, OpenRouter, xAI, Mistral）
+- [x] **1.6.3** 实现自定义工具 — `server/pi-mono/tools/domain-research.ts`（domain_research 工具）
+- [x] **1.6.4** 实现自定义工具 — `server/pi-mono/tools/knowledge-write.ts`（knowledge_write 工具）
+- [x] **1.6.5** 实现自定义工具 — `server/pi-mono/tools/timeline-analyze.ts`（timeline_analyze 工具）
+- [x] **1.6.6** 实现扩展加载器 — `server/pi-mono/extensions/`，知识管理扩展 + 研究代理扩展 + 导入处理扩展
+- [x] **1.6.7** 实现 pi-mono 封装层接口 — `server/services/pi-mono-wrapper.ts`，6 大核心接口（IModelManager, IAgentPool, IKnowledgeDB, ISkillEngine, IImportPipe, ISearchEngine）
 - **依赖**：1.5
 - **验证**：pi-mono 可初始化，Provider 可注册，自定义工具可被 Agent 调用
 
 ### 1.7 文件系统抽象层
 
-- [ ] **1.7.1** 实现 FileSystemProvider 接口 — `server/fs/provider.ts`，抽象文件读写操作
-- [ ] **1.7.2** 实现路径工具 — `server/fs/paths.ts`，跨平台路径处理（`app.getPath('userData')`）
-- [ ] **1.7.3** 实现领域目录管理器 — `server/fs/domain-dirs.ts`，领域目录结构创建/验证（config.yaml, skills/, tools/, prompts/, data/knowledge/, data/inbox/）
-- [ ] **1.7.4** 实现 Markdown 文件解析器 — `server/fs/markdown-parser.ts`，gray-matter 解析 YAML frontmatter
+- [x] **1.7.1** 实现 FileSystemProvider 接口 — `server/fs/provider.ts`，抽象文件读写操作
+- [x] **1.7.2** 实现路径工具 — `server/fs/paths.ts`，跨平台路径处理（`app.getPath('userData')`）
+- [x] **1.7.3** 实现领域目录管理器 — `server/fs/domain-dirs.ts`，领域目录结构创建/验证（config.yaml, skills/, tools/, prompts/, data/knowledge/, data/inbox/）
+- [x] **1.7.4** 实现 Markdown 文件解析器 — `server/fs/markdown-parser.ts`，gray-matter 解析 YAML frontmatter
 - **依赖**：1.1
 - **验证**：领域目录可正确创建，Markdown 文件可解析出 frontmatter + content
 
@@ -233,75 +233,75 @@
 
 ### 2.1 模型管理 UI（F9）
 
-- [ ] **2.1.1** 实现 ModelManager 服务 — `server/services/model-manager.ts`，API Key 导入/验证/加密存储、模型发现/列表、模型切换、领域默认模型
-- [ ] **2.1.2** 实现 ModelManager IPC Handler — `server/ipc/handlers/model-handler.ts`
-- [ ] **2.1.3** 实现模型管理设置页 — `src/app/(main)/settings/models/page.tsx`，API Key 管理表格 + 可用模型列表 + 领域默认模型配置
-- [ ] **2.1.4** 实现 API Key 导入对话框 — `src/components/settings/api-key-dialog.tsx`，Provider 选择 + Key 输入 + 验证状态 + 连接测试
-- [ ] **2.1.5** 实现模型列表组件 — `src/components/settings/model-list.tsx`，模型名 + Provider + 成本/m + 活跃状态星标
-- [ ] **2.1.6** 实现模型切换下拉 — `src/components/chat/model-switcher.tsx`，对话中模型切换（当前模型 + 备选列表 + 成本提示）
-- [ ] **2.1.7** 实现领域默认模型设置 — `src/components/settings/domain-model-config.tsx`，按领域配置 expert/research/summary 模型
+- [x] **2.1.1** 实现 ModelManager 服务 — `server/services/model-manager.ts`，API Key 导入/验证/加密存储、模型发现/列表、模型切换、领域默认模型
+- [x] **2.1.2** 实现 ModelManager IPC Handler — `server/ipc/handlers/model-handler.ts`
+- [x] **2.1.3** 实现模型管理设置页 — `src/app/(main)/settings/models/page.tsx`，API Key 管理表格 + 可用模型列表 + 领域默认模型配置
+- [x] **2.1.4** 实现 API Key 导入对话框 — `src/components/settings/api-key-dialog.tsx`，Provider 选择 + Key 输入 + 验证状态 + 连接测试
+- [x] **2.1.5** 实现模型列表组件 — `src/components/settings/model-list.tsx`，模型名 + Provider + 成本/m + 活跃状态星标
+- [x] **2.1.6** 实现模型切换下拉 — `src/components/chat/model-switcher.tsx`，对话中模型切换（当前模型 + 备选列表 + 成本提示）
+- [x] **2.1.7** 实现领域默认模型设置 — `src/components/settings/domain-model-config.tsx`，按领域配置 expert/research/summary 模型
 - **依赖**：1.5, 1.6
 - **验证**：可导入 API Key、查看可用模型、切换活跃模型、设置领域默认模型
 
 ### 2.2 领域管理（F6）
 
-- [ ] **2.2.1** 实现 DomainManager 服务 — `server/services/domain-manager.ts`，领域 CRUD、目录创建、配置解析、模型绑定
-- [ ] **2.2.2** 实现 DomainManager IPC Handler — `server/ipc/handlers/domain-handler.ts`
-- [ ] **2.2.3** 实现领域创建对话框 — `src/components/domain/create-domain-dialog.tsx`，名称 + 描述 + 颜色选择 + 图标选择 + 预设模板
-- [ ] **2.2.4** 实现领域列表组件 — `src/components/domain/domain-list.tsx`，侧边栏领域树（颜色标识 + 名称 + 知识节点数）
-- [ ] **2.2.5** 实现领域编辑页面 — `src/app/(main)/settings/domains/page.tsx`，领域配置编辑（模型、来源、框架、技能）
-- [ ] **2.2.6** 实现领域配置文件解析 — `server/services/domain-config.ts`，config.yaml 读写（模型、研究配置、框架、技能、标签）
+- [x] **2.2.1** 实现 DomainManager 服务 — `server/services/domain-manager.ts`，领域 CRUD、目录创建、配置解析、模型绑定
+- [x] **2.2.2** 实现 DomainManager IPC Handler — `server/ipc/handlers/domain-handler.ts`
+- [x] **2.2.3** 实现领域创建对话框 — `src/components/domain/create-domain-dialog.tsx`，名称 + 描述 + 颜色选择 + 图标选择 + 预设模板
+- [x] **2.2.4** 实现领域列表组件 — `src/components/domain/domain-list.tsx`，侧边栏领域树（颜色标识 + 名称 + 知识节点数）
+- [x] **2.2.5** 实现领域编辑页面 — `src/app/(main)/settings/domains/page.tsx`，领域配置编辑（模型、来源、框架、技能）
+- [x] **2.2.6** 实现领域配置文件解析 — `server/services/domain-config.ts`，config.yaml 读写（模型、研究配置、框架、技能、标签）
 - **依赖**：1.5, 1.7
 - **验证**：可创建/编辑/删除领域，领域目录结构正确创建
 
 ### 2.3 安全版本控制（F11）
 
-- [ ] **2.3.1** 实现 VersionControl 服务 — `server/services/version-control.ts`，git 初始化、自动 commit、diff 生成、回滚
-- [ ] **2.3.2** 实现 pre-write 自动 commit 钩子 — Agent 写入操作前自动 `git add + git commit`
-- [ ] **2.3.3** 实现 Diff 可视化组件 — `src/components/diff/diff-viewer.tsx`，行级 diff 显示（新增/删除/修改高亮）
-- [ ] **2.3.4** 实现版本历史面板 — `src/components/diff/version-history.tsx`，commit 列表 + 点击查看 diff
-- [ ] **2.3.5** 实现一键回滚功能 — 选择历史版本 → 确认 → `git checkout` → 刷新
-- [ ] **2.3.6** 实现写入范围限制 — Agent 只能写入指定领域目录
+- [x] **2.3.1** 实现 VersionControl 服务 — `server/services/version-control.ts`，git 初始化、自动 commit、diff 生成、回滚
+- [x] **2.3.2** 实现 pre-write 自动 commit 钩子 — Agent 写入操作前自动 `git add + git commit`
+- [x] **2.3.3** 实现 Diff 可视化组件 — `src/components/diff/diff-viewer.tsx`，行级 diff 显示（新增/删除/修改高亮）
+- [x] **2.3.4** 实现版本历史面板 — `src/components/diff/version-history.tsx`，commit 列表 + 点击查看 diff
+- [x] **2.3.5** 实现一键回滚功能 — 选择历史版本 → 确认 → `git checkout` → 刷新
+- [x] **2.3.6** 实现写入范围限制 — Agent 只能写入指定领域目录
 - **依赖**：1.5, 1.7
 - **验证**：AI 写入触发自动 commit，可查看 diff，可回滚到历史版本
 
 ### 2.4 主题系统
 
-- [ ] **2.4.1** 实现 CSS Token 变量系统 — `src/styles/tokens.css`，30 个规范 Token 定义
-- [ ] **2.4.2** 实现 Linear 风格包 — `src/styles/themes/linear.css`，30 个 Token 的 Linear 映射值（默认）
-- [ ] **2.4.3** 实现 Cursor 风格包 — `src/styles/themes/cursor.css`
-- [ ] **2.4.4** 实现 Notion 风格包 — `src/styles/themes/notion.css`
-- [ ] **2.4.5** 实现 PostHog 风格包 — `src/styles/themes/posthog.css`
-- [ ] **2.4.6** 实现主题切换器 — `src/lib/hooks/use-theme.ts`，运行时 CSS 变量替换，即时生效
-- [ ] **2.4.7** 实现外观设置页 — `src/app/(main)/settings/page.tsx`，风格选择器 + 预览
+- [x] **2.4.1** 实现 CSS Token 变量系统 — `src/styles/tokens.css`，30 个规范 Token 定义
+- [x] **2.4.2** 实现 Linear 风格包 — `src/styles/themes/linear.css`，30 个 Token 的 Linear 映射值（默认）
+- [x] **2.4.3** 实现 Cursor 风格包 — `src/styles/themes/cursor.css`
+- [x] **2.4.4** 实现 Notion 风格包 — `src/styles/themes/notion.css`
+- [x] **2.4.5** 实现 PostHog 风格包 — `src/styles/themes/posthog.css`
+- [x] **2.4.6** 实现主题切换器 — `src/lib/hooks/use-theme.ts`，运行时 CSS 变量替换，即时生效
+- [x] **2.4.7** 实现外观设置页 — `src/app/(main)/settings/page.tsx`，风格选择器 + 预览
 - **依赖**：1.3, P0.4（Token 系统规格）
 - **验证**：可切换 4 种风格，切换后所有组件即时更新
 
 ### 2.5 首次运行引导流程
 
-- [ ] **2.5.1** 实现引导流程控制器 — `src/stores/onboarding-store.ts`，引导步骤状态管理
-- [ ] **2.5.2** 实现欢迎屏 — `src/components/onboarding/welcome-screen.tsx`，价值主张展示
-- [ ] **2.5.3** 实现 API Key 设置引导 — `src/components/onboarding/api-key-setup.tsx`，Provider 选择 + Key 输入 + 连接验证 + "免费试用"（Ollama 本地）选项
-- [ ] **2.5.4** 实现创建首个领域引导 — `src/components/onboarding/create-first-domain.tsx`，预设模板选择（AI/ML, Web 开发, 通用研究）
-- [ ] **2.5.5** 实现引导研究步骤 — `src/components/onboarding/guided-research.tsx`，触发首次研究并展示结果
-- [ ] **2.5.6** 实现"无 API Key"阻塞状态 — 全屏引导卡片，非普通空状态
+- [x] **2.5.1** 实现引导流程控制器 — `src/stores/onboarding-store.ts`，引导步骤状态管理
+- [x] **2.5.2** 实现欢迎屏 — `src/components/onboarding/welcome-screen.tsx`，价值主张展示
+- [x] **2.5.3** 实现 API Key 设置引导 — `src/components/onboarding/api-key-setup.tsx`，Provider 选择 + Key 输入 + 连接验证 + "免费试用"（Ollama 本地）选项
+- [x] **2.5.4** 实现创建首个领域引导 — `src/components/onboarding/create-first-domain.tsx`，预设模板选择（AI/ML, Web 开发, 通用研究）
+- [x] **2.5.5** 实现引导研究步骤 — `src/components/onboarding/guided-research.tsx`，触发首次研究并展示结果
+- [x] **2.5.6** 实现"无 API Key"阻塞状态 — 全屏引导卡片，非普通空状态
 - **依赖**：2.1, 2.2, P0.6（引导流程规格）
 - **验证**：首次启动显示引导流程，完成后可正常使用应用
 
 ### 2.6 基础 UI 组件库
 
-- [ ] **2.6.1** 实现 Button 组件 — `src/components/ui/button.tsx`，primary/secondary/ghost/danger 变体 + loading 状态
-- [ ] **2.6.2** 实现 Input 组件 — `src/components/ui/input.tsx`，text/search/textarea 变体 + 验证状态
-- [ ] **2.6.3** 实现 Dialog 组件 — `src/components/ui/dialog.tsx`，模态 + 非模态 + 焦点陷阱
-- [ ] **2.6.4** 实现 Toast 组件 — `src/components/ui/toast.tsx`，成功/错误/警告 + 操作按钮（重试）+ 自动消失
-- [ ] **2.6.5** 实现 Tabs 组件 — `src/components/ui/tabs.tsx`
-- [ ] **2.6.6** 实现 SegmentedControl 组件 — `src/components/ui/segmented-control.tsx`，列表 | 图谱 视图切换
-- [ ] **2.6.7** 实现 Dropdown 组件 — `src/components/ui/dropdown.tsx`
-- [ ] **2.6.8** 实现 Skeleton 组件 — `src/components/ui/skeleton.tsx`，骨架屏占位（行/卡片/圆形/矩形）
-- [ ] **2.6.9** 实现 Badge 组件 — `src/components/ui/badge.tsx`
-- [ ] **2.6.10** 实现 Tooltip 组件 — `src/components/ui/tooltip.tsx`
-- [ ] **2.6.11** 实现 Progress 组件 — `src/components/ui/progress.tsx`，线性 + 环形
-- [ ] **2.6.12** 实现 EmptyState 组件 — `src/components/ui/empty-state.tsx`，温暖感文案 + 主操作按钮 + 上下文说明
+- [x] **2.6.1** 实现 Button 组件 — `src/components/ui/button.tsx`，primary/secondary/ghost/danger 变体 + loading 状态
+- [x] **2.6.2** 实现 Input 组件 — `src/components/ui/input.tsx`，text/search/textarea 变体 + 验证状态
+- [x] **2.6.3** 实现 Dialog 组件 — `src/components/ui/dialog.tsx`，模态 + 非模态 + 焦点陷阱
+- [x] **2.6.4** 实现 Toast 组件 — `src/components/ui/toast.tsx`，成功/错误/警告 + 操作按钮（重试）+ 自动消失
+- [x] **2.6.5** 实现 Tabs 组件 — `src/components/ui/tabs.tsx`
+- [x] **2.6.6** 实现 SegmentedControl 组件 — `src/components/ui/segmented-control.tsx`，列表 | 图谱 视图切换
+- [x] **2.6.7** 实现 Dropdown 组件 — `src/components/ui/dropdown.tsx`
+- [x] **2.6.8** 实现 Skeleton 组件 — `src/components/ui/skeleton.tsx`，骨架屏占位（行/卡片/圆形/矩形）
+- [x] **2.6.9** 实现 Badge 组件 — `src/components/ui/badge.tsx`
+- [x] **2.6.10** 实现 Tooltip 组件 — `src/components/ui/tooltip.tsx`
+- [x] **2.6.11** 实现 Progress 组件 — `src/components/ui/progress.tsx`，线性 + 环形
+- [x] **2.6.12** 实现 EmptyState 组件 — `src/components/ui/empty-state.tsx`，温暖感文案 + 主操作按钮 + 上下文说明
 - **依赖**：1.3, 2.4（主题系统）
 - **验证**：每个组件在 4 种风格下渲染正确
 
@@ -313,77 +313,77 @@
 
 ### 3.1 知识存储基础（F10 部分）
 
-- [ ] **3.1.1** 实现 KnowledgeGraph 服务 — `server/services/knowledge-graph.ts`，节点 CRUD、边 CRUD、图遍历、统计
-- [ ] **3.1.2** 实现 KnowledgeGraph IPC Handler — `server/ipc/handlers/knowledge-handler.ts`
-- [ ] **3.1.3** 实现知识列表视图 — `src/app/(main)/domain/[id]/page.tsx`，按领域分类的知识列表 + 搜索 + 筛选（类型/状态/理解度）
-- [ ] **3.1.4** 实现知识节点卡片 — `src/components/knowledge/knowledge-card.tsx`，标题 + 类型标签 + 理解指示器（0-5 圆点）+ 领域色 + 来源数
-- [ ] **3.1.5** 实现知识节点详情面板 — `src/components/knowledge/knowledge-detail.tsx`，右侧面板内容（标题 + Markdown 内容 + frontmatter + 理解度 + 相关节点 + 来源）
-- [ ] **3.1.6** 实现知识节点创建/编辑表单 — `src/components/knowledge/knowledge-form.tsx`
-- [ ] **3.1.7** 实现理解指示器组件 — `src/components/knowledge/comprehension-indicator.tsx`，0-5 圆点 + aria-label
+- [x] **3.1.1** 实现 KnowledgeGraph 服务 — `server/services/knowledge-graph.ts`，节点 CRUD、边 CRUD、图遍历、统计
+- [x] **3.1.2** 实现 KnowledgeGraph IPC Handler — `server/ipc/handlers/knowledge-handler.ts`
+- [x] **3.1.3** 实现知识列表视图 — `src/app/(main)/domain/page.tsx`，按领域分类的知识列表 + 搜索 + 筛选（类型/状态/理解度，query param ?id=xxx）
+- [x] **3.1.4** 实现知识节点卡片 — `src/components/knowledge/knowledge-card.tsx`，标题 + 类型标签 + 理解指示器（0-5 圆点）+ 领域色 + 来源数
+- [x] **3.1.5** 实现知识节点详情面板 — `src/components/knowledge/knowledge-detail.tsx`，右侧面板内容（标题 + Markdown 内容 + frontmatter + 理解度 + 相关节点 + 来源）
+- [x] **3.1.6** 实现知识节点创建/编辑表单 — `src/components/knowledge/knowledge-form.tsx`
+- [x] **3.1.7** 实现理解指示器组件 — `src/components/knowledge/comprehension-indicator.tsx`，0-5 圆点 + aria-label
 - **依赖**：1.5, 1.6
 - **验证**：可创建/查看/编辑/删除知识节点，列表视图按领域正确展示
 
 ### 3.2 知识图谱可视化（F10 部分）
 
-- [ ] **3.2.1** 实现 D3.js 力导向图基础 — `src/components/graph/force-graph.tsx`，节点（颜色=领域色，大小=连接数）+ 边（粗细=权重）+ 缩放 + 平移
-- [ ] **3.2.2** 实现节点交互 — 点击打开详情面板、悬停显示 tooltip、拖拽重新布局
-- [ ] **3.2.3** 实现 WebGL 降级 — `src/components/graph/webgl-graph.tsx`，> 1000 节点自动切换
-- [ ] **3.2.4** 实现图谱控制面板 — 缩放按钮、布局切换（力导向/分层/环形）、筛选（按领域/类型/理解度）
-- [ ] **3.2.5** 实现图谱 → 列表视图切换 — SegmentedControl 切换 + 平滑过渡动画
-- [ ] **3.2.6** 实现图谱无障碍降级 — aria-hidden + "使用列表视图进行键盘可访问浏览" 提示
+- [x] **3.2.1** 实现 D3.js 力导向图基础 — `src/components/graph/force-graph.tsx`，节点（颜色=领域色，大小=连接数）+ 边（粗细=权重）+ 缩放 + 平移
+- [x] **3.2.2** 实现节点交互 — 点击打开详情面板、悬停显示 tooltip、拖拽重新布局
+- [x] **3.2.3** 实现 WebGL 降级 — `src/components/graph/webgl-graph.tsx`，> 1000 节点自动切换
+- [x] **3.2.4** 实现图谱控制面板 — 缩放按钮、布局切换（力导向/分层/环形）、筛选（按领域/类型/理解度）
+- [x] **3.2.5** 实现图谱 → 列表视图切换 — SegmentedControl 切换 + 平滑过渡动画
+- [x] **3.2.6** 实现图谱无障碍降级 — aria-hidden + "使用列表视图进行键盘可访问浏览" 提示
 - **依赖**：3.1, P0.11（无障碍规格）
 - **验证**：图谱可缩放/平移/点击，> 1000 节点降级到 WebGL，列表视图可完全替代图谱
 
 ### 3.3 专家对话（F5 主动模式）
 
-- [ ] **3.3.1** 实现 AgentPool 服务 — `server/services/agent-pool.ts`，会话创建/销毁、会话池管理、模型绑定
-- [ ] **3.3.2** 实现 AgentPool IPC Handler — `server/ipc/handlers/agent-handler.ts`
-- [ ] **3.3.3** 实现对话界面容器 — `src/app/(main)/domain/[id]/chat/page.tsx`
-- [ ] **3.3.4** 实现消息列表组件 — `src/components/chat/message-list.tsx`，Markdown 渲染（marked）+ 代码高亮 + 流式输出
-- [ ] **3.3.5** 实现消息输入组件 — `src/components/chat/message-input.tsx`，多行输入 + 发送按钮 + 附件
-- [ ] **3.3.6** 实现树状会话分支 — `src/components/chat/conversation-tree.tsx`，分支显示 + 折叠/展开 + 分支导航（点击 + 箭头键）+ 虚拟滚动（> 50 条消息）
-- [ ] **3.3.7** 实现领域上下文自动加载 — 进入对话时加载领域 Warm 层数据作为 system prompt
-- [ ] **3.3.8** 实现流式响应处理 — pi-mono 流式输出 → IPC 流 → React 状态更新
+- [x] **3.3.1** 实现 AgentPool 服务 — `server/services/agent-pool.ts`，会话创建/销毁、会话池管理、模型绑定
+- [x] **3.3.2** 实现 AgentPool IPC Handler — `server/ipc/handlers/agent-handler.ts`
+- [x] **3.3.3** 实现对话界面容器 — `src/app/(main)/domain/[id]/chat/page.tsx`
+- [x] **3.3.4** 实现消息列表组件 — `src/components/chat/message-list.tsx`，Markdown 渲染（marked）+ 代码高亮 + 流式输出
+- [x] **3.3.5** 实现消息输入组件 — `src/components/chat/message-input.tsx`，多行输入 + 发送按钮 + 附件
+- [x] **3.3.6** 实现树状会话分支 — `src/components/chat/conversation-tree.tsx`，分支显示 + 折叠/展开 + 分支导航（点击 + 箭头键）+ 虚拟滚动（> 50 条消息）
+- [x] **3.3.7** 实现领域上下文自动加载 — 进入对话时加载领域 Warm 层数据作为 system prompt
+- [x] **3.3.8** 实现流式响应处理 — pi-mono 流式输出 → IPC 流 → React 状态更新
 - **依赖**：1.6, 2.1（模型管理）, P0.13（树状对话规格）
 - **验证**：可发起对话、收到流式响应、创建/切换分支、领域上下文自动加载
 
 ### 3.4 斜杠命令框架
 
-- [ ] **3.4.1** 实现命令解析器 — `src/lib/commands/parser.ts`，识别 `/command [args]` 格式
-- [ ] **3.4.2** 实现命令注册表 — `src/lib/commands/registry.ts`，命令注册 + 参数定义 + 执行路由
-- [ ] **3.4.3** 实现内置命令 — `/daily`, `/deep-dive`, `/summarize`, `/timeline`, `/framework`, `/connect`, `/predict`, `/skill`, `/review`, `/import`
-- [ ] **3.4.4** 实现命令自动补全 — 输入 `/` 后弹出命令列表 + 参数提示
+- [x] **3.4.1** 实现命令解析器 — `src/lib/commands/parser.ts`，识别 `/command [args]` 格式
+- [x] **3.4.2** 实现命令注册表 — `src/lib/commands/registry.ts`，命令注册 + 参数定义 + 执行路由
+- [x] **3.4.3** 实现内置命令 — `/daily`, `/deep-dive`, `/summarize`, `/timeline`, `/framework`, `/connect`, `/predict`, `/skill`, `/review`, `/import`
+- [x] **3.4.4** 实现命令自动补全 — 输入 `/` 后弹出命令列表 + 参数提示
 - **依赖**：3.3
 - **验证**：输入 `/daily` 触发每日研究，输入 `/deep-dive transformer` 触发深度研究
 
 ### 3.5 混合搜索引擎
 
-- [ ] **3.5.1** 实现 SearchEngine 服务 — `server/services/search-engine.ts`
-- [ ] **3.5.2** 实现向量索引管道 — 新增/更新知识节点 → 生成 embedding → 存入 SQLite-vec
-- [ ] **3.5.3** 实现 BM25 全文搜索 — SQLite FTS5 虚拟表 + 全文索引
-- [ ] **3.5.4** 实现 RRF 融合排序 — 向量搜索结果 + 全文搜索结果 → 倒数排名融合
-- [ ] **3.5.5** 实现 SearchEngine IPC Handler — `server/ipc/handlers/search-handler.ts`
-- [ ] **3.5.6** 实现搜索 UI 组件 — `src/components/search/search-bar.tsx` + 结果列表
+- [x] **3.5.1** 实现 SearchEngine 服务 — `server/services/search-engine.ts`
+- [x] **3.5.2** 实现向量索引管道 — 新增/更新知识节点 → 生成 embedding → 存入 SQLite-vec
+- [x] **3.5.3** 实现 BM25 全文搜索 — SQLite FTS5 虚拟表 + 全文索引
+- [x] **3.5.4** 实现 RRF 融合排序 — 向量搜索结果 + 全文搜索结果 → 倒数排名融合
+- [x] **3.5.5** 实现 SearchEngine IPC Handler — `server/ipc/handlers/search-handler.ts`
+- [x] **3.5.6** 实现搜索 UI 组件 — `src/components/search/search-bar.tsx` + 结果列表
 - **依赖**：1.5（向量索引层）, 3.1（知识节点）
 - **验证**：搜索可返回向量 + 全文融合结果
 
 ### 3.6 收件箱处理（F5 被动模式）
 
-- [ ] **3.6.1** 实现 InboxProcessor 服务 — `server/services/inbox-processor.ts`，AI 摘要生成 + 领域分配
-- [ ] **3.6.2** 实现 InboxProcessor IPC Handler — `server/ipc/handlers/inbox-handler.ts`
-- [ ] **3.6.3** 实现收件箱列表视图 — `src/app/(main)/inbox/page.tsx`，待处理/已处理/已拒绝 筛选
-- [ ] **3.6.4** 实现收件箱项目卡片 — `src/components/inbox/inbox-item.tsx`，来源信息 + AI 摘要 + 确认/拒绝/编辑 操作
-- [ ] **3.6.5** 实现确认后存入领域流程 — 选择目标领域 → 创建知识节点 → 从收件箱移除
-- [ ] **3.6.6** 实现快速记录入口 — 侧边栏"快速记录"按钮 → 输入文本 → 进入 Inbox
+- [x] **3.6.1** 实现 InboxProcessor 服务 — `server/services/inbox-processor.ts`，AI 摘要生成 + 领域分配
+- [x] **3.6.2** 实现 InboxProcessor IPC Handler — `server/ipc/handlers/inbox-handler.ts`
+- [x] **3.6.3** 实现收件箱列表视图 — `src/app/(main)/inbox/page.tsx`，待处理/已处理/已拒绝 筛选
+- [x] **3.6.4** 实现收件箱项目卡片 — `src/components/inbox/inbox-item.tsx`，来源信息 + AI 摘要 + 确认/拒绝/编辑 操作
+- [x] **3.6.5** 实现确认后存入领域流程 — 选择目标领域 → 创建知识节点 → 从收件箱移除
+- [x] **3.6.6** 实现快速记录入口 — 侧边栏"快速记录"按钮 → 输入文本 → 进入 Inbox
 - **依赖**：3.1, 3.3（AI 摘要通过 Agent 生成）
 - **验证**：手动输入文本进入 Inbox，AI 生成摘要，确认后存入领域
 
 ### 3.7 Diff 审核与安全关卡
 
-- [ ] **3.7.1** 实现 Diff 生成服务 — `server/services/diff-service.ts`，比较新旧内容生成行级 diff
-- [ ] **3.7.2** 实现 Diff 审核队列 — 右侧面板堆栈排队（最新在顶部），输入区域"X 个待审核"徽标
-- [ ] **3.7.3** 实现 Diff 审核交互 — 接受/拒绝/编辑后接受 三个操作按钮
-- [ ] **3.7.4** 实现写入权限检查 — 中风险操作触发确认、高风险操作需要明确批准
+- [x] **3.7.1** 实现 Diff 生成服务 — `server/services/diff-service.ts`，比较新旧内容生成行级 diff
+- [x] **3.7.2** 实现 Diff 审核队列 — 右侧面板堆栈排队（最新在顶部），输入区域"X 个待审核"徽标
+- [x] **3.7.3** 实现 Diff 审核交互 — 接受/拒绝/编辑后接受 三个操作按钮
+- [x] **3.7.4** 实现写入权限检查 — 中风险操作触发确认、高风险操作需要明确批准
 - **依赖**：2.3（版本控制）, P0.8（安全关卡规格）
 - **验证**：AI 写入触发 Diff 显示，用户可逐条审核，拒绝后写入不执行
 
@@ -395,60 +395,60 @@
 
 ### 4.1 定时研究代理（F2）
 
-- [ ] **4.1.1** 实现 ResearchScheduler 服务 — `server/services/research-scheduler.ts`，cron 表达式解析 + 任务调度
-- [ ] **4.1.2** 实现研究代理执行器 — 基于 pi-mono AgentSession，使用廉价模型（DeepSeek-V3）执行研究
-- [ ] **4.1.3** 实现研究结果处理 — 研究输出 → AI 摘要 → 自动创建知识节点（直接入库，不经 Inbox）
-- [ ] **4.1.4** 实现研究来源配置 — 领域 config.yaml 中的 sources 配置解析
-- [ ] **4.1.5** 实现 ResearchScheduler IPC Handler — `server/ipc/handlers/research-handler.ts`
-- [ ] **4.1.6** 实现研究仪表盘 — `src/app/(main)/research/page.tsx`，每日研究摘要 + 研究历史时间线 + 成本追踪
-- [ ] **4.1.7** 实现研究触发组件 — 手动触发研究按钮 + 研究进度显示
+- [x] **4.1.1** 实现 ResearchScheduler 服务 — `server/services/research-scheduler.ts`，cron 表达式解析 + 任务调度
+- [x] **4.1.2** 实现研究代理执行器 — 基于 pi-mono AgentSession，使用廉价模型（DeepSeek-V3）执行研究
+- [x] **4.1.3** 实现研究结果处理 — 研究输出 → AI 摘要 → 自动创建知识节点（直接入库，不经 Inbox）
+- [x] **4.1.4** 实现研究来源配置 — 领域 config.yaml 中的 sources 配置解析
+- [x] **4.1.5** 实现 ResearchScheduler IPC Handler — `server/ipc/handlers/research-handler.ts`
+- [x] **4.1.6** 实现研究仪表盘 — `src/app/(main)/research/page.tsx`，每日研究摘要 + 研究历史时间线 + 成本追踪
+- [x] **4.1.7** 实现研究触发组件 — 手动触发研究按钮 + 研究进度显示
 - **依赖**：3.1, 3.3, 2.1
 - **验证**：配置 cron 后研究自动执行，结果自动入库，仪表盘显示研究历史
 
 ### 4.2 导入管道（F8）
 
-- [ ] **4.2.1** 实现 ImportPipeline 服务 — `server/services/import-pipeline.ts`
-- [ ] **4.2.2** 实现 URL 导入器 — URL → 内容抓取（HTML → Markdown） → AI 摘要 → 来源追踪
-- [ ] **4.2.3** 实现 PDF 导入器 — PDF → 文本抽取 → AI 摘要 → 来源追踪
-- [ ] **4.2.4** 实现 RSS 订阅源轮询 — RSS feed 解析 + 新内容检测 + 自动导入
-- [ ] **4.2.5** 实现 ImportPipeline IPC Handler — `server/ipc/handlers/import-handler.ts`
-- [ ] **4.2.6** 实现导入 UI — `src/components/import/import-dialog.tsx`，URL/PDF 输入 + 进度显示 + 结果预览
-- [ ] **4.2.7** 实现导入失败处理 — 部分导入 + 错误报告 + 重试按钮
+- [x] **4.2.1** 实现 ImportPipeline 服务 — `server/services/import-pipeline.ts`
+- [x] **4.2.2** 实现 URL 导入器 — URL → 内容抓取（HTML → Markdown） → AI 摘要 → 来源追踪
+- [x] **4.2.3** 实现 PDF 导入器 — PDF → 文本抽取 → AI 摘要 → 来源追踪
+- [x] **4.2.4** 实现 RSS 订阅源轮询 — RSS feed 解析 + 新内容检测 + 自动导入
+- [x] **4.2.5** 实现 ImportPipeline IPC Handler — `server/ipc/handlers/import-handler.ts`
+- [x] **4.2.6** 实现导入 UI — `src/components/import/import-dialog.tsx`，URL/PDF 输入 + 进度显示 + 结果预览
+- [x] **4.2.7** 实现导入失败处理 — 部分导入 + 错误报告 + 重试按钮
 - **依赖**：3.6（导入结果进入 Inbox 或直接入库）
 - **验证**：可导入 URL/PDF 内容，RSS 自动轮询新内容
 
 ### 4.3 框架分析（F3）
 
-- [ ] **4.3.1** 实现 FrameworkEngine 服务 — `server/services/framework-engine.ts`，分析框架定义 + 执行 + 结果生成
-- [ ] **4.3.2** 实现内置框架 — 技术就绪度（TRL）、竞争格局（Competitive Landscape）、炒作周期（Hype Cycle）
-- [ ] **4.3.3** 实现框架判断 → 知识节点 — 框架分析结果自动创建知识节点
-- [ ] **4.3.4** 实现 Decision Record 生成 — ADR-NNN-title.md 格式（上下文 + 决策 + 理由 + 预期结果）
-- [ ] **4.3.5** 实现历史决策检索 — 新分析时自动检索相关历史决策
-- [ ] **4.3.6** 实现领域摘要生成 — 定期摘要触发 + 三层记忆分层（Hot → Warm → Cold）
-- [ ] **4.3.7** 实现框架分析 UI — 框架选择 + 分析结果展示 + ADR 列表
+- [x] **4.3.1** 实现 FrameworkEngine 服务 — `server/services/framework-engine.ts`，分析框架定义 + 执行 + 结果生成
+- [x] **4.3.2** 实现内置框架 — 技术就绪度（TRL）、竞争格局（Competitive Landscape）、炒作周期（Hype Cycle）
+- [x] **4.3.3** 实现框架判断 → 知识节点 — 框架分析结果自动创建知识节点
+- [x] **4.3.4** 实现 Decision Record 生成 — ADR-NNN-title.md 格式（上下文 + 决策 + 理由 + 预期结果）
+- [x] **4.3.5** 实现历史决策检索 — 新分析时自动检索相关历史决策
+- [x] **4.3.6** 实现领域摘要生成 — 定期摘要触发 + 三层记忆分层（Hot → Warm → Cold）
+- [x] **4.3.7** 实现框架分析 UI — 框架选择 + 分析结果展示 + ADR 列表
 - **依赖**：3.1, 3.3
 - **验证**：可选择框架执行分析，结果生成知识节点 + Decision Record
 
 ### 4.4 时间线与预测（F4）
 
-- [ ] **4.4.1** 实现 TimelineEngine 服务 — `server/services/timeline-engine.ts`，时间线 CRUD + 趋势分析 + 预测生成
-- [ ] **4.4.2** 实现时间线条目管理 — 从知识节点提取时间事件 + 手动创建
-- [ ] **4.4.3** 实现趋势分析生成 — 基于时间线数据 + AI 分析生成趋势报告
-- [ ] **4.4.4** 实现预测生成 — 带置信度的预测 + 关联知识节点
-- [ ] **4.4.5** 实现预测准确率追踪 — 预测到期后自动对比实际结果
-- [ ] **4.4.6** 实现时间线视图 — `src/app/(main)/timeline/page.tsx`，垂直时间线 + 事件卡片 + 预测高亮
-- [ ] **4.4.7** 实现时间线筛选 — 按领域/日期范围/重要性筛选
+- [x] **4.4.1** 实现 TimelineEngine 服务 — `server/services/timeline-engine.ts`，时间线 CRUD + 趋势分析 + 预测生成
+- [x] **4.4.2** 实现时间线条目管理 — 从知识节点提取时间事件 + 手动创建
+- [x] **4.4.3** 实现趋势分析生成 — 基于时间线数据 + AI 分析生成趋势报告
+- [x] **4.4.4** 实现预测生成 — 带置信度的预测 + 关联知识节点
+- [x] **4.4.5** 实现预测准确率追踪 — 预测到期后自动对比实际结果
+- [x] **4.4.6** 实现时间线视图 — `src/app/(main)/timeline/page.tsx`，垂直时间线 + 事件卡片 + 预测高亮
+- [x] **4.4.7** 实现时间线筛选 — 按领域/日期范围/重要性筛选
 - **依赖**：3.1, 3.3
 - **验证**：可查看时间线、生成趋势分析、创建/追踪预测
 
 ### 4.5 技能系统（F7）
 
-- [ ] **4.5.1** 实现 SkillEngine 服务 — `server/services/skill-engine.ts`，SKILL.md 解析 + 注册 + 执行
-- [ ] **4.5.2** 实现技能执行沙箱 — 隔离执行环境 + 资源限制 + 超时控制
-- [ ] **4.5.3** 实现内置技能 — paper-summarizer, trend-analyzer, connection-finder, domain-expert
-- [ ] **4.5.4** 实现技能效果追踪 — 执行次数 + 成功率 + 用户评分
-- [ ] **4.5.5** 实现技能注册 UI — 设置页技能列表 + 启用/禁用 + 效果指标
-- [ ] **4.5.6** 实现领域专属技能加载 — 按领域 config.yaml 加载 skills/ 目录下的技能
+- [x] **4.5.1** 实现 SkillEngine 服务 — `server/services/skill-engine.ts`，SKILL.md 解析 + 注册 + 执行
+- [x] **4.5.2** 实现技能执行沙箱 — 隔离执行环境 + 资源限制 + 超时控制
+- [x] **4.5.3** 实现内置技能 — paper-summarizer, trend-analyzer, connection-finder, domain-expert
+- [x] **4.5.4** 实现技能效果追踪 — 执行次数 + 成功率 + 用户评分
+- [x] **4.5.5** 实现技能注册 UI — 设置页技能列表 + 启用/禁用 + 效果指标
+- [x] **4.5.6** 实现领域专属技能加载 — 按领域 config.yaml 加载 skills/ 目录下的技能
 - **依赖**：1.6, 3.3
 - **验证**：可查看内置技能、执行技能、查看效果指标
 
@@ -460,11 +460,11 @@
 
 ### 5.1 命令面板（Cmd+K）
 
-- [ ] **5.1.1** 实现命令面板组件 — `src/components/cmd-palette/cmd-palette.tsx`，搜索 + 命令 + 导航 + 知识搜索
-- [ ] **5.1.2** 实现键盘交互模型 — 上/下箭头移动选中项、Tab 切换分组、Enter 执行、Escape 关闭
-- [ ] **5.1.3** 实现搜索过滤 — 防抖 150ms、按类别分组、每类最多 5 个结果
-- [ ] **5.1.4** 实现参数输入模式 — 命令需要参数时替换搜索输入为参数提示
-- [ ] **5.1.5** 实现焦点陷阱 — 打开时焦点移入面板，Escape 关闭后焦点返回触发元素
+- [x] **5.1.1** 实现命令面板组件 — `src/components/cmd-palette/cmd-palette.tsx`，搜索 + 命令 + 导航 + 知识搜索
+- [x] **5.1.2** 实现键盘交互模型 — 上/下箭头移动选中项、Tab 切换分组、Enter 执行、Escape 关闭
+- [x] **5.1.3** 实现搜索过滤 — 防抖 150ms、按类别分组、每类最多 5 个结果
+- [x] **5.1.4** 实现参数输入模式 — 命令需要参数时替换搜索输入为参数提示
+- [x] **5.1.5** 实现焦点陷阱 — 打开时焦点移入面板，Escape 关闭后焦点返回触发元素
 - **依赖**：3.5（搜索集成）, P0.12（键盘模型规格）
 - **验证**：Cmd+K 打开面板，搜索过滤正确，键盘导航流畅
 

@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Statusbar } from '@/components/layout/statusbar';
 import { DetailPanel } from '@/components/layout/detail-panel';
 import { OnboardingOverlay } from '@/components/onboarding/onboarding-overlay';
+import { CommandPalette } from '@/components/cmd-palette/cmd-palette';
 
 function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -18,6 +19,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <Statusbar />
       <OnboardingOverlay />
+      <CommandPalette />
     </div>
   );
 }
