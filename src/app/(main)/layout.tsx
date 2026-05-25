@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import { LayoutProvider } from '@/components/layout/layout-context';
 import { Titlebar } from '@/components/layout/titlebar';
 import { Sidebar } from '@/components/layout/sidebar';
@@ -9,6 +10,7 @@ import { OnboardingOverlay } from '@/components/onboarding/onboarding-overlay';
 import { CommandPalette } from '@/components/cmd-palette/cmd-palette';
 import { ErrorBoundary } from '@/components/error/error-boundary';
 import { ToastProvider } from '@/components/ui/toast';
+import { LaunchLoader } from '@/components/ui/launch-loader';
 import { useRouteFocus } from '@/lib/hooks/use-route-focus';
 
 function AppShell({ children }: { children: React.ReactNode }) {
@@ -35,6 +37,26 @@ function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
+  const [ready, setReady] = useState(false);
+  const handleReady = useCallback(() => setReady(true), []);
+
+  if (!ready) {
+    return (
+      <ToastProvider>
+        <LayoutProvider>
+          <div className="app-layout">
+            <Titlebar />
+            <div className="app-layout__body">
+              <main className="app-layout__main">
+                <LaunchLoader onReady={handleReady} />
+              </main>
+            </div>
+          </div>
+        </LayoutProvider>
+      </ToastProvider>
+    );
+  }
+
   return (
     <ToastProvider>
       <LayoutProvider>

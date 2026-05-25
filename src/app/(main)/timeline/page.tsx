@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTimelineStore } from '@/stores/timeline-store';
 import { useDomainStore } from '@/stores/domain-store';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ViewLoadingState } from '@/components/skeleton/view-loading';
 import {
   TimelineEventCard,
   PredictionCard,
@@ -123,6 +123,12 @@ export default function TimelinePage() {
   ];
 
   return (
+    <ViewLoadingState
+      view="timeline"
+      isLoading={loading && filteredEvents.length === 0 && predictions.length === 0}
+      onRetry={() => { if (selectedDomainId) { fetchEvents(selectedDomainId); fetchPredictions(selectedDomainId); } }}
+      onCancel={() => {}}
+    >
     <div className="timeline-page">
       <div className="timeline-page__header">
         <div className="timeline-page__header-left">
@@ -240,13 +246,7 @@ export default function TimelinePage() {
             description="Choose a domain to view its timeline, predictions, and trend analyses."
           />
         ) : activeTab === 'timeline' ? (
-          loading && filteredEvents.length === 0 ? (
-            <div className="timeline-page__skeleton">
-              {Array.from({ length: 5 }, (_, i) => (
-                <Skeleton key={i} variant="card" />
-              ))}
-            </div>
-          ) : filteredEvents.length === 0 ? (
+          filteredEvents.length === 0 ? (
             <EmptyState
               icon={
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -264,13 +264,7 @@ export default function TimelinePage() {
             </div>
           )
         ) : activeTab === 'predictions' ? (
-          loading && predictions.length === 0 ? (
-            <div className="timeline-page__skeleton">
-              {Array.from({ length: 3 }, (_, i) => (
-                <Skeleton key={i} variant="card" />
-              ))}
-            </div>
-          ) : predictions.length === 0 ? (
+          predictions.length === 0 ? (
             <EmptyState
               icon={
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -757,5 +751,6 @@ export default function TimelinePage() {
         }
       `}</style>
     </div>
+    </ViewLoadingState>
   );
 }

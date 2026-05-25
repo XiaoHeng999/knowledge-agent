@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useResearchStore } from '@/stores/research-store';
 import { useDomainStore } from '@/stores/domain-store';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ViewLoadingState } from '@/components/skeleton/view-loading';
 import { Progress } from '@/components/ui/progress';
 
 export default function ResearchPage() {
@@ -63,6 +63,12 @@ export default function ResearchPage() {
   const costTracking = dashboard?.costTracking;
 
   return (
+    <ViewLoadingState
+      view="research"
+      isLoading={loading && recentResearch.length === 0}
+      onRetry={fetchDashboard}
+      onCancel={() => {}}
+    >
     <div className="research-page">
       <div className="research-page__header">
         <h1 className="research-page__title">Research Dashboard</h1>
@@ -135,13 +141,7 @@ export default function ResearchPage() {
       <div className="research-page__history">
         <h2 className="research-page__section-title">Recent Research</h2>
 
-        {loading && recentResearch.length === 0 ? (
-          <div className="research-page__skeleton">
-            {Array.from({ length: 3 }, (_, i) => (
-              <Skeleton key={i} variant="card" />
-            ))}
-          </div>
-        ) : recentResearch.length === 0 ? (
+        {recentResearch.length === 0 ? (
           <EmptyState
             icon={
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -181,5 +181,6 @@ export default function ResearchPage() {
         )}
       </div>
     </div>
+    </ViewLoadingState>
   );
 }

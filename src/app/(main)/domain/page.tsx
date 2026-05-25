@@ -9,7 +9,7 @@ import { KnowledgeCard } from '@/components/knowledge/knowledge-card';
 import { KnowledgeDetail } from '@/components/knowledge/knowledge-detail';
 import { KnowledgeForm } from '@/components/knowledge/knowledge-form';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ViewLoadingState } from '@/components/skeleton/view-loading';
 
 const TYPE_OPTIONS = [
   { value: '', label: 'All Types' },
@@ -147,6 +147,12 @@ export default function DomainKnowledgePage() {
   }
 
   return (
+    <ViewLoadingState
+      view="knowledge"
+      isLoading={loading && nodes.length === 0}
+      onRetry={() => fetchNodes(domainId, { page: 1 })}
+      onCancel={() => {}}
+    >
     <div className="knowledge-page">
       <div className="knowledge-page__header">
         <div className="knowledge-page__header-left">
@@ -208,13 +214,7 @@ export default function DomainKnowledgePage() {
       )}
 
       <div className="knowledge-page__list">
-        {loading && nodes.length === 0 ? (
-          <div className="knowledge-page__skeleton">
-            {Array.from({ length: 5 }, (_, i) => (
-              <Skeleton key={i} variant="card" />
-            ))}
-          </div>
-        ) : nodes.length === 0 ? (
+        {nodes.length === 0 ? (
           <EmptyState
             icon={
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -268,5 +268,6 @@ export default function DomainKnowledgePage() {
         </div>
       )}
     </div>
+    </ViewLoadingState>
   );
 }

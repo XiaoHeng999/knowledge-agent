@@ -9,7 +9,7 @@ import { KnowledgeCard } from '@/components/knowledge/knowledge-card';
 import { KnowledgeDetail } from '@/components/knowledge/knowledge-detail';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import { ForceGraph } from './force-graph';
 import { WebGLGraph } from './webgl-graph';
 import { GraphControlPanel, type LayoutMode, type GraphFilters } from './graph-controls';
@@ -179,7 +179,7 @@ export function GraphView() {
           />
           {loading ? (
             <div className="graph-view__loading" role="status" aria-label="Loading graph">
-              <Skeleton variant="rect" />
+              <Skeleton height={200} width="100%" radius={6} />
             </div>
           ) : filteredNodes.length === 0 ? (
             <EmptyState
@@ -232,7 +232,7 @@ export function GraphView() {
           {loading && nodes.length === 0 ? (
             <div className="graph-view__loading">
               {Array.from({ length: 5 }, (_, i) => (
-                <Skeleton key={i} variant="card" />
+                <SkeletonCard key={i} />
               ))}
             </div>
           ) : filteredNodes.length === 0 ? (

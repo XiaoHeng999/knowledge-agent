@@ -47,7 +47,14 @@ agentclaw/
 │   │   │   └── layout-context.tsx # 布局状态 Context
 │   │   │
 │   │   ├── ui/                   # 基础 UI 组件库
-│   │   │   └── index.ts          # 统一导出（Button, Input, Dialog, Toast, Tabs, ...）
+│   │   │   ├── index.ts          # 统一导出（Button, Input, Dialog, Toast, Tabs, ...）
+│   │   │   ├── skeleton.tsx      # 骨架屏基元组件（Skeleton, SkeletonCircle, SkeletonLine 等）
+│   │   │   ├── loading-timeout.tsx # 加载超时状态组件（超时提示 + 重试/取消）
+│   │   │   └── launch-loader.tsx # 首次启动加载动画
+│   │   │
+│   │   ├── skeleton/             # 骨架屏视图组件
+│   │   │   ├── view-skeletons.tsx # 9 个视图级骨架屏组件
+│   │   │   └── view-loading.tsx  # ViewLoadingState 包装器 + 视图超时消息配置
 │   │   │
 │   │   ├── settings/             # 设置相关组件
 │   │   │   ├── api-key-dialog.tsx
@@ -159,7 +166,8 @@ agentclaw/
 │   │   │   ├── use-theme.ts      # 主题切换 hook
 │   │   │   ├── use-focus-trap.ts # 焦点陷阱与焦点转移 hook
 │   │   │   ├── use-route-focus.ts # 路由切换焦点管理 hook
-│   │   │   └── use-security-gate.ts # 安全网关 hook（审核/生成 diff）
+│   │   │   ├── use-security-gate.ts # 安全网关 hook（审核/生成 diff）
+│   │   │   └── use-skeleton.ts    # 加载状态 hook（闪烁阈值 + 超时控制）
 │   │   └── commands/
 │   │       ├── index.ts           # 统一导出 + builtins 自动注册
 │   │       ├── types.ts           # 命令类型定义（CommandDefinition, ParsedCommand 等）

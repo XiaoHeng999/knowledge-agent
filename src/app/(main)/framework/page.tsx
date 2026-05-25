@@ -9,7 +9,7 @@ import { DecisionRecordCard } from '@/components/framework/decision-record-card'
 import { DomainSummaryPanel } from '@/components/framework/domain-summary-panel';
 import { MemoryLayerBar } from '@/components/framework/memory-layer-bar';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ViewLoadingState } from '@/components/skeleton/view-loading';
 
 type TabKey = 'analysis' | 'decisions' | 'summary';
 
@@ -106,6 +106,12 @@ export default function FrameworkPage() {
   ];
 
   return (
+    <ViewLoadingState
+      view="research"
+      isLoading={loading && analysisResults.length === 0 && decisions.length === 0}
+      onRetry={() => { if (selectedDomainId) { fetchResults(selectedDomainId); fetchDecisions(selectedDomainId); } }}
+      onCancel={() => {}}
+    >
     <div className="framework-page">
       <div className="framework-page__header">
         <div className="framework-page__header-left">
@@ -194,13 +200,7 @@ export default function FrameworkPage() {
             description="Choose a domain from the dropdown to run framework analyses."
           />
         ) : activeTab === 'analysis' ? (
-          loading && analysisResults.length === 0 ? (
-            <div className="framework-page__skeleton">
-              {Array.from({ length: 3 }, (_, i) => (
-                <Skeleton key={i} variant="card" />
-              ))}
-            </div>
-          ) : analysisResults.length === 0 ? (
+          analysisResults.length === 0 ? (
             <EmptyState
               icon={
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -220,13 +220,7 @@ export default function FrameworkPage() {
             ))
           )
         ) : activeTab === 'decisions' ? (
-          loading && decisions.length === 0 ? (
-            <div className="framework-page__skeleton">
-              {Array.from({ length: 3 }, (_, i) => (
-                <Skeleton key={i} variant="card" />
-              ))}
-            </div>
-          ) : decisions.length === 0 ? (
+          decisions.length === 0 ? (
             <EmptyState
               icon={
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -262,5 +256,6 @@ export default function FrameworkPage() {
         )}
       </div>
     </div>
+    </ViewLoadingState>
   );
 }

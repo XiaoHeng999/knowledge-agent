@@ -5,7 +5,7 @@ import { useIpcQuery } from '@/lib/hooks/use-ipc';
 import type { InboxListResponse, InboxStatsResponse, DomainListResponse, InboxSuggestDomainsResponse, DomainSuggestion } from '@/lib/ipc/channels';
 import { InboxItemCard } from '@/components/inbox/inbox-item';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ViewLoadingState } from '@/components/skeleton/view-loading';
 
 type FilterStatus = 'pending' | 'processed' | 'rejected';
 
@@ -92,41 +92,41 @@ export default function InboxPage() {
   );
 
   return (
-    <div className="inbox-page">
-      <div className="inbox-page__header">
-        <h1 className="inbox-page__title">Inbox</h1>
-        <span className="inbox-page__count">{pendingCount} pending</span>
-      </div>
+    <ViewLoadingState
+      view="inbox"
+      isLoading={loading && items.length === 0}
+      onRetry={refresh}
+      onCancel={() => setFilter('pending')}
+    >
+      <div className="inbox-page">
+        <div className="inbox-page__header">
+          <h1 className="inbox-page__title">Inbox</h1>
+          <span className="inbox-page__count">{pendingCount} pending</span>
+        </div>
 
-      <div className="inbox-page__filters">
-        <button
-          className={`inbox-page__filter-btn ${filter === 'pending' ? 'inbox-page__filter-btn--active' : ''}`}
-          onClick={() => { setFilter('pending'); setPage(1); }}
-        >
-          Pending {pendingCount > 0 && <span className="inbox-page__filter-badge">{pendingCount}</span>}
-        </button>
-        <button
-          className={`inbox-page__filter-btn ${filter === 'processed' ? 'inbox-page__filter-btn--active' : ''}`}
-          onClick={() => { setFilter('processed'); setPage(1); }}
-        >
-          Processed {processedCount > 0 && <span className="inbox-page__filter-badge">{processedCount}</span>}
-        </button>
-        <button
-          className={`inbox-page__filter-btn ${filter === 'rejected' ? 'inbox-page__filter-btn--active' : ''}`}
-          onClick={() => { setFilter('rejected'); setPage(1); }}
-        >
-          Rejected {rejectedCount > 0 && <span className="inbox-page__filter-badge">{rejectedCount}</span>}
-        </button>
-      </div>
+        <div className="inbox-page__filters">
+          <button
+            className={`inbox-page__filter-btn ${filter === 'pending' ? 'inbox-page__filter-btn--active' : ''}`}
+            onClick={() => { setFilter('pending'); setPage(1); }}
+          >
+            Pending {pendingCount > 0 && <span className="inbox-page__filter-badge">{pendingCount}</span>}
+          </button>
+          <button
+            className={`inbox-page__filter-btn ${filter === 'processed' ? 'inbox-page__filter-btn--active' : ''}`}
+            onClick={() => { setFilter('processed'); setPage(1); }}
+          >
+            Processed {processedCount > 0 && <span className="inbox-page__filter-badge">{processedCount}</span>}
+          </button>
+          <button
+            className={`inbox-page__filter-btn ${filter === 'rejected' ? 'inbox-page__filter-btn--active' : ''}`}
+            onClick={() => { setFilter('rejected'); setPage(1); }}
+          >
+            Rejected {rejectedCount > 0 && <span className="inbox-page__filter-badge">{rejectedCount}</span>}
+          </button>
+        </div>
 
-      <div className="inbox-page__list">
-        {loading && items.length === 0 ? (
-          <div className="inbox-page__skeleton">
-            {Array.from({ length: 5 }, (_, i) => (
-              <Skeleton key={i} variant="card" />
-            ))}
-          </div>
-        ) : items.length === 0 ? (
+        <div className="inbox-page__list">
+          {items.length === 0 ? (
           <EmptyState
             icon={
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -184,5 +184,6 @@ export default function InboxPage() {
         </div>
       )}
     </div>
+    </ViewLoadingState>
   );
 }

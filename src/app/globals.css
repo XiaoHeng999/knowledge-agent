@@ -3562,6 +3562,286 @@ body {
   gap: var(--spacing-sm);
 }
 
+.ui-skeleton-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.ui-skeleton-section {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Skeleton view layouts */
+.sk-dashboard__row {
+  display: flex;
+  gap: var(--spacing-md);
+}
+.sk-dashboard__overview {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+.sk-dashboard__inbox-summary {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+.sk-dashboard__activity,
+.sk-dashboard__decisions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.sk-knowledge__card {
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sk-timeline__events {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+.sk-timeline__event {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+.sk-timeline__separator {
+  border-top: 1px dashed var(--border);
+  margin: var(--spacing-xs) 0;
+}
+
+.sk-research__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+.sk-research__finding-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sk-chat__messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  min-height: 200px;
+}
+.sk-chat__msg {
+  display: flex;
+  flex-direction: column;
+}
+.sk-chat__msg--ai {
+  align-items: flex-start;
+}
+.sk-chat__msg--user {
+  align-items: flex-end;
+}
+.sk-chat__msg--user .ui-skeleton {
+  background: var(--surface);
+}
+.sk-chat__input {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.sk-inbox__item {
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sk-graph__canvas {
+  position: relative;
+  min-height: 300px;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sk-graph__node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.sk-graph__node--center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.sk-graph__node--left {
+  top: 40%;
+  left: 18%;
+}
+.sk-graph__node--right {
+  top: 35%;
+  right: 18%;
+}
+.sk-graph__node--bottom-left {
+  bottom: 20%;
+  left: 25%;
+}
+.sk-graph__node--bottom-right {
+  bottom: 22%;
+  right: 22%;
+}
+.sk-graph__connections {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sk-settings__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Loading timeout */
+.ui-loading-timeout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  text-align: center;
+  gap: var(--spacing-md);
+}
+.ui-loading-timeout__icon {
+  color: var(--text-tertiary);
+  opacity: 0.6;
+}
+.ui-loading-timeout__headline {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+.ui-loading-timeout__desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  max-width: 360px;
+  line-height: 1.5;
+}
+.ui-loading-timeout__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+.ui-loading-timeout__retry,
+.ui-loading-timeout__cancel {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.ui-loading-timeout__retry {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-color: var(--accent);
+}
+.ui-loading-timeout__retry:hover {
+  opacity: 0.9;
+}
+.ui-loading-timeout__cancel {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.ui-loading-timeout__cancel:hover {
+  background: var(--surface);
+}
+.ui-loading-timeout__elapsed {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin-top: var(--spacing-xs);
+}
+
+/* First-launch loading animation */
+.ui-launch-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-2xl);
+  animation: anim-fade-in 300ms ease-out;
+}
+.ui-launch-loader__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+.ui-launch-loader__text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.ui-launch-loader__bar {
+  width: 200px;
+  height: 3px;
+  background: var(--surface);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ui-launch-loader__bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: sk-launch-progress 2.5s ease-in-out forwards;
+}
+@keyframes sk-launch-progress {
+  0% { width: 0%; }
+  20% { width: 30%; }
+  60% { width: 70%; }
+  90% { width: 90%; }
+  100% { width: 100%; }
+}
+
+/* Fade-in transition for content after skeleton */
+.anim-fade-in {
+  animation: fadeIn 200ms ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ui-skeleton {
+    animation: none;
+    opacity: 0.7;
+  }
+  .ui-launch-loader__spinner {
+    animation: none;
+    opacity: 0.7;
+  }
+  .ui-launch-loader__bar-fill {
+    animation: none;
+    width: 100%;
+  }
+  .anim-fade-in {
+    animation: none;
+  }
+}
+
 /* =========================================================================
    UI Components — Badge
    ========================================================================= */
