@@ -8355,3 +8355,87 @@ input[type="radio"],
   color: var(--text-primary);
   font-weight: 500;
 }
+
+/* ========================================================================= */
+/* Update Notification                                                       */
+/* ========================================================================= */
+
+.update-notification {
+  position: fixed;
+  bottom: calc(var(--statusbar-height) + var(--spacing-md));
+  right: var(--spacing-md);
+  z-index: 9998;
+  animation: slide-up 200ms ease;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .update-notification { animation: none; }
+}
+
+.update-notification__content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  flex-wrap: wrap;
+}
+
+.update-notification__text {
+  color: var(--text-primary);
+}
+
+.update-notification__btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background var(--transition-fast);
+}
+
+.update-notification__btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.update-notification__btn--primary:hover {
+  background: var(--accent-hover);
+}
+
+.update-notification__btn--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.update-notification__btn--ghost:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.update-notification__progress {
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.update-notification__progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+  transition: width 300ms ease;
+}

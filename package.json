@@ -12,6 +12,10 @@
     "build:electron": "tsc -p electron/tsconfig.json",
     "pack": "npm run build && electron-builder --dir",
     "dist": "npm run build && electron-builder",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:win": "npm run build && electron-builder --win",
+    "build:linux": "npm run build && electron-builder --linux",
+    "build:all": "npm run build && electron-builder --mac --win --linux",
     "lint": "next lint",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json"
   },
@@ -20,6 +24,7 @@
     "@mozilla/readability": "^0.6.0",
     "better-sqlite3": "^11.7.0",
     "d3": "^7.9.0",
+    "electron-updater": "^6.8.3",
     "fast-xml-parser": "^5.8.0",
     "gray-matter": "^4.0.3",
     "jsdom": "^29.1.1",

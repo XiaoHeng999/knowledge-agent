@@ -176,6 +176,13 @@ export const WORKER_CHANNELS = {
   GET_STATUS: "worker:getStatus",
 } as const;
 
+export const UPDATE_CHANNELS = {
+  CHECK: "update:check",
+  DOWNLOAD: "update:download",
+  INSTALL: "update:install",
+  GET_STATUS: "update:getStatus",
+} as const;
+
 // ---------------------------------------------------------------------------
 // Domain data types (shared between request/response)
 // ---------------------------------------------------------------------------
@@ -1121,6 +1128,29 @@ export interface WorkerStatusResponse {
   isReady: boolean;
 }
 
+// --- Auto-Update ---
+export interface UpdateStatusResponse {
+  checking: boolean;
+  available: boolean;
+  downloading: boolean;
+  downloaded: boolean;
+  version: string | null;
+  error: string | null;
+}
+
+export interface UpdateCheckResponse {
+  available: boolean;
+  version: string | null;
+}
+
+export interface UpdateDownloadResponse {
+  started: boolean;
+}
+
+export interface UpdateInstallResponse {
+  started: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Channel → { request, response } type map
 // ---------------------------------------------------------------------------
@@ -1256,6 +1286,11 @@ export interface IpcChannelMap {
   [WORKER_CHANNELS.SUBMIT_TASK]: { request: WorkerSubmitTaskRequest; response: WorkerTaskStatus };
   [WORKER_CHANNELS.CANCEL_TASK]: { request: WorkerCancelTaskRequest; response: void };
   [WORKER_CHANNELS.GET_STATUS]: { request: void; response: WorkerStatusResponse };
+  // Update
+  [UPDATE_CHANNELS.CHECK]: { request: void; response: UpdateCheckResponse };
+  [UPDATE_CHANNELS.DOWNLOAD]: { request: void; response: UpdateDownloadResponse };
+  [UPDATE_CHANNELS.INSTALL]: { request: void; response: UpdateInstallResponse };
+  [UPDATE_CHANNELS.GET_STATUS]: { request: void; response: UpdateStatusResponse };
 }
 
 // ---------------------------------------------------------------------------

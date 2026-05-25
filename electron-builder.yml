@@ -2,6 +2,11 @@ appId: com.agentclaw.app
 productName: AgentClaw
 copyright: Copyright © 2024 AgentClaw
 
+publish:
+  provider: github
+  owner: agentclaw
+  repo: agentclaw
+
 directories:
   buildResources: resources
   output: release
@@ -24,6 +29,14 @@ mac:
   icon: resources/icon.icns
   hardenedRuntime: true
   gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+  artifactName: "${productName}-${version}-mac-${arch}.${ext}"
+  # Notarization — set env vars APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
+  notarize: true
+
+dmg:
+  artifactName: "${productName}-${version}-mac-${arch}.${ext}"
 
 win:
   target:
@@ -34,11 +47,18 @@ win:
       arch:
         - x64
   icon: resources/icon.ico
+  artifactName: "${productName}-${version}-Setup.${ext}"
 
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: AgentClaw
+  artifactName: "${productName}-${version}-Setup.${ext}"
+
+portable:
+  artifactName: "${productName}-${version}-Portable.${ext}"
 
 linux:
   target:
@@ -53,3 +73,20 @@ linux:
         - x64
   icon: resources/icon.png
   category: Office
+  mimeTypes:
+    - application/json
+    - text/markdown
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+
+appImage:
+  artifactName: "${productName}-${version}-${arch}.AppImage"
+
+deb:
+  depends:
+    - libnotify4
+    - libxtst6
+    - libnss3
+  artifactName: "${productName}-${version}-${arch}.deb"
+
+rpm:
+  artifactName: "${productName}-${version}-${arch}.rpm"

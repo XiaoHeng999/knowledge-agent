@@ -1,4 +1,4 @@
-import { APP_CHANNELS, DB_CHANNELS, WINDOW_CHANNELS, WORKER_CHANNELS } from "../../src/lib/ipc/channels";
+import { APP_CHANNELS, DB_CHANNELS, WINDOW_CHANNELS, WORKER_CHANNELS, UPDATE_CHANNELS } from "../../src/lib/ipc/channels";
 import { BrowserWindow } from "electron";
 import { registerHandler } from "./handler";
 import {
@@ -22,6 +22,13 @@ import { registerFrameworkHandlers as registerFrameworkHandlersFromModule } from
 import { registerTimelineHandlers as registerTimelineHandlersFromModule } from "./handlers/timeline-handler";
 import { registerSkillHandlers as registerSkillHandlersFromModule } from "./handlers/skill-handler";
 import { getWorkerBridge } from "../worker/worker-bridge";
+import {
+  initializeAutoUpdater,
+  shutdownAutoUpdater,
+  getUpdateStatus,
+  downloadUpdate,
+  quitAndInstall,
+} from "../services/auto-updater";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -188,6 +195,27 @@ function registerWindowHandlers(): void {
   });
 }
 
+function registerUpdateHandlers(): void {
+  registerHandler(UPDATE_CHANNELS.CHECK, async () => {
+    const status = getUpdateStatus();
+    return { available: status.available, version: status.version };
+  });
+
+  registerHandler(UPDATE_CHANNELS.DOWNLOAD, async () => {
+    await downloadUpdate();
+    return { started: true };
+  });
+
+  registerHandler(UPDATE_CHANNELS.INSTALL, async () => {
+    quitAndInstall();
+    return { started: true };
+  });
+
+  registerHandler(UPDATE_CHANNELS.GET_STATUS, async () => {
+    return getUpdateStatus();
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Public entry point — called once from electron/main.ts
 // ---------------------------------------------------------------------------
@@ -211,4 +239,5 @@ export function registerAllIpcHandlers(): void {
   registerSkillHandlers();
   registerWorkerHandlers();
   registerWindowHandlers();
+  registerUpdateHandlers();
 }

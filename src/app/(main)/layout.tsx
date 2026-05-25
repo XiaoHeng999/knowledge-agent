@@ -11,6 +11,7 @@ import { CommandPalette } from '@/components/cmd-palette/cmd-palette';
 import { ErrorBoundary } from '@/components/error/error-boundary';
 import { ToastProvider } from '@/components/ui/toast';
 import { LaunchLoader } from '@/components/ui/launch-loader';
+import { UpdateNotification } from '@/components/update/update-notification';
 import { useRouteFocus } from '@/lib/hooks/use-route-focus';
 
 function AppShell({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <Statusbar />
       <OnboardingOverlay />
       <CommandPalette />
+      <UpdateNotification />
     </div>
   );
 }

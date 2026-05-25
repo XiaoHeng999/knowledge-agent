@@ -8,6 +8,7 @@ import { startScheduler, stopScheduler } from "../server/services/research-sched
 import { initializeTimelineExecutor } from "../server/services/timeline-engine";
 import { initializeSkillEngine } from "../server/services/skill-engine";
 import { initializeWorker, shutdownWorker } from "../server/worker/worker-bridge";
+import { initializeAutoUpdater, shutdownAutoUpdater } from "../server/services/auto-updater";
 import { logger } from "../server/services/logger";
 
 let mainWindow: BrowserWindow | null = null;
@@ -60,6 +61,7 @@ if (!gotTheLock) {
     }
 
     startScheduler();
+    initializeAutoUpdater();
     mainWindow = createWindow();
 
     mainWindow.on("closed", () => {
@@ -82,6 +84,7 @@ if (!gotTheLock) {
   app.on("will-quit", () => {
     stopScheduler();
     shutdownWorker();
+    shutdownAutoUpdater();
     shutdownPiMono();
     shutdownDatabase();
     logger.shutdown();

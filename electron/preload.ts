@@ -201,6 +201,14 @@ const api = {
     getStatus: () => invoke("worker:getStatus"),
   },
 
+  // --- Update ---
+  update: {
+    check: () => invoke("update:check"),
+    download: () => invoke("update:download"),
+    install: () => invoke("update:install"),
+    getStatus: () => invoke("update:getStatus"),
+  },
+
   // --- Event subscription (main → renderer pushes) ---
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args);

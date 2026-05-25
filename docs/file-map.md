@@ -86,7 +86,8 @@ agentclaw/
 │   │   │   ├── knowledge-card.tsx        # 知识节点卡片
 │   │   │   ├── knowledge-detail.tsx      # 知识详情面板
 │   │   │   ├── knowledge-form.tsx        # 知识创建/编辑表单
-│   │   │   └── comprehension-indicator.tsx # 理解度指示器（0-5 圆点）
+│   │   │   ├── comprehension-indicator.tsx # 理解度指示器（0-5 圆点）
+│   │   │   └── comprehension-ring.tsx     # 理解度进度环（SVG，仪表盘用）
 │   │   │
 │   │   ├── graph/                # 知识图谱可视化
 │   │   │   ├── force-graph.tsx           # D3.js 力导向图
@@ -139,6 +140,9 @@ agentclaw/
 │   │   └── debug/                 # 调试组件（5.3）
 │   │       └── debug-panel.tsx         # 调试面板（日志 + 错误 + 性能指标）
 │   │
+│   │   └── update/                 # 自动更新组件（5.8）
+│   │       └── update-notification.tsx  # 更新通知（下载提示 + 进度 + 重启）
+│   │
 │   ├── stores/                   # Zustand 状态管理
 │   │   ├── base.ts               # persistedStorage 基础设施
 │   │   ├── app-store.ts          # 全局应用状态（视图、侧边栏、主题）
@@ -168,6 +172,7 @@ agentclaw/
 │   │   │   ├── use-route-focus.ts # 路由切换焦点管理 hook
 │   │   │   ├── use-security-gate.ts # 安全网关 hook（审核/生成 diff）
 │   │   │   └── use-skeleton.ts    # 加载状态 hook（闪烁阈值 + 超时控制）
+│   │   ├── platform.ts           # 跨平台工具（平台检测、修饰键判断）（5.8）
 │   │   └── commands/
 │   │       ├── index.ts           # 统一导出 + builtins 自动注册
 │   │       ├── types.ts           # 命令类型定义（CommandDefinition, ParsedCommand 等）
@@ -216,8 +221,8 @@ agentclaw/
 │   │
 │   ├── fs/                       # 文件系统抽象层
 │   │   ├── index.ts              # 文件系统入口
-│   │   ├── paths.ts              # 路径管理
-│   │   ├── provider.ts           # 文件系统 Provider
+│   │   ├── paths.ts              # 路径管理（跨平台：app.getPath('userData') + path.join）
+│   │   ├── provider.ts           # 文件系统 Provider（跨平台文件操作抽象）
 │   │   ├── domain-dirs.ts        # 域目录管理
 │   │   └── markdown-parser.ts    # Markdown 解析器
 │   │
@@ -253,6 +258,17 @@ agentclaw/
 │   │       ├── research-agent-extension.ts
 │   │       └── knowledge-tools-extension.ts
 │   │
+│   ├── worker/                    # Utility Process Worker（5.7）
+│   │   ├── types.ts               # 消息协议、任务类型、payload/result 接口
+│   │   ├── task-queue.ts          # 优先级队列（HIGH/NORMAL/LOW, FIFO, 100 max）
+│   │   ├── worker-process.ts      # Utility Process 入口（接收任务、执行、返回结果）
+│   │   ├── worker-bridge.ts       # 主进程桥接（submit/cancel/progress, 生命周期管理）
+│   │   └── tasks/                 # 任务处理器
+│   │       ├── embedding-task.ts  # EMBEDDING_GENERATION + BATCH_EMBEDDINGS
+│   │       ├── vector-index-task.ts # VECTOR_INDEX_BUILD
+│   │       ├── graph-layout-task.ts # GRAPH_LAYOUT_COMPUTE（力导向布局）
+│   │       └── pdf-parse-task.ts   # PDF_TEXT_EXTRACT
+│   │
 │   └── services/                 # 业务服务层
 │       ├── domain-manager.ts     # 域管理服务
 │       ├── domain-config.ts      # 域配置服务
@@ -272,6 +288,7 @@ agentclaw/
 │       ├── security-gate.ts      # 安全网关（风险评估 + 审核队列）
 │       ├── pi-mono-wrapper.ts    # Pi Mono 服务包装
 │       └── logger.ts             # 结构化日志服务（5.3：JSON 格式 + 操作成本追踪）
+│       └── auto-updater.ts       # 自动更新服务（5.8：electron-updater + GitHub Releases）
 
 ├── resources/                    # 内置资源
 │   └── skills/                   # 内置技能定义（4.5）
