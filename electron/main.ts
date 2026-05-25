@@ -7,6 +7,7 @@ import { initializePiMono, shutdownPiMono } from "../server/pi-mono/instance";
 import { startScheduler, stopScheduler } from "../server/services/research-scheduler";
 import { initializeTimelineExecutor } from "../server/services/timeline-engine";
 import { initializeSkillEngine } from "../server/services/skill-engine";
+import { initializeWorker, shutdownWorker } from "../server/worker/worker-bridge";
 import { logger } from "../server/services/logger";
 
 let mainWindow: BrowserWindow | null = null;
@@ -50,6 +51,14 @@ if (!gotTheLock) {
     registerAllIpcHandlers();
     initializeTimelineExecutor();
     initializeSkillEngine();
+
+    try {
+      await initializeWorker();
+      console.log("[Worker] Utility process initialized");
+    } catch (err) {
+      console.error("[Worker] Initialization failed:", err);
+    }
+
     startScheduler();
     mainWindow = createWindow();
 
@@ -72,6 +81,7 @@ if (!gotTheLock) {
 
   app.on("will-quit", () => {
     stopScheduler();
+    shutdownWorker();
     shutdownPiMono();
     shutdownDatabase();
     logger.shutdown();

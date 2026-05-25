@@ -170,6 +170,12 @@ export const SKILL_CHANNELS = {
   REGISTER_DOMAIN: "skill:registerDomain",
 } as const;
 
+export const WORKER_CHANNELS = {
+  SUBMIT_TASK: "worker:submitTask",
+  CANCEL_TASK: "worker:cancelTask",
+  GET_STATUS: "worker:getStatus",
+} as const;
+
 // ---------------------------------------------------------------------------
 // Domain data types (shared between request/response)
 // ---------------------------------------------------------------------------
@@ -1091,6 +1097,30 @@ export interface SkillRegisterDomainRequest {
   domainSlug: string;
 }
 
+// --- Worker ---
+export interface WorkerSubmitTaskRequest {
+  type: string;
+  priority?: "high" | "normal" | "low";
+  payload: unknown;
+  timeout?: number;
+}
+
+export interface WorkerTaskStatus {
+  taskId: string;
+  status: "submitted" | "running" | "completed" | "failed" | "cancelled";
+  progress: number;
+  message?: string;
+}
+
+export interface WorkerCancelTaskRequest {
+  taskId: string;
+}
+
+export interface WorkerStatusResponse {
+  pendingCount: number;
+  isReady: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Channel → { request, response } type map
 // ---------------------------------------------------------------------------
@@ -1222,6 +1252,10 @@ export interface IpcChannelMap {
   [SKILL_CHANNELS.METRICS]: { request: Pick<SkillMetrics, "skillId">; response: SkillMetrics };
   [SKILL_CHANNELS.RATE]: { request: SkillRateRequest; response: void };
   [SKILL_CHANNELS.REGISTER_DOMAIN]: { request: SkillRegisterDomainRequest; response: { registered: number } };
+  // Worker
+  [WORKER_CHANNELS.SUBMIT_TASK]: { request: WorkerSubmitTaskRequest; response: WorkerTaskStatus };
+  [WORKER_CHANNELS.CANCEL_TASK]: { request: WorkerCancelTaskRequest; response: void };
+  [WORKER_CHANNELS.GET_STATUS]: { request: void; response: WorkerStatusResponse };
 }
 
 // ---------------------------------------------------------------------------

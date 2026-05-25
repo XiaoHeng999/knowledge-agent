@@ -194,6 +194,13 @@ const api = {
     registerDomain: (req: ChannelRequest<"skill:registerDomain">) => invoke("skill:registerDomain", req),
   },
 
+  // --- Worker ---
+  worker: {
+    submitTask: (req: ChannelRequest<"worker:submitTask">) => invoke("worker:submitTask", req),
+    cancelTask: (req: ChannelRequest<"worker:cancelTask">) => invoke("worker:cancelTask", req),
+    getStatus: () => invoke("worker:getStatus"),
+  },
+
   // --- Event subscription (main → renderer pushes) ---
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args);

@@ -1,4 +1,4 @@
-import { APP_CHANNELS, DB_CHANNELS, WINDOW_CHANNELS } from "../../src/lib/ipc/channels";
+import { APP_CHANNELS, DB_CHANNELS, WINDOW_CHANNELS, WORKER_CHANNELS } from "../../src/lib/ipc/channels";
 import { BrowserWindow } from "electron";
 import { registerHandler } from "./handler";
 import {
@@ -21,6 +21,7 @@ import { registerImportHandlers as registerImportHandlersFromModule } from "./ha
 import { registerFrameworkHandlers as registerFrameworkHandlersFromModule } from "./handlers/framework-handler";
 import { registerTimelineHandlers as registerTimelineHandlersFromModule } from "./handlers/timeline-handler";
 import { registerSkillHandlers as registerSkillHandlersFromModule } from "./handlers/skill-handler";
+import { getWorkerBridge } from "../worker/worker-bridge";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -120,6 +121,32 @@ function registerSkillHandlers(): void {
   registerSkillHandlersFromModule();
 }
 
+function registerWorkerHandlers(): void {
+  registerHandler(WORKER_CHANNELS.SUBMIT_TASK, async (_event, req) => {
+    const bridge = getWorkerBridge();
+    const taskId = bridge.submitTask({
+      type: req.type as import("../worker/types").WorkerTaskType,
+      priority: req.priority,
+      payload: req.payload,
+      timeout: req.timeout,
+    });
+    return { taskId, status: "submitted" as const, progress: 0 };
+  });
+
+  registerHandler(WORKER_CHANNELS.CANCEL_TASK, async (_event, req) => {
+    const bridge = getWorkerBridge();
+    bridge.cancelTask(req.taskId);
+  });
+
+  registerHandler(WORKER_CHANNELS.GET_STATUS, async () => {
+    const bridge = getWorkerBridge();
+    return {
+      pendingCount: bridge.getPendingCount(),
+      isReady: true,
+    };
+  });
+}
+
 function registerVersionControlHandlers(): void {
   registerVersionControlHandlersFromModule();
 }
@@ -182,5 +209,6 @@ export function registerAllIpcHandlers(): void {
   registerFrameworkHandlers();
   registerTimelineHandlers();
   registerSkillHandlers();
+  registerWorkerHandlers();
   registerWindowHandlers();
 }

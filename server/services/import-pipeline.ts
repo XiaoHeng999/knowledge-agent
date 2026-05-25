@@ -552,7 +552,39 @@ async function processPdfImport(
 
     if (abortController.signal.aborted) throw new Error("Cancelled");
 
-    const extracted = await extractPdfText(filePath);
+    // Try worker for PDF text extraction
+    let extracted: ExtractedContent;
+    try {
+      const { getWorkerBridge } = await import("../worker/worker-bridge");
+      const bridge = getWorkerBridge();
+      const result = await bridge.submitTaskAsync<{
+        text: string;
+        pageCount: number;
+        metadata?: { title?: string; author?: string; createdAt?: string };
+      }>({
+        type: "PDF_TEXT_EXTRACT",
+        priority: "normal",
+        payload: { filePath, domainId: domainId ?? "" },
+        timeout: 120_000,
+      });
+
+      const title =
+        result.metadata?.title ||
+        result.text.split("\n").find((l: string) => l.trim().length > 5)?.trim() ||
+        `PDF Document (${result.pageCount} pages)`;
+
+      extracted = {
+        title,
+        content: result.text,
+        author: result.metadata?.author || null,
+        publishDate: result.metadata?.createdAt || null,
+        description: null,
+        contentHash: sha256(result.text),
+      };
+    } catch {
+      // Worker unavailable — fallback to direct extraction
+      extracted = await extractPdfText(filePath);
+    }
 
     if (abortController.signal.aborted) throw new Error("Cancelled");
 

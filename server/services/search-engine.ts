@@ -7,6 +7,10 @@
  *  - FTS5 (fts_knowledge table) for BM25 text search
  *  - RRF fusion to merge and re-rank results
  *  - Domain filtering + optional tag/date/source filters
+ *
+ * Worker integration:
+ *  - indexNode / reindexDomain can run via the WorkerBridge for CPU-heavy
+ *    embedding generation, falling back to direct generation if worker is busy.
  */
 import { getDatabaseService } from "../db/index";
 import type { VectorSearchResult } from "../db/vector";
@@ -84,6 +88,23 @@ export async function search(
 
 export async function indexNode(nodeId: string, content: string): Promise<void> {
   const db = getDatabaseService();
+
+  // Try worker for single embedding
+  try {
+    const { getWorkerBridge } = await import("../worker/worker-bridge");
+    const bridge = getWorkerBridge();
+    const result = await bridge.submitTaskAsync<{ vector: number[] }>({
+      type: "EMBEDDING_GENERATION",
+      priority: "high",
+      payload: { text: content, model: "hash-embedding", domainId: "", nodeId },
+      timeout: 30_000,
+    });
+    db.vectorIndex.upsert(nodeId, result.vector);
+    return;
+  } catch {
+    // Worker unavailable or timed out — fallback
+  }
+
   const embedding = await generateEmbedding(content);
   db.vectorIndex.upsert(nodeId, embedding);
 }
@@ -100,6 +121,35 @@ export async function reindexDomain(domainId: string): Promise<number> {
     limit: 10000,
     offset: 0,
   });
+
+  const nodes = nodeRows.items.map((row) => ({
+    id: row.id,
+    title: row.title,
+    content: row.content,
+    summary: row.summary,
+  }));
+
+  // Try to use worker for batch embedding generation
+  try {
+    const { getWorkerBridge } = await import("../worker/worker-bridge");
+    const bridge = getWorkerBridge();
+    const result = await bridge.submitTaskAsync<{
+      vectors: Array<{ nodeId: string; vector: number[] }>;
+      indexedCount: number;
+    }>({
+      type: "VECTOR_INDEX_BUILD",
+      priority: "normal",
+      payload: { domainId, model: "hash-embedding", nodes },
+    });
+
+    // Upsert all vectors returned by worker
+    for (const { nodeId, vector } of result.vectors) {
+      db.vectorIndex.upsert(nodeId, vector);
+    }
+    return result.indexedCount;
+  } catch {
+    // Worker unavailable — fallback to direct generation
+  }
 
   let indexed = 0;
   for (const row of nodeRows.items) {
