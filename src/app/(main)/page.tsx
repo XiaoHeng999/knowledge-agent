@@ -137,7 +137,7 @@ function DomainCard({ domain }: { domain: DomainInfo }) {
     <button
       className="dashboard-domain-card"
       style={{ '--domain-color': domain.color } as React.CSSProperties}
-      onClick={() => router.push(`/domain/${domain.id}`)}
+      onClick={() => router.push(`/domain?id=${domain.id}`)}
     >
       <div className="dashboard-domain-card__header" />
       <div className="dashboard-domain-card__body">

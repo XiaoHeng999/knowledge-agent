@@ -93,7 +93,7 @@ export function CommandPalette() {
             : getAllCommands();
 
         items = commands
-          .map((cmd, i) => {
+          .map((cmd) => {
             const match = q ? fuzzyMatch(slashMode ? q.slice(1) : q, `/${cmd.name} ${cmd.label}`) : null;
             return {
               item: {

@@ -15,7 +15,8 @@ export function registerDomainHandlers(): void {
       const db = getDatabaseService();
       const domainRow = db.domains.findById(domain.id);
       if (domainRow) {
-        await SkillEngine.registerDomainSkills(domain.id, domainRow.slug);
+        const slug = domainRow.config_path.split("/").filter(Boolean).pop() ?? "";
+        if (slug) await SkillEngine.registerDomainSkills(domain.id, slug);
       }
     } catch { /* non-critical */ }
     return domain;
@@ -52,7 +53,8 @@ export function registerDomainHandlers(): void {
       const db = getDatabaseService();
       const domainRow = db.domains.findById(req.id);
       if (domainRow) {
-        await SkillEngine.registerDomainSkills(req.id, domainRow.slug);
+        const slug = domainRow.config_path.split("/").filter(Boolean).pop() ?? "";
+        if (slug) await SkillEngine.registerDomainSkills(req.id, slug);
       }
     } catch { /* non-critical */ }
     return { config: result };

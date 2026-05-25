@@ -1,4 +1,4 @@
-/* AgentClaw Design Tokens — 33 canonical tokens */
+/* AgentClaw Design Tokens — 42 canonical tokens */
 /* Default: Tokyo Night (dark, purple-blue, high contrast) */
 
 :root {
@@ -11,7 +11,7 @@
   /* Text */
   --text-primary: #a9b1d6;
   --text-secondary: #8289ac;
-  --text-tertiary: #3b4261;
+  --text-tertiary: #565f89;
 
   /* Accent */
   --accent: #7aa2f7;

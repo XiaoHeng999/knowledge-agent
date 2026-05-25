@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { use } from "react";
 import { useChatStore } from "@/stores/chat-store";
 import { useModelStore } from "@/stores/model-store";
 import { useOnboardingStore } from "@/stores/onboarding-store";
@@ -12,9 +12,9 @@ import { NoApiKeyBlocker } from "@/components/onboarding/no-api-key-blocker";
 import { EmptyState } from "@/components/ui";
 import type { ModelInfo } from "@/lib/ipc/channels";
 
-export default function ChatPage() {
-  const searchParams = useSearchParams();
-  const domainId = searchParams.get("id");
+export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const domainId = decodeURIComponent(id);
 
   const hasApiKey = useOnboardingStore((s) => s.hasApiKey);
   const setHasApiKey = useOnboardingStore((s) => s.setHasApiKey);

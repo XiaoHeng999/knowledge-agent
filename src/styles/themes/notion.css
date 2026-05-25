@@ -10,12 +10,12 @@
   /* Text */
   --text-primary: #37352f;
   --text-secondary: #6d6c69;
-  --text-tertiary: #b4b4b0;
+  --text-tertiary: #9b9b97;
 
   /* Accent */
-  --accent: #1e8ab8;
-  --accent-hover: #1778a5;
-  --accent-muted: rgba(46, 170, 220, 0.12);
+  --accent: #2eaadc;
+  --accent-hover: #1e8ab8;
+  --accent-muted: rgba(46, 170, 220, 0.15);
 
   /* Status */
   --error: #eb5757;

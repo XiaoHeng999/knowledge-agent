@@ -1,0 +1,41 @@
+/* Style Pack: PostHog — Vibrant, data-driven, yellow-accented (Dark) */
+
+:root[data-theme="posthog"] {
+  /* Background */
+  --bg-primary: #1c1c2e;
+  --bg-secondary: #151526;
+  --bg-tertiary: #252540;
+  --surface: #2a2a3e;
+
+  /* Text */
+  --text-primary: #f0f0f0;
+  --text-secondary: #a0a0b0;
+  --text-tertiary: #7a7a8e;
+
+  /* Accent */
+  --accent: #f9bd2b;
+  --accent-hover: #f5a623;
+  --accent-muted: rgba(249, 189, 43, 0.15);
+
+  /* Status */
+  --error: #ff5c5c;
+  --warning: #f9bd2b;
+  --success: #2dba4e;
+  --info: #6c9bf2;
+
+  /* Border */
+  --border: #2e2e44;
+  --border-hover: #3e3e54;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.5);
+
+  /* Typography */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 18px;
+}

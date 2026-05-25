@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useDomainStore } from '@/stores/domain-store';
 import { useAppStore } from '@/stores/app-store';
 import { CreateDomainDialog } from './create-domain-dialog';
@@ -12,6 +13,7 @@ interface DomainListProps {
 }
 
 export function DomainList({ collapsed, onDomainSelect }: DomainListProps) {
+  const router = useRouter();
   const domains = useDomainStore((s) => s.domains);
   const currentDomainId = useDomainStore((s) => s.currentDomainId);
   const loading = useDomainStore((s) => s.loading);
@@ -28,9 +30,10 @@ export function DomainList({ collapsed, onDomainSelect }: DomainListProps) {
     (domain: DomainInfo) => {
       setCurrentDomain(domain.id);
       setAppCurrentDomain(domain.id);
+      router.push(`/domain?id=${domain.id}`);
       onDomainSelect?.(domain);
     },
-    [setCurrentDomain, setAppCurrentDomain, onDomainSelect],
+    [setCurrentDomain, setAppCurrentDomain, router, onDomainSelect],
   );
 
   const handleCreated = useCallback(

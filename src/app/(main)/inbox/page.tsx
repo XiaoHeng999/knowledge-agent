@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useIpcQuery } from '@/lib/hooks/use-ipc';
-import type { InboxListResponse, InboxStatsResponse, DomainListResponse, InboxSuggestDomainsResponse, DomainSuggestion } from '@/lib/ipc/channels';
+import type { InboxListResponse, InboxStatsResponse, DomainListResponse, DomainSuggestion } from '@/lib/ipc/channels';
 import { InboxItemCard } from '@/components/inbox/inbox-item';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ViewLoadingState } from '@/components/skeleton/view-loading';
@@ -98,7 +98,7 @@ export default function InboxPage() {
       onRetry={refresh}
       onCancel={() => setFilter('pending')}
     >
-      <div className="inbox-page">
+      <div className="inbox-page" data-suggestions-v={suggestionsVersion}>
         <div className="inbox-page__header">
           <h1 className="inbox-page__title">Inbox</h1>
           <span className="inbox-page__count">{pendingCount} pending</span>

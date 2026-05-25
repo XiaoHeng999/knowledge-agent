@@ -77,6 +77,25 @@ export function Sidebar() {
             </svg>
             <span>Research</span>
           </button>
+          <button className="sidebar__action-btn" aria-label="Inbox" onClick={() => router.push('/inbox')}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <rect x="1" y="8" width="14" height="7" rx="1.5" />
+              <path d="M4 8V3a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v5" />
+              <path d="M6 11h4" strokeLinecap="round" />
+            </svg>
+            <span>Inbox</span>
+          </button>
+          <button className="sidebar__action-btn" aria-label="Timeline" onClick={() => router.push('/timeline')}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <circle cx="3" cy="3" r="1.5" fill="currentColor" />
+              <line x1="6" y1="3" x2="15" y2="3" />
+              <circle cx="3" cy="8" r="1.5" fill="currentColor" />
+              <line x1="6" y1="8" x2="15" y2="8" />
+              <circle cx="3" cy="13" r="1.5" fill="currentColor" />
+              <line x1="6" y1="13" x2="15" y2="13" />
+            </svg>
+            <span>Timeline</span>
+          </button>
           <button className="sidebar__action-btn" aria-label="Frameworks" onClick={() => router.push('/framework')}>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2">
               <rect x="1" y="1" width="5" height="5" rx="1" />

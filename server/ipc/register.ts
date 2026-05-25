@@ -1,4 +1,4 @@
-import { APP_CHANNELS, DB_CHANNELS, WINDOW_CHANNELS, WORKER_CHANNELS, UPDATE_CHANNELS } from "../../src/lib/ipc/channels";
+import { APP_CHANNELS, DB_CHANNELS, WINDOW_CHANNELS, WORKER_CHANNELS, UPDATE_CHANNELS, SETTINGS_CHANNELS } from "../../src/lib/ipc/channels";
 import { BrowserWindow } from "electron";
 import { registerHandler } from "./handler";
 import {
@@ -109,7 +109,27 @@ function registerResearchHandlers(): void {
 }
 
 function registerSettingsHandlers(): void {
-  // TODO: task 2.4.x
+  registerHandler(SETTINGS_CHANNELS.GET, async (_event, req) => {
+    const db = getDatabaseService();
+    const row = db.db.prepare("SELECT value FROM settings WHERE key = ?").get(req.key) as { value: string } | undefined;
+    return row?.value ?? null;
+  });
+
+  registerHandler(SETTINGS_CHANNELS.SET, async (_event, req) => {
+    const db = getDatabaseService();
+    db.db.prepare("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))").run(req.key, JSON.stringify(req.value));
+  });
+
+  registerHandler(SETTINGS_CHANNELS.GET_THEME, async () => {
+    const db = getDatabaseService();
+    const row = db.db.prepare("SELECT value FROM settings WHERE key = 'theme'").get() as { value: string } | undefined;
+    return row?.value ?? "tokyo-night";
+  });
+
+  registerHandler(SETTINGS_CHANNELS.SET_THEME, async (_event, req) => {
+    const db = getDatabaseService();
+    db.db.prepare("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('theme', ?, datetime('now'))").run(JSON.stringify(req.value));
+  });
 }
 
 function registerImportHandlers(): void {

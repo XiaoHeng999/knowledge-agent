@@ -389,7 +389,7 @@ export async function executeSkill(
     output: status === "completed" ? output : null,
     errorMessage,
     startedAt,
-    completedAt: status !== "running" ? new Date().toISOString() : null,
+    completedAt: new Date().toISOString(),
     costUsd,
   };
 }
