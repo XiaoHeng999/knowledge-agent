@@ -11,7 +11,7 @@ export type AppView =
   | 'inbox'
   | 'settings';
 
-export type AppTheme = 'linear' | 'cursor' | 'notion' | 'posthog';
+export type AppTheme = 'tokyo-night' | 'linear' | 'cursor' | 'notion' | 'posthog';
 
 interface AppState {
   currentDomainId: string | null;
@@ -35,7 +35,7 @@ export const useAppStore = create<AppState & AppActions>()(
     (set) => ({
       currentDomainId: null,
       currentView: 'dashboard',
-      theme: 'linear',
+      theme: 'tokyo-night',
       sidebarCollapsed: false,
       commandPaletteOpen: false,
 

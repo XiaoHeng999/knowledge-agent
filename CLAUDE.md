@@ -14,6 +14,7 @@ AgentClaw 是一个基于 Agent 的智能知识库应用，核心理念是"理�
 
 | 任务类型 | 文档路径 |
 |---|---|
+| 定位目标文件、理解项目结构 | **先看** `docs/file-map.md` |
 | UI/UX / 页面布局设计 | `docs/projection_design_planning/UI-UX-design-v2.md` |
 | Agent 架构 / 需求设计 | `docs/projection_design_planning/agent-claw-v2.md` |
 | 代码编写或任务拆分有疑问 | 先看 `docs/projection_design_planning/after-review-plan.md` |
@@ -26,6 +27,10 @@ AgentClaw 是一个基于 Agent 的智能知识库应用，核心理念是"理�
 ### 通用规范
 
 - 使用 TypeScript，禁止 `any` 类型（泛型除外）
+
+### 文件规模
+
+- 当文件超过 **700 行**时，检查是否承担了多个职责，考虑拆分。纯类型定义、常量映射等声明性文件不受此约束。
 
 ### React / Next.js 规范
 
@@ -78,3 +83,4 @@ npm run typecheck
 2. 每完成一个小功能就进行 git commit，消息使用英文，格式如 `feat: add xxx` 或 `fix: resolve xxx`，与通用规范中的"提交信息使用英文"保持一致。
 3. 执行 `git add` 时，不要将 `openspec/`、`docs/`、`out/` 目录下的文件加入暂存区
 4. 编码完成后运行项目，验证核心功能可正常工作，控制台无明显报错。
+5. 编码过程中如果发生了文件结构变化（新增/删除/重命名文件、新增目录、IPC 链路变化），需同步更新 `docs/file-map.md`；仅修改文件内部逻辑不需要更新。
