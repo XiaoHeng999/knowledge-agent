@@ -221,6 +221,8 @@ agentclaw/
 │   │
 │   ├── fs/                       # 文件系统抽象层
 │   │   ├── index.ts              # 文件系统入口
+│   ├── lib/                      # 服务端共享工具
+│   │   └── lru-cache.ts          # LRU 缓存（搜索结果、嵌入缓存）
 │   │   ├── paths.ts              # 路径管理（跨平台：app.getPath('userData') + path.join）
 │   │   ├── provider.ts           # 文件系统 Provider（跨平台文件操作抽象）
 │   │   ├── domain-dirs.ts        # 域目录管理

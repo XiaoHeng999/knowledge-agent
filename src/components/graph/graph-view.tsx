@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKnowledgeStore } from '@/stores/knowledge-store';
 import { useDomainStore } from '@/stores/domain-store';
@@ -10,9 +10,15 @@ import { KnowledgeDetail } from '@/components/knowledge/knowledge-detail';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
-import { ForceGraph } from './force-graph';
-import { WebGLGraph } from './webgl-graph';
 import { GraphControlPanel, type LayoutMode, type GraphFilters } from './graph-controls';
+
+// Lazy-load heavy graph renderers — they are only needed when viewing the graph tab
+const ForceGraph = lazy(() =>
+  import('./force-graph').then((m) => ({ default: m.ForceGraph }))
+);
+const WebGLGraph = lazy(() =>
+  import('./webgl-graph').then((m) => ({ default: m.WebGLGraph }))
+);
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -182,34 +188,44 @@ export function GraphView() {
               title="No knowledge nodes"
               description="Add knowledge to this domain to see the graph visualization."
             />
-          ) : useWebGL ? (
-            <div
-              role="img"
-              aria-label={`Knowledge graph visualization showing ${filteredNodes.length} nodes and ${filteredEdges.length} connections. Use list view for keyboard-accessible browsing.`}
-            >
-              <svg aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0 }} />
-              <WebGLGraph
-                nodes={filteredNodes}
-                edges={filteredEdges}
-                domainColor={currentDomain?.color}
-                onNodeClick={handleNodeClick}
-                selectedNodeId={selectedNodeId}
-              />
-            </div>
           ) : (
-            <div
-              role="img"
-              aria-label={`Knowledge graph visualization showing ${filteredNodes.length} nodes and ${filteredEdges.length} connections. Use list view for keyboard-accessible browsing.`}
+            <Suspense
+              fallback={
+                <div className="graph-view__loading" role="status" aria-label="Loading graph renderer">
+                  <Skeleton height="100%" width="100%" radius={6} />
+                </div>
+              }
             >
-              <svg aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0 }} />
-              <ForceGraph
-              nodes={filteredNodes}
-              edges={filteredEdges}
-              domainColor={currentDomain?.color}
-              onNodeClick={handleNodeClick}
-              selectedNodeId={selectedNodeId}
-            />
-            </div>
+              {useWebGL ? (
+                <div
+                  role="img"
+                  aria-label={`Knowledge graph visualization showing ${filteredNodes.length} nodes and ${filteredEdges.length} connections. Use list view for keyboard-accessible browsing.`}
+                >
+                  <svg aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0 }} />
+                  <WebGLGraph
+                    nodes={filteredNodes}
+                    edges={filteredEdges}
+                    domainColor={currentDomain?.color}
+                    onNodeClick={handleNodeClick}
+                    selectedNodeId={selectedNodeId}
+                  />
+                </div>
+              ) : (
+                <div
+                  role="img"
+                  aria-label={`Knowledge graph visualization showing ${filteredNodes.length} nodes and ${filteredEdges.length} connections. Use list view for keyboard-accessible browsing.`}
+                >
+                  <svg aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0 }} />
+                  <ForceGraph
+                    nodes={filteredNodes}
+                    edges={filteredEdges}
+                    domainColor={currentDomain?.color}
+                    onNodeClick={handleNodeClick}
+                    selectedNodeId={selectedNodeId}
+                  />
+                </div>
+              )}
+            </Suspense>
           )}
           <div className="graph-view__a11y-notice" role="note">
             <a href="#" onClick={(e) => { e.preventDefault(); setViewMode('list'); }}>

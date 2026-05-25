@@ -1,14 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
-import * as d3 from 'd3';
+import { select } from 'd3-selection';
+import { zoom as d3Zoom, zoomIdentity } from 'd3-zoom';
+import { drag as d3Drag } from 'd3-drag';
+import {
+  forceSimulation,
+  forceLink,
+  forceManyBody,
+  forceCenter,
+  forceCollide,
+} from 'd3-force';
+import type { SimulationNodeDatum, SimulationLinkDatum } from 'd3-force';
 import type { KnowledgeNode, KnowledgeEdge } from '@/lib/ipc/channels';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export interface SimNode extends d3.SimulationNodeDatum {
+export interface SimNode extends SimulationNodeDatum {
   id: string;
   title: string;
   type: string;
@@ -18,7 +28,7 @@ export interface SimNode extends d3.SimulationNodeDatum {
   connectionCount: number;
 }
 
-export interface SimEdge extends d3.SimulationLinkDatum<SimNode> {
+export interface SimEdge extends SimulationLinkDatum<SimNode> {
   weight: number;
   edgeType: string;
 }
@@ -120,7 +130,7 @@ function GraphTooltip({ data }: { data: TooltipData }) {
 }
 
 // ---------------------------------------------------------------------------
-// ForceGraph component
+// ForceGraph component — uses D3 enter/update/exit for incremental DOM updates
 // ---------------------------------------------------------------------------
 
 export function ForceGraph({
@@ -136,7 +146,7 @@ export function ForceGraph({
 }: ForceGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const simulationRef = useRef<d3.Simulation<SimNode, SimEdge> | null>(null);
+  const simulationRef = useRef<ReturnType<typeof forceSimulation<SimNode, SimEdge>> | null>(null);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [dimensions, setDimensions] = useState({ width: propWidth ?? 800, height: propHeight ?? 600 });
 
@@ -166,87 +176,77 @@ export function ForceGraph({
     return () => observer.disconnect();
   }, [propWidth, propHeight]);
 
-  // Main D3 render
+  // Main D3 render — uses data join (enter/update/exit) instead of clearing all
   useEffect(() => {
     const svgEl = svgRef.current;
     if (!svgEl) return;
-    const svg = d3.select(svgEl);
-    svg.selectAll('*').remove();
-
+    const svg = select(svgEl);
     const { width, height } = dimensions;
     if (width < 10 || height < 10 || simNodes.length === 0) return;
 
-    // Zoom container
-    const g = svg.append('g').attr('class', 'graph-zoom-group');
+    // Ensure structure exists
+    let g = svg.select<SVGGElement>('.graph-zoom-group');
+    if (g.empty()) {
+      svg.selectAll('*').remove();
+      svg.append('defs').append('marker')
+        .attr('id', 'arrowhead')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 20)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', 'var(--text-tertiary)');
+      g = svg.append('g').attr('class', 'graph-zoom-group');
+      g.append('g').attr('class', 'graph-edges');
+      g.append('g').attr('class', 'graph-nodes');
+    }
 
-    // Arrow marker for edges
-    svg
-      .append('defs')
-      .append('marker')
-      .attr('id', 'arrowhead')
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 20)
-      .attr('refY', 0)
-      .attr('markerWidth', 6)
-      .attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', 'var(--text-tertiary)');
+    const edgeGroup = g.select<SVGGElement>('.graph-edges');
+    const nodeGroup = g.select<SVGGElement>('.graph-nodes');
 
-    // Zoom behavior
-    const zoom = d3
-      .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 4])
-      .on('zoom', (event) => {
-        g.attr('transform', event.transform);
+    // Data join for edges
+    const link = edgeGroup
+      .selectAll<SVGLineElement, SimEdge>('line')
+      .data(simEdges, (d) => {
+        const s = typeof d.source === 'string' ? d.source : (d.source as SimNode).id;
+        const t = typeof d.target === 'string' ? d.target : (d.target as SimNode).id;
+        return `${s}-${t}`;
       });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (svg as any).call(zoom);
 
-    // Center initial view
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (svg as any).call(
-      zoom.transform,
-      d3.zoomIdentity.translate(width / 2, height / 2),
-    );
+    link.exit().remove();
 
-    // Edge links
-    const link = g
-      .append('g')
-      .attr('class', 'graph-edges')
-      .selectAll('line')
-      .data(simEdges)
-      .join('line')
+    const linkEnter = link
+      .enter()
+      .append('line')
       .attr('stroke', 'var(--border-hover)')
       .attr('stroke-width', (d) => Math.max(1, d.weight * 3))
       .attr('stroke-opacity', 0.6)
       .attr('marker-end', 'url(#arrowhead)');
 
-    // Node groups
-    const node = g
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const linkAll = linkEnter.merge(link as any);
+
+    // Data join for nodes
+    const node = nodeGroup
+      .selectAll<SVGGElement, SimNode>('g.graph-node')
+      .data(simNodes, (d) => d.id);
+
+    node.exit().remove();
+
+    const nodeEnter = node
+      .enter()
       .append('g')
-      .attr('class', 'graph-nodes')
-      .selectAll<SVGGElement, SimNode>('g')
-      .data(simNodes)
-      .join('g')
       .attr('class', 'graph-node')
       .style('cursor', 'pointer');
 
-    // Node circles
-    node
-      .append('circle')
-      .attr('r', (d) => nodeRadius(d.connectionCount))
-      .attr('fill', (d) => d.domainColor)
-      .attr('stroke', 'var(--bg-primary)')
-      .attr('stroke-width', 2)
-      .attr('opacity', 0.9);
+    nodeEnter.append('circle');
 
-    // Node labels (for small graphs only)
+    // Labels only for small graphs
     if (simNodes.length <= 80) {
-      node
-        .append('text')
-        .text((d) => truncate(d.title, 16))
+      nodeEnter.append('text')
         .attr('dy', (d) => nodeRadius(d.connectionCount) + 14)
         .attr('text-anchor', 'middle')
         .attr('fill', 'var(--text-secondary)')
@@ -254,17 +254,24 @@ export function ForceGraph({
         .attr('pointer-events', 'none');
     }
 
-    // Highlight selected
-    if (selectedNodeId) {
-      node
-        .select('circle')
-        .attr('stroke', (d) => (d.id === selectedNodeId ? 'var(--accent)' : 'var(--bg-primary)'))
-        .attr('stroke-width', (d) => (d.id === selectedNodeId ? 3 : 2));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const nodeAll = nodeEnter.merge(node as any);
+
+    // Update attributes on all nodes (enter + update)
+    nodeAll
+      .select('circle')
+      .attr('r', (d) => nodeRadius(d.connectionCount))
+      .attr('fill', (d) => d.domainColor)
+      .attr('stroke', (d) => (d.id === selectedNodeId ? 'var(--accent)' : 'var(--bg-primary)'))
+      .attr('stroke-width', (d) => (d.id === selectedNodeId ? 3 : 2))
+      .attr('opacity', 0.9);
+
+    if (simNodes.length <= 80) {
+      nodeAll.select('text').text((d) => truncate(d.title, 16));
     }
 
-    // Drag
-    const drag = d3
-      .drag<SVGGElement, SimNode>()
+    // Drag behavior
+    const dragBehavior = d3Drag<SVGGElement, SimNode>()
       .on('start', (event, d) => {
         if (!event.active) simulationRef.current?.alphaTarget(0.3).restart();
         d.fx = d.x;
@@ -279,29 +286,29 @@ export function ForceGraph({
         d.fx = null;
         d.fy = null;
       });
-    node.call(drag);
+    nodeAll.call(dragBehavior);
 
     // Click
-    node.on('click', (_event, d) => {
+    nodeAll.on('click', (_event, d) => {
       onNodeClick?.(d.id);
     });
 
     // Hover → tooltip
-    node.on('mouseenter', (event, d) => {
+    nodeAll.on('mouseenter', (event, d) => {
       setTooltip({ x: event.offsetX, y: event.offsetY, node: d });
       onNodeHover?.(d.id);
-      d3.select(event.currentTarget)
+      select(event.currentTarget)
         .select('circle')
         .transition()
         .duration(150)
         .attr('stroke', 'var(--accent)')
         .attr('stroke-width', 3);
     });
-    node.on('mouseleave', (event, d) => {
+    nodeAll.on('mouseleave', (event, d) => {
       setTooltip(null);
       onNodeHover?.(null);
       const isSelected = d.id === selectedNodeId;
-      d3.select(event.currentTarget)
+      select(event.currentTarget)
         .select('circle')
         .transition()
         .duration(150)
@@ -309,26 +316,41 @@ export function ForceGraph({
         .attr('stroke-width', isSelected ? 3 : 2);
     });
 
+    // Zoom behavior — only bind once
+    if (!((svgEl as unknown) as Record<string, unknown>).__zoomBound) {
+      const zoomBehavior = d3Zoom<SVGSVGElement, unknown>()
+        .scaleExtent([0.1, 4])
+        .on('zoom', (event) => {
+          g.attr('transform', event.transform);
+        });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (svg as any).call(zoomBehavior);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (svg as any).call(
+        zoomBehavior.transform,
+        zoomIdentity.translate(width / 2, height / 2),
+      );
+      ((svgEl as unknown) as Record<string, unknown>).__zoomBound = true;
+    }
+
     // Force simulation
-    const simulation = d3
-      .forceSimulation<SimNode>(simNodes)
+    const simulation = forceSimulation<SimNode>(simNodes)
       .force(
         'link',
-        d3
-          .forceLink<SimNode, SimEdge>(simEdges)
+        forceLink<SimNode, SimEdge>(simEdges)
           .id((d) => d.id)
           .distance(80),
       )
-      .force('charge', d3.forceManyBody().strength(-200))
-      .force('center', d3.forceCenter(0, 0))
-      .force('collision', d3.forceCollide().radius((d) => nodeRadius((d as SimNode).connectionCount) + 4))
+      .force('charge', forceManyBody().strength(-200))
+      .force('center', forceCenter(0, 0))
+      .force('collision', forceCollide<SimNode>().radius((d) => nodeRadius(d.connectionCount) + 4))
       .on('tick', () => {
-        link
+        linkAll
           .attr('x1', (d) => (d.source as SimNode).x ?? 0)
           .attr('y1', (d) => (d.source as SimNode).y ?? 0)
           .attr('x2', (d) => (d.target as SimNode).x ?? 0)
           .attr('y2', (d) => (d.target as SimNode).y ?? 0);
-        node.attr('transform', (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
+        nodeAll.attr('transform', (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
       });
 
     simulationRef.current = simulation;
@@ -340,22 +362,24 @@ export function ForceGraph({
 
   // Public zoom controls
   const handleZoomIn = useCallback(() => {
-    const svg = d3.select(svgRef.current);
+    const svg = select(svgRef.current);
+    const zoomBehavior = d3Zoom<SVGSVGElement, unknown>().scaleExtent([0.1, 4]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (svg.transition().duration(300) as any).call(d3.zoom<SVGSVGElement, unknown>().scaleBy, 1.4);
+    (svg.transition().duration(300) as any).call(zoomBehavior.scaleBy, 1.4);
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    const svg = d3.select(svgRef.current);
+    const svg = select(svgRef.current);
+    const zoomBehavior = d3Zoom<SVGSVGElement, unknown>().scaleExtent([0.1, 4]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (svg.transition().duration(300) as any).call(d3.zoom<SVGSVGElement, unknown>().scaleBy, 0.7);
+    (svg.transition().duration(300) as any).call(zoomBehavior.scaleBy, 0.7);
   }, []);
 
   const handleZoomReset = useCallback(() => {
-    const svg = d3.select(svgRef.current);
-    const zoom = d3.zoom<SVGSVGElement, unknown>().scaleExtent([0.1, 4]);
+    const svg = select(svgRef.current);
+    const zoomBehavior = d3Zoom<SVGSVGElement, unknown>().scaleExtent([0.1, 4]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (svg.transition().duration(500) as any).call(zoom.transform, d3.zoomIdentity);
+    (svg.transition().duration(500) as any).call(zoomBehavior.transform, zoomIdentity);
   }, []);
 
   if (simNodes.length === 0) {

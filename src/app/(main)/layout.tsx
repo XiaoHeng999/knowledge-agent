@@ -1,18 +1,26 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { LayoutProvider } from '@/components/layout/layout-context';
 import { Titlebar } from '@/components/layout/titlebar';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Statusbar } from '@/components/layout/statusbar';
 import { DetailPanel } from '@/components/layout/detail-panel';
-import { OnboardingOverlay } from '@/components/onboarding/onboarding-overlay';
-import { CommandPalette } from '@/components/cmd-palette/cmd-palette';
 import { ErrorBoundary } from '@/components/error/error-boundary';
 import { ToastProvider } from '@/components/ui/toast';
 import { LaunchLoader } from '@/components/ui/launch-loader';
-import { UpdateNotification } from '@/components/update/update-notification';
 import { useRouteFocus } from '@/lib/hooks/use-route-focus';
+
+// Lazy-load heavy/optional components — not needed for initial paint
+const OnboardingOverlay = lazy(() =>
+  import('@/components/onboarding/onboarding-overlay').then((m) => ({ default: m.OnboardingOverlay }))
+);
+const CommandPalette = lazy(() =>
+  import('@/components/cmd-palette/cmd-palette').then((m) => ({ default: m.CommandPalette }))
+);
+const UpdateNotification = lazy(() =>
+  import('@/components/update/update-notification').then((m) => ({ default: m.UpdateNotification }))
+);
 
 function AppShell({ children }: { children: React.ReactNode }) {
   useRouteFocus();
@@ -31,9 +39,11 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <DetailPanel />
       </div>
       <Statusbar />
-      <OnboardingOverlay />
-      <CommandPalette />
-      <UpdateNotification />
+      <Suspense fallback={null}>
+        <OnboardingOverlay />
+        <CommandPalette />
+        <UpdateNotification />
+      </Suspense>
     </div>
   );
 }

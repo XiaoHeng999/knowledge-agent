@@ -20,24 +20,19 @@ export class VectorIndex {
     const row = this.db
       .prepare("SELECT rowid FROM knowledge_nodes WHERE id = ?")
       .get(nodeId) as { rowid: number } | undefined;
-
     if (!row) {
       throw new Error(`Knowledge node ${nodeId} not found — cannot upsert vector`);
     }
 
     this.db.prepare("DELETE FROM vss_nodes WHERE rowid = ?").run(row.rowid);
-
     const buf = this.embeddingToBuffer(embedding);
-    this.db
-      .prepare("INSERT INTO vss_nodes (rowid, embedding) VALUES (?, ?)")
-      .run(row.rowid, buf);
+    this.db.prepare("INSERT INTO vss_nodes (rowid, embedding) VALUES (?, ?)").run(row.rowid, buf);
   }
 
   remove(nodeId: string): void {
     const row = this.db
       .prepare("SELECT rowid FROM knowledge_nodes WHERE id = ?")
       .get(nodeId) as { rowid: number } | undefined;
-
     if (row) {
       this.db.prepare("DELETE FROM vss_nodes WHERE rowid = ?").run(row.rowid);
     }
@@ -57,23 +52,7 @@ export class VectorIndex {
       .all(buf, topK) as { rowid: number; distance: number }[];
 
     if (rows.length === 0) return [];
-
-    const rowids = rows.map((r) => r.rowid);
-    const placeholders = rowids.map(() => "?").join(",");
-
-    const nodeRows = this.db
-      .prepare(`SELECT rowid, id FROM knowledge_nodes WHERE rowid IN (${placeholders})`)
-      .all(...rowids) as { rowid: number; id: string }[];
-
-    const rowidToId = new Map(nodeRows.map((n) => [n.rowid, n.id]));
-
-    return rows
-      .map((r) => {
-        const id = rowidToId.get(r.rowid);
-        if (!id) return null;
-        return { nodeId: id, distance: r.distance };
-      })
-      .filter((r): r is VectorSearchResult => r !== null);
+    return this.resolveNodeIds(rows);
   }
 
   fullTextSearch(query: string, limit = 20): VectorSearchResult[] {
@@ -88,23 +67,7 @@ export class VectorIndex {
       .all(query, limit) as { rowid: number; rank: number }[];
 
     if (rows.length === 0) return [];
-
-    const rowids = rows.map((r) => r.rowid);
-    const placeholders = rowids.map(() => "?").join(",");
-
-    const nodeRows = this.db
-      .prepare(`SELECT rowid, id FROM knowledge_nodes WHERE rowid IN (${placeholders})`)
-      .all(...rowids) as { rowid: number; id: string }[];
-
-    const rowidToId = new Map(nodeRows.map((n) => [n.rowid, n.id]));
-
-    return rows
-      .map((r) => {
-        const id = rowidToId.get(r.rowid);
-        if (!id) return null;
-        return { nodeId: id, distance: r.rank };
-      })
-      .filter((r): r is VectorSearchResult => r !== null);
+    return this.resolveNodeIds(rows.map((r) => ({ rowid: r.rowid, distance: r.rank })));
   }
 
   hybridSearch(
@@ -130,6 +93,25 @@ export class VectorIndex {
       .map(([nodeId, score]) => ({ nodeId, distance: score }))
       .sort((a, b) => b.distance - a.distance)
       .slice(0, topK);
+  }
+
+  private resolveNodeIds(rows: Array<{ rowid: number; distance: number }>): VectorSearchResult[] {
+    const rowids = rows.map((r) => r.rowid);
+    const placeholders = rowids.map(() => "?").join(",");
+
+    const nodeRows = this.db
+      .prepare(`SELECT rowid, id FROM knowledge_nodes WHERE rowid IN (${placeholders})`)
+      .all(...rowids) as { rowid: number; id: string }[];
+
+    const rowidToId = new Map(nodeRows.map((n) => [n.rowid, n.id]));
+
+    return rows
+      .map((r) => {
+        const id = rowidToId.get(r.rowid);
+        if (!id) return null;
+        return { nodeId: id, distance: r.distance };
+      })
+      .filter((r): r is VectorSearchResult => r !== null);
   }
 
   private embeddingToBuffer(embedding: number[]): Buffer {

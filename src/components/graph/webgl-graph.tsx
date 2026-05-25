@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import type { KnowledgeNode, KnowledgeEdge } from '@/lib/ipc/channels';
 
 // ---------------------------------------------------------------------------
@@ -54,21 +54,24 @@ const TYPE_HEX: Record<string, string> = {
   question: '#ff9e64',
 };
 
-// Simple vertex/fragment shaders for point + line rendering
+// Shaders — vertex now carries color per vertex
 const VERT_SRC = `
   attribute vec2 a_position;
+  attribute vec4 a_vertColor;
   uniform vec2 u_resolution;
+  varying vec4 v_color;
   void main() {
     vec2 clip = (a_position / u_resolution) * 2.0 - 1.0;
     gl_Position = vec4(clip * vec2(1, -1), 0, 1);
+    v_color = a_vertColor;
   }
 `;
 
-const POINT_FRAG_SRC = `
+const FRAG_SRC = `
   precision mediump float;
-  uniform vec4 u_color;
+  varying vec4 v_color;
   void main() {
-    gl_FragColor = u_color;
+    gl_FragColor = v_color;
   }
 `;
 
@@ -86,7 +89,7 @@ function compileShader(gl: WebGLRenderingContext, type: number, src: string): We
 
 function createProgram(gl: WebGLRenderingContext): WebGLProgram | null {
   const vert = compileShader(gl, gl.VERTEX_SHADER, VERT_SRC);
-  const frag = compileShader(gl, gl.FRAGMENT_SHADER, POINT_FRAG_SRC);
+  const frag = compileShader(gl, gl.FRAGMENT_SHADER, FRAG_SRC);
   if (!vert || !frag) return null;
   const prog = gl.createProgram();
   if (!prog) return null;
@@ -151,6 +154,23 @@ function runSimpleLayout(
   }
 }
 
+/** Cull nodes outside the visible viewport with padding. */
+function isInViewport(
+  x: number,
+  y: number,
+  radius: number,
+  panX: number,
+  panY: number,
+  zoom: number,
+  viewW: number,
+  viewH: number,
+): boolean {
+  const sx = x * zoom + panX;
+  const sy = y * zoom + panY;
+  const pad = radius * zoom + 8;
+  return sx + pad >= 0 && sx - pad <= viewW && sy + pad >= 0 && sy - pad <= viewH;
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -168,25 +188,30 @@ export function WebGLGraph({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const panRef = useRef({ x: 0, y: 0, zoom: 1, dragging: false, lastX: 0, lastY: 0 });
-  const [dimensions, setDimensions] = useState({ width: propWidth ?? 800, height: propHeight ?? 600 });
+  const rafRef = useRef<number>(0);
+  const dimsRef = useRef({ width: propWidth ?? 800, height: propHeight ?? 600 });
+  const glRef = useRef<{ gl: WebGLRenderingContext; program: WebGLProgram; posLoc: number; colorLoc: number; resLoc: WebGLUniformLocation | null; edgeBuf: WebGLBuffer | null; nodeBuf: WebGLBuffer | null } | null>(null);
 
   const nodeColorHex = domainColor ?? '#7aa2f7';
 
   // Build layout data
-  const { glNodes, edgeIndices } = useMemo(() => {
+  const { glNodes, edgeIndices, idIndex } = useMemo(() => {
     const connCount = new Map<string, number>();
     for (const e of knowledgeEdges) {
       connCount.set(e.sourceId, (connCount.get(e.sourceId) ?? 0) + 1);
       connCount.set(e.targetId, (connCount.get(e.targetId) ?? 0) + 1);
     }
 
+    const w = dimsRef.current.width;
+    const h = dimsRef.current.height;
+
     const glNodes: WebGLNode[] = knowledgeNodes.map((n, i) => ({
       id: n.id,
       title: n.title,
       type: n.type,
       comprehensionLevel: n.comprehensionLevel,
-      x: dimensions.width / 2 + Math.cos(i * 2.399) * 200,
-      y: dimensions.height / 2 + Math.sin(i * 2.399) * 200,
+      x: w / 2 + Math.cos(i * 2.399) * 200,
+      y: h / 2 + Math.sin(i * 2.399) * 200,
       radius: Math.max(3, Math.min(12, 3 + (connCount.get(n.id) ?? 0))),
       color: hexToRgb(TYPE_HEX[n.type] ?? nodeColorHex),
       connectionCount: connCount.get(n.id) ?? 0,
@@ -197,14 +222,115 @@ export function WebGLGraph({
       .filter((e) => idIndex.has(e.sourceId) && idIndex.has(e.targetId))
       .map((e) => [idIndex.get(e.sourceId)!, idIndex.get(e.targetId)!]);
 
-    runSimpleLayout(glNodes, edgeIndices, dimensions.width, dimensions.height);
-    return { glNodes, edgeIndices };
-  }, [knowledgeNodes, knowledgeEdges, nodeColorHex, dimensions]);
+    runSimpleLayout(glNodes, edgeIndices, w, h);
+    return { glNodes, edgeIndices, idIndex };
+  }, [knowledgeNodes, knowledgeEdges, nodeColorHex]);
+
+  // Batched render using a single buffer for all edges + nodes
+  const renderGL = useCallback(() => {
+    const state = glRef.current;
+    if (!state) return;
+    const { gl, program, posLoc, colorLoc, resLoc } = state;
+    const pan = panRef.current;
+    const { width, height } = dimsRef.current;
+
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(program);
+    if (resLoc) gl.uniform2f(resLoc, width, height);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    // -- Draw all edges as one batched LINES call --
+    const edgeVerts: number[] = [];
+    for (const [ai, bi] of edgeIndices) {
+      const a = glNodes[ai];
+      const b = glNodes[bi];
+      if (
+        !isInViewport(a.x, a.y, 0, pan.x, pan.y, pan.zoom, width, height) &&
+        !isInViewport(b.x, b.y, 0, pan.x, pan.y, pan.zoom, width, height)
+      ) continue;
+      const ax = a.x * pan.zoom + pan.x;
+      const ay = a.y * pan.zoom + pan.y;
+      const bx = b.x * pan.zoom + pan.x;
+      const by = b.y * pan.zoom + pan.y;
+      // 2 vertices * 6 floats (x, y, r, g, b, a)
+      edgeVerts.push(ax, ay, 0.25, 0.27, 0.37, 0.5);
+      edgeVerts.push(bx, by, 0.25, 0.27, 0.37, 0.5);
+    }
+
+    if (edgeVerts.length > 0) {
+      const data = new Float32Array(edgeVerts);
+      if (!state.edgeBuf) state.edgeBuf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, state.edgeBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+
+      const stride = 6 * 4;
+      gl.enableVertexAttribArray(posLoc);
+      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, stride, 0);
+      gl.enableVertexAttribArray(colorLoc);
+      gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, stride, 2 * 4);
+      gl.drawArrays(gl.LINES, 0, edgeVerts.length / 6);
+    }
+
+    // -- Draw all nodes as one batched TRIANGLES call --
+    const nodeVerts: number[] = [];
+    for (const n of glNodes) {
+      if (!isInViewport(n.x, n.y, n.radius, pan.x, pan.y, pan.zoom, width, height)) continue;
+
+      const cx = n.x * pan.zoom + pan.x;
+      const cy = n.y * pan.zoom + pan.y;
+      const r = n.radius * pan.zoom;
+      const isSelected = n.id === selectedNodeId;
+      const [cr, cg, cb] = n.color;
+      const alpha = isSelected ? 1.0 : 0.85;
+      const strokeWidth = isSelected ? 2 : 1;
+
+      // Outer ring for selected
+      if (isSelected) {
+        const rs = r + strokeWidth;
+        nodeVerts.push(
+          cx - rs, cy - rs, 1, 1, 1, 1,
+          cx + rs, cy - rs, 1, 1, 1, 1,
+          cx, cy, 1, 1, 1, 1,
+          cx - rs, cy + rs, 1, 1, 1, 1,
+          cx + rs, cy + rs, 1, 1, 1, 1,
+          cx, cy, 1, 1, 1, 1,
+        );
+      }
+
+      // Node circle (two triangles)
+      nodeVerts.push(
+        cx - r, cy - r, cr, cg, cb, alpha,
+        cx + r, cy - r, cr, cg, cb, alpha,
+        cx, cy, cr, cg, cb, alpha,
+        cx - r, cy + r, cr, cg, cb, alpha,
+        cx + r, cy + r, cr, cg, cb, alpha,
+        cx, cy, cr, cg, cb, alpha,
+      );
+    }
+
+    if (nodeVerts.length > 0) {
+      const data = new Float32Array(nodeVerts);
+      if (!state.nodeBuf) state.nodeBuf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, state.nodeBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+
+      const stride = 6 * 4;
+      gl.enableVertexAttribArray(posLoc);
+      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, stride, 0);
+      gl.enableVertexAttribArray(colorLoc);
+      gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, stride, 2 * 4);
+      gl.drawArrays(gl.TRIANGLES, 0, nodeVerts.length / 6);
+    }
+  }, [glNodes, edgeIndices, selectedNodeId]);
 
   // Responsive sizing
   useEffect(() => {
     if (propWidth && propHeight) {
-      setDimensions({ width: propWidth, height: propHeight });
+      dimsRef.current = { width: propWidth, height: propHeight };
+      renderGL();
       return;
     }
     const container = containerRef.current;
@@ -212,91 +338,55 @@ export function WebGLGraph({
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
-        setDimensions({
+        dimsRef.current = {
           width: Math.floor(entry.contentRect.width),
           height: Math.floor(entry.contentRect.height),
-        });
+        };
+        renderGL();
       }
     });
     observer.observe(container);
     return () => observer.disconnect();
-  }, [propWidth, propHeight]);
+  }, [propWidth, propHeight, renderGL]);
 
-  // Render loop
+  // Initialize GL context
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const gl = canvas.getContext('webgl', { antialias: true });
     if (!gl) return;
 
-    const { width, height } = dimensions;
-    canvas.width = width * devicePixelRatio;
-    canvas.height = height * devicePixelRatio;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    gl.viewport(0, 0, canvas.width, canvas.height);
-
     const program = createProgram(gl);
     if (!program) return;
 
     const posLoc = gl.getAttribLocation(program, 'a_position');
+    const colorLoc = gl.getAttribLocation(program, 'a_vertColor');
     const resLoc = gl.getUniformLocation(program, 'u_resolution');
-    const colorLoc = gl.getUniformLocation(program, 'u_color');
 
-    gl.useProgram(program);
-    gl.uniform2f(resLoc, width, height);
+    glRef.current = { gl, program, posLoc, colorLoc, resLoc, edgeBuf: null, nodeBuf: null };
 
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    renderGL();
 
-    const pan = panRef.current;
+    return () => {
+      if (glRef.current) {
+        if (glRef.current.edgeBuf) gl.deleteBuffer(glRef.current.edgeBuf);
+        if (glRef.current.nodeBuf) gl.deleteBuffer(glRef.current.nodeBuf);
+        gl.deleteProgram(glRef.current.program);
+      }
+      glRef.current = null;
+    };
+  }, [renderGL]);
 
-    // Draw edges
-    const edgeVerts: number[] = [];
-    for (const [ai, bi] of edgeIndices) {
-      const a = glNodes[ai];
-      const b = glNodes[bi];
-      edgeVerts.push(a.x * pan.zoom + pan.x, a.y * pan.zoom + pan.y);
-      edgeVerts.push(b.x * pan.zoom + pan.x, b.y * pan.zoom + pan.y);
-    }
-    if (edgeVerts.length > 0) {
-      const buf = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(edgeVerts), gl.STATIC_DRAW);
-      gl.enableVertexAttribArray(posLoc);
-      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
-      gl.uniform4f(colorLoc, 0.25, 0.27, 0.37, 0.5);
-      gl.drawArrays(gl.LINES, 0, edgeVerts.length / 2);
-      gl.deleteBuffer(buf);
-    }
-
-    // Draw nodes (as points — each node becomes 4 triangles for a circle)
-    for (const n of glNodes) {
-      const cx = n.x * pan.zoom + pan.x;
-      const cy = n.y * pan.zoom + pan.y;
-      const r = n.radius * pan.zoom;
-      const isSelected = n.id === selectedNodeId;
-      const [cr, cg, cb] = n.color;
-      const alpha = isSelected ? 1.0 : 0.85;
-      gl.uniform4f(colorLoc, cr, cg, cb, alpha);
-
-      const verts = [
-        cx - r, cy - r,
-        cx + r, cy - r,
-        cx, cy,
-        cx - r, cy + r,
-        cx + r, cy + r,
-        cx, cy,
-      ];
-      const buf = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
-      gl.enableVertexAttribArray(posLoc);
-      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      gl.deleteBuffer(buf);
-    }
-  }, [glNodes, edgeIndices, dimensions, selectedNodeId]);
+  // Resize canvas when dimensions change
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { width, height } = dimsRef.current;
+    canvas.width = width * devicePixelRatio;
+    canvas.height = height * devicePixelRatio;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+  }, [propWidth, propHeight]);
 
   // Click → node detection
   const handleCanvasClick = useCallback(
@@ -307,8 +397,11 @@ export function WebGLGraph({
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
       const pan = panRef.current;
+      const { width, height } = dimsRef.current;
 
+      // Check visible nodes only
       for (const n of glNodes) {
+        if (!isInViewport(n.x, n.y, n.radius, pan.x, pan.y, pan.zoom, width, height)) continue;
         const nx = n.x * pan.zoom + pan.x;
         const ny = n.y * pan.zoom + pan.y;
         const r = n.radius * pan.zoom + 4;
@@ -323,7 +416,12 @@ export function WebGLGraph({
     [glNodes, onNodeClick],
   );
 
-  // Pan
+  // Pan with requestAnimationFrame
+  const scheduleRender = useCallback(() => {
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(renderGL);
+  }, [renderGL]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     panRef.current.dragging = true;
     panRef.current.lastX = e.clientX;
@@ -336,11 +434,20 @@ export function WebGLGraph({
     panRef.current.y += e.clientY - panRef.current.lastY;
     panRef.current.lastX = e.clientX;
     panRef.current.lastY = e.clientY;
-  }, []);
+    scheduleRender();
+  }, [scheduleRender]);
 
   const handleMouseUp = useCallback(() => {
     panRef.current.dragging = false;
   }, []);
+
+  // Scroll → zoom
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    panRef.current.zoom = Math.max(0.1, Math.min(10, panRef.current.zoom * delta));
+    scheduleRender();
+  }, [scheduleRender]);
 
   return (
     <div
@@ -356,6 +463,7 @@ export function WebGLGraph({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
         style={{ display: 'block', cursor: 'grab' }}
       />
     </div>

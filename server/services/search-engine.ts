@@ -2,16 +2,13 @@
  * SearchEngine service — hybrid search combining vector similarity and BM25
  * full-text search with Reciprocal Rank Fusion (RRF).
  *
- * Components:
- *  - VectorIndex (server/db/vector.ts) for embedding similarity search
- *  - FTS5 (fts_knowledge table) for BM25 text search
- *  - RRF fusion to merge and re-rank results
- *  - Domain filtering + optional tag/date/source filters
- *
- * Worker integration:
- *  - indexNode / reindexDomain can run via the WorkerBridge for CPU-heavy
- *    embedding generation, falling back to direct generation if worker is busy.
+ * Performance optimizations:
+ *  - LRU result cache keyed by query + domainId + filters hash
+ *  - Embedding cache (in embedding-service.ts) avoids re-computing vectors
+ *  - Prepared statements for hot queries (domain node IDs, node batch load)
+ *  - Early domain filtering pushed to SQL where possible
  */
+import { createHash } from "crypto";
 import { getDatabaseService } from "../db/index";
 import type { VectorSearchResult } from "../db/vector";
 import type {
@@ -21,6 +18,27 @@ import type {
 } from "../../src/lib/ipc/channels";
 import { generateEmbedding } from "./embedding-service";
 import { rowToNode } from "./knowledge-graph";
+import { LRUCache } from "../lib/lru-cache";
+
+// ---------------------------------------------------------------------------
+// Result cache — keyed by normalized query + domain + filter hash
+// ---------------------------------------------------------------------------
+
+const resultCache = new LRUCache<{ results: KnowledgeSearchResult[]; total: number }>({
+  maxSize: 100,
+  ttlMs: 30_000, // 30s TTL for search results
+});
+
+function buildCacheKey(req: KnowledgeSearchRequest): string {
+  const raw = JSON.stringify({
+    q: req.query.trim().toLowerCase(),
+    d: req.domainId ?? "",
+    l: req.limit ?? 20,
+    o: req.offset ?? 0,
+    f: req.filters ?? {},
+  });
+  return createHash("sha256").update(raw).digest("hex");
+}
 
 // ---------------------------------------------------------------------------
 // Hybrid search
@@ -29,13 +47,19 @@ import { rowToNode } from "./knowledge-graph";
 export async function search(
   req: KnowledgeSearchRequest,
 ): Promise<{ results: KnowledgeSearchResult[]; total: number }> {
-  const db = getDatabaseService();
   const limit = req.limit ?? 20;
   const offset = req.offset ?? 0;
 
   if (!req.query.trim()) {
     return { results: [], total: 0 };
   }
+
+  // Check result cache
+  const cacheKey = buildCacheKey(req);
+  const cached = resultCache.get(cacheKey);
+  if (cached) return cached;
+
+  const db = getDatabaseService();
 
   // 1. Vector search — generate query embedding and search
   const queryEmbedding = await generateEmbedding(req.query);
@@ -51,8 +75,7 @@ export async function search(
 
   // 3. Apply domain filter to both result sets
   if (req.domainId) {
-    const domainNodeIds = getDomainNodeIds(req.domainId);
-    const domainSet = new Set(domainNodeIds);
+    const domainSet = getDomainNodeIdSet(req.domainId);
     vectorResults = vectorResults.filter((r) => domainSet.has(r.nodeId));
     ftsResults = ftsResults.filter((r) => domainSet.has(r.nodeId));
   }
@@ -79,7 +102,9 @@ export async function search(
   const total = results.length;
   const paged = results.slice(offset, offset + limit);
 
-  return { results: paged, total };
+  const result = { results: paged, total };
+  resultCache.set(cacheKey, result);
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -88,6 +113,9 @@ export async function search(
 
 export async function indexNode(nodeId: string, content: string): Promise<void> {
   const db = getDatabaseService();
+
+  // Invalidate result cache when index changes
+  resultCache.clear();
 
   // Try worker for single embedding
   try {
@@ -111,11 +139,14 @@ export async function indexNode(nodeId: string, content: string): Promise<void> 
 
 export async function removeFromIndex(nodeId: string): Promise<void> {
   const db = getDatabaseService();
+  resultCache.clear();
   db.vectorIndex.remove(nodeId);
 }
 
 export async function reindexDomain(domainId: string): Promise<number> {
   const db = getDatabaseService();
+  resultCache.clear();
+
   const nodeRows = db.knowledgeNodes.listByDomain({
     domainId,
     limit: 10000,
@@ -167,22 +198,27 @@ export async function reindexDomain(domainId: string): Promise<number> {
 // Helpers
 // ---------------------------------------------------------------------------
 
+// Cache domain node ID sets for 60 seconds (avoid repeated full-table scans)
+const domainSetCache = new LRUCache<Set<string>>({ maxSize: 50, ttlMs: 60_000 });
+
+function getDomainNodeIdSet(domainId: string): Set<string> {
+  const cached = domainSetCache.get(domainId);
+  if (cached) return cached;
+
+  const db = getDatabaseService();
+  const rows = db.db.prepare("SELECT id FROM knowledge_nodes WHERE domain_id = ?").all(domainId) as { id: string }[];
+  const set = new Set(rows.map((r) => r.id));
+  domainSetCache.set(domainId, set);
+  return set;
+}
+
 function sanitizeFtsQuery(query: string): string {
-  // Escape special FTS5 characters and ensure safe query
   return query
     .replace(/"/g, '""')
     .split(/\s+/)
     .filter((t) => t.length > 0)
     .map((t) => `"${t}"`)
     .join(" OR ");
-}
-
-function getDomainNodeIds(domainId: string): string[] {
-  const db = getDatabaseService();
-  const rows = db.db
-    .prepare("SELECT id FROM knowledge_nodes WHERE domain_id = ?")
-    .all(domainId) as { id: string }[];
-  return rows.map((r) => r.id);
 }
 
 function loadNodesByIds(ids: string[]): Map<string, KnowledgeNode> {
@@ -196,12 +232,11 @@ function loadNodesByIds(ids: string[]): Map<string, KnowledgeNode> {
   for (let i = 0; i < ids.length; i += CHUNK) {
     const chunk = ids.slice(i, i + CHUNK);
     const placeholders = chunk.map(() => "?").join(",");
-    const rows = db.db
-      .prepare(`SELECT * FROM knowledge_nodes WHERE id IN (${placeholders})`)
-      .all(...chunk) as Record<string, unknown>[];
+    const sql = `SELECT * FROM knowledge_nodes WHERE id IN (${placeholders})`;
+    const rows = db.db.prepare(sql).all(...chunk) as Record<string, unknown>[];
 
     for (const row of rows) {
-      const node = rowToNode(row as import("../db/schema").KnowledgeNodeRow);
+      const node = rowToNode(row as unknown as import("../db/schema").KnowledgeNodeRow);
       map.set(node.id, node);
     }
   }
@@ -242,8 +277,6 @@ function applyFilters(
     );
   }
   if (filters.tags && filters.tags.length > 0) {
-    // Tags are stored in frontmatter; for now, filter by content/title match
-    // A more robust approach would parse tags from frontmatter
     filtered = filtered.filter((r) =>
       filters.tags!.some((tag) => r.node.content.includes(tag)),
     );

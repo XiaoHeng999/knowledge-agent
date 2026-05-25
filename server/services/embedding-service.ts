@@ -5,8 +5,12 @@
  * Default implementation uses a deterministic hash-based approach suitable
  * for offline/local use. Production deployments swap in API-backed providers
  * (e.g. OpenAI text-embedding-ada-002).
+ *
+ * Caching: LRU cache keyed by SHA-256 of input text avoids re-computing
+ * embeddings for identical content (common during reindex operations).
  */
 import { createHash } from "crypto";
+import { LRUCache } from "../lib/lru-cache";
 
 export const EMBEDDING_DIMENSION = 1536;
 
@@ -59,10 +63,17 @@ class HashEmbeddingProvider implements EmbeddingProvider {
 }
 
 // ---------------------------------------------------------------------------
-// Singleton service
+// Singleton service + caching
 // ---------------------------------------------------------------------------
 
 let currentProvider: EmbeddingProvider = new HashEmbeddingProvider();
+
+// Cache embeddings by content hash — 500 entries, 5-minute TTL
+const embeddingCache = new LRUCache<number[]>({ maxSize: 500, ttlMs: 300_000 });
+
+function contentHash(text: string): string {
+  return createHash("sha256").update(text.toLowerCase().trim()).digest("hex");
+}
 
 export function getEmbeddingProvider(): EmbeddingProvider {
   return currentProvider;
@@ -70,8 +81,15 @@ export function getEmbeddingProvider(): EmbeddingProvider {
 
 export function setEmbeddingProvider(provider: EmbeddingProvider): void {
   currentProvider = provider;
+  embeddingCache.clear();
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {
-  return currentProvider.embed(text);
+  const key = contentHash(text);
+  const cached = embeddingCache.get(key);
+  if (cached) return cached;
+
+  const embedding = await currentProvider.embed(text);
+  embeddingCache.set(key, embedding);
+  return embedding;
 }

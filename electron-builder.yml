@@ -11,10 +11,27 @@ directories:
   buildResources: resources
   output: release
 
+# ASAR archive — compresses the app source into a single file
+asar: true
+asarUnpack:
+  - "**/*.node"
+  - "**/better-sqlite3/**"
+
+# Only include what's needed in production
 files:
   - dist/**/*
   - out/**/*
   - package.json
+  - "!**/*.ts"
+  - "!**/*.map"
+  - "!**/test/**"
+  - "!**/tests/**"
+  - "!**/__tests__/**"
+  - "!**/*.spec.*"
+  - "!**/*.test.*"
+  - "!docs/**"
+  - "!openspec/**"
+  - "!resources/**"
 
 extraMetadata:
   main: dist/electron/main.js
@@ -56,6 +73,8 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: AgentClaw
   artifactName: "${productName}-${version}-Setup.${ext}"
+  # Compress installer
+  compression: lzma
 
 portable:
   artifactName: "${productName}-${version}-Portable.${ext}"
@@ -90,3 +109,6 @@ deb:
 
 rpm:
   artifactName: "${productName}-${version}-${arch}.rpm"
+
+# Compression settings for smaller packages
+compression: xz
