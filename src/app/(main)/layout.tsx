@@ -7,6 +7,8 @@ import { Statusbar } from '@/components/layout/statusbar';
 import { DetailPanel } from '@/components/layout/detail-panel';
 import { OnboardingOverlay } from '@/components/onboarding/onboarding-overlay';
 import { CommandPalette } from '@/components/cmd-palette/cmd-palette';
+import { ErrorBoundary } from '@/components/error/error-boundary';
+import { ToastProvider } from '@/components/ui/toast';
 import { useRouteFocus } from '@/lib/hooks/use-route-focus';
 
 function AppShell({ children }: { children: React.ReactNode }) {
@@ -18,7 +20,11 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <Titlebar />
       <div className="app-layout__body">
         <Sidebar />
-        <main id="main-content" className="app-layout__main" tabIndex={-1}>{children}</main>
+        <main id="main-content" className="app-layout__main" tabIndex={-1}>
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </main>
         <DetailPanel />
       </div>
       <Statusbar />
@@ -30,8 +36,10 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
-    <LayoutProvider>
-      <AppShell>{children}</AppShell>
-    </LayoutProvider>
+    <ToastProvider>
+      <LayoutProvider>
+        <AppShell>{children}</AppShell>
+      </LayoutProvider>
+    </ToastProvider>
   );
 }

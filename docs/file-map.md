@@ -14,6 +14,7 @@ agentclaw/
 ├── src/                          # 渲染进程（Next.js）
 │   ├── app/                      # Next.js App Router 页面
 │   │   ├── layout.tsx            # 根布局
+│   │   ├── error.tsx             # 全局错误边界页面（5.3）
 │   │   └── (main)/               # 主布局路由组
 │   │       ├── layout.tsx        # 三栏布局（侧边栏 + 主内容 + 详情面板）
 │   │       ├── page.tsx          # 首页
@@ -124,6 +125,13 @@ agentclaw/
 │   │       ├── guided-research.tsx
 │   │       └── no-api-key-blocker.tsx
 │   │
+│   │   ├── error/                # 错误处理组件（5.3）
+│   │   │   ├── error-boundary.tsx      # React 错误边界（捕获渲染异常）
+│   │   │   └── error-banner.tsx        # 通用错误横幅（error/warning/info 三种变体）
+│   │   │
+│   │   └── debug/                 # 调试组件（5.3）
+│   │       └── debug-panel.tsx         # 调试面板（日志 + 错误 + 性能指标）
+│   │
 │   ├── stores/                   # Zustand 状态管理
 │   │   ├── base.ts               # persistedStorage 基础设施
 │   │   ├── app-store.ts          # 全局应用状态（视图、侧边栏、主题）
@@ -140,6 +148,10 @@ agentclaw/
 │   │   └── skill-store.ts        # 技能系统状态（4.5）
 │   │
 │   ├── lib/
+│   │   ├── error/               # 错误处理基础设施（5.3）
+│   │   │   ├── index.ts              # 统一导出
+│   │   │   ├── error-registry.ts     # 错误注册表（43 个结构化错误定义）
+│   │   │   └── error-recovery.ts     # 错误恢复（重试退避 + 错误 store + 日志 store）
 │   │   ├── ipc/
 │   │   │   └── channels.ts       # IPC 通道注册表（类型安全的 channel 定义）
 │   │   ├── hooks/
@@ -250,7 +262,8 @@ agentclaw/
 │       ├── version-control.ts    # 版本控制服务
 │       ├── diff-service.ts       # Diff 生成服务（行级内容比较）
 │       ├── security-gate.ts      # 安全网关（风险评估 + 审核队列）
-│       └── pi-mono-wrapper.ts    # Pi Mono 服务包装
+│       ├── pi-mono-wrapper.ts    # Pi Mono 服务包装
+│       └── logger.ts             # 结构化日志服务（5.3：JSON 格式 + 操作成本追踪）
 
 ├── resources/                    # 内置资源
 │   └── skills/                   # 内置技能定义（4.5）

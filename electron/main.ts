@@ -7,8 +7,22 @@ import { initializePiMono, shutdownPiMono } from "../server/pi-mono/instance";
 import { startScheduler, stopScheduler } from "../server/services/research-scheduler";
 import { initializeTimelineExecutor } from "../server/services/timeline-engine";
 import { initializeSkillEngine } from "../server/services/skill-engine";
+import { logger } from "../server/services/logger";
 
 let mainWindow: BrowserWindow | null = null;
+
+// ---------------------------------------------------------------------------
+// Global error handlers — catch uncaught exceptions & unhandled rejections
+// ---------------------------------------------------------------------------
+
+process.on('uncaughtException', (error) => {
+  logger.error("main", "Uncaught exception", error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  logger.error("main", "Unhandled rejection", err);
+});
 
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -23,6 +37,7 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(async () => {
+    logger.initialize();
     initializeDatabase();
 
     try {
@@ -59,6 +74,7 @@ if (!gotTheLock) {
     stopScheduler();
     shutdownPiMono();
     shutdownDatabase();
+    logger.shutdown();
     globalShortcut.unregisterAll();
   });
 }
