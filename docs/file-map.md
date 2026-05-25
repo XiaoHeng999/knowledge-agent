@@ -25,10 +25,17 @@ agentclaw/
 │   │       │       └── page.tsx  # 专家对话页（动态路由）
 │   │       ├── inbox/
 │   │       │   └── page.tsx      # 收件箱列表（待处理/已处理/已拒绝筛选）
+│   │       ├── research/
+│   │       │   └── page.tsx      # 研究仪表盘（每日摘要 + 历史时间线 + 成本追踪）
+│   │       ├── framework/
+│   │       │   └── page.tsx      # 框架分析页（框架选择 + 结果列表 + ADR + 领域摘要）
+│   │       ├── timeline/
+│   │       │   └── page.tsx      # 时间线与预测页（垂直时间线 + 预测卡片 + 趋势分析 + 筛选）
 │   │       └── settings/         # 设置页
 │   │           ├── page.tsx      # 设置主页
 │   │           ├── models/       # 模型管理
-│   │           └── domains/      # 域管理
+│   │           ├── domains/      # 域管理
+│   │           └── skills/       # 技能管理（4.5）
 │   │
 │   ├── components/
 │   │   ├── layout/               # 布局组件
@@ -84,6 +91,17 @@ agentclaw/
 │   │   │   ├── approve-confirm.tsx       # 高风险操作确认（输入 APPROVE）
 │   │   │   └── pending-badge.tsx         # 输入区域待审核徽标
 │   │   │
+│   │   ├── research/              # 研究相关组件（4.1）
+│   │   ├── framework/             # 框架分析组件（4.3）
+│   │   │   ├── framework-result-card.tsx  # 分析结果卡片（展开/折叠）
+│   │   │   ├── decision-record-card.tsx   # ADR 决策记录卡片
+│   │   │   ├── domain-summary-panel.tsx   # 领域摘要面板
+│   │   │   └── memory-layer-bar.tsx       # 三层记忆可视化条
+│   │   ├── import/               # 导入管道组件（4.2）
+│   │   │   ├── import-dialog.tsx        # 导入对话框（URL/PDF/RSS + 进度 + 结果预览）
+│   │   │   └── import-history.tsx       # 导入历史列表（重试/取消）
+│   │   ├── timeline/              # 时间线与预测组件（4.4）
+│   │   │   └── timeline-event-card.tsx  # 时间线事件卡片 + 预测卡片 + 趋势分析 + 准确率面板
 │   │   ├── diff/                 # 版本对比组件
 │   │   │   ├── diff-viewer.tsx
 │   │   │   └── version-history.tsx
@@ -104,7 +122,12 @@ agentclaw/
 │   │   ├── knowledge-store.ts    # 知识节点/边状态
 │   │   ├── chat-store.ts         # 对话、消息、流式状态
 │   │   ├── onboarding-store.ts   # 引导流程状态
-│   │   └── security-store.ts     # 安全审核状态（待审核队列）
+│   │   ├── security-store.ts     # 安全审核状态（待审核队列）
+│   │   ├── research-store.ts     # 研究仪表盘状态（4.1）
+│   │   ├── import-store.ts       # 导入管道状态（4.2）
+│   │   └── framework-store.ts    # 框架分析状态（4.3）
+│   │   └── timeline-store.ts     # 时间线与预测状态（4.4）
+│   │   └── skill-store.ts        # 技能系统状态（4.5）
 │   │
 │   ├── lib/
 │   │   ├── ipc/
@@ -153,7 +176,11 @@ agentclaw/
 │   │       ├── timeline-entries.ts # 时间线
 │   │       ├── decision-records.ts # 决策记录
 │   │       ├── conversations.ts   # 对话 CRUD
-│   │       └── messages.ts        # 消息 CRUD（树结构查询）
+│   │       ├── messages.ts        # 消息 CRUD（树结构查询）
+│   │       └── research-runs.ts   # 研究运行 CRUD（4.1）
+│   │       ├── imports.ts          # 导入记录 CRUD（4.2）
+│   │       ├── framework-results.ts # 框架分析结果 CRUD（4.3）
+│   │       └── skills.ts           # 技能 CRUD（4.5）
 │   │
 │   ├── fs/                       # 文件系统抽象层
 │   │   ├── index.ts              # 文件系统入口
@@ -172,6 +199,11 @@ agentclaw/
 │   │       ├── chat-handler.ts          # 对话 IPC handler
 │   │       ├── search-handler.ts        # 搜索 IPC handler（混合搜索）
 │   │       ├── inbox-handler.ts         # 收件箱 IPC handler
+│   │       ├── research-handler.ts      # 研究 IPC handler（4.1）
+│   │       ├── import-handler.ts        # 导入管道 IPC handler（4.2）
+│   │       ├── framework-handler.ts     # 框架分析 IPC handler（4.3）
+│       ├── timeline-handler.ts      # 时间线与预测 IPC handler（4.4）
+│       ├── skill-handler.ts         # 技能系统 IPC handler（4.5）
 │   │       ├── security-handler.ts
 │   │       └── version-control-handler.ts
 │   │
@@ -197,11 +229,23 @@ agentclaw/
 │       ├── conversation-service.ts # 对话服务（会话管理、流式响应、领域上下文）
 │       ├── search-engine.ts      # 混合搜索引擎（向量 + BM25 + RRF）
 │       ├── inbox-processor.ts    # 收件箱处理（AI 摘要 + 领域建议 + 确认/拒绝）
+│       ├── research-scheduler.ts # 定时研究调度器（4.1：cron 调度 + Agent 执行 + 结果入库）
+│       ├── import-pipeline.ts    # 导入管道（4.2：URL/PDF/RSS 导入 + AI 摘要 + 来源追踪）
+│       ├── framework-engine.ts   # 框架分析引擎（4.3：内置框架 + ADR + 三层记忆 + 领域摘要）
+│       ├── timeline-engine.ts    # 时间线引擎（4.4：时间线CRUD + 趋势分析 + 预测生成 + 准确率追踪）
+│       ├── skill-engine.ts       # 技能引擎（4.5：SKILL.md解析 + 注册 + 执行 + 沙箱 + 效果追踪）
 │       ├── embedding-service.ts  # 嵌入向量生成服务
 │       ├── version-control.ts    # 版本控制服务
 │       ├── diff-service.ts       # Diff 生成服务（行级内容比较）
 │       ├── security-gate.ts      # 安全网关（风险评估 + 审核队列）
 │       └── pi-mono-wrapper.ts    # Pi Mono 服务包装
+
+├── resources/                    # 内置资源
+│   └── skills/                   # 内置技能定义（4.5）
+│       ├── paper-summarizer/     # 论文摘要技能
+│       ├── trend-analyzer/       # 趋势分析技能
+│       ├── connection-finder/    # 跨域连接发现技能
+│       └── domain-expert/        # 领域专家问答技能
 
 ├── docs/                         # 文档
 │   ├── projection_design_planning/  # 设计规划文档（按需查阅）

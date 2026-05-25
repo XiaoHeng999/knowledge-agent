@@ -4,10 +4,20 @@
 import { DOMAIN_CHANNELS } from "../../../src/lib/ipc/channels";
 import { registerHandler } from "../handler";
 import * as DomainManager from "../../services/domain-manager";
+import * as SkillEngine from "../../services/skill-engine";
+import { getDatabaseService } from "../../db/index";
 
 export function registerDomainHandlers(): void {
   registerHandler(DOMAIN_CHANNELS.CREATE, async (_event, req) => {
     const domain = await DomainManager.createDomain(req);
+    // Register domain-specific skills after domain creation
+    try {
+      const db = getDatabaseService();
+      const domainRow = db.domains.findById(domain.id);
+      if (domainRow) {
+        await SkillEngine.registerDomainSkills(domain.id, domainRow.slug);
+      }
+    } catch { /* non-critical */ }
     return domain;
   });
 
@@ -37,6 +47,14 @@ export function registerDomainHandlers(): void {
 
   registerHandler(DOMAIN_CHANNELS.UPDATE_CONFIG, async (_event, req) => {
     const result = await DomainManager.updateDomainConfig(req.id, req.config);
+    // Re-register domain skills after config update
+    try {
+      const db = getDatabaseService();
+      const domainRow = db.domains.findById(req.id);
+      if (domainRow) {
+        await SkillEngine.registerDomainSkills(req.id, domainRow.slug);
+      }
+    } catch { /* non-critical */ }
     return { config: result };
   });
 }

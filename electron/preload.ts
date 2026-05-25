@@ -182,6 +182,18 @@ const api = {
     getEvents: (req: ChannelRequest<"timeline:getEvents">) => invoke("timeline:getEvents", req),
   },
 
+  // --- Skill ---
+  skill: {
+    list: (req: ChannelRequest<"skill:list"> = {}) => invoke("skill:list", req),
+    get: (req: ChannelRequest<"skill:get">) => invoke("skill:get", req),
+    toggle: (req: ChannelRequest<"skill:toggle">) => invoke("skill:toggle", req),
+    execute: (req: ChannelRequest<"skill:execute">) => invoke("skill:execute", req),
+    cancel: (req: ChannelRequest<"skill:cancel">) => invoke("skill:cancel", req),
+    metrics: (req: ChannelRequest<"skill:metrics">) => invoke("skill:metrics", req),
+    rate: (req: ChannelRequest<"skill:rate">) => invoke("skill:rate", req),
+    registerDomain: (req: ChannelRequest<"skill:registerDomain">) => invoke("skill:registerDomain", req),
+  },
+
   // --- Event subscription (main → renderer pushes) ---
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args);

@@ -15,6 +15,7 @@ import { MessagesRepository } from "./repositories/messages";
 import { ResearchRunsRepository } from "./repositories/research-runs";
 import { ImportsRepository } from "./repositories/imports";
 import { FrameworkResultsRepository } from "./repositories/framework-results";
+import { SkillsRepository } from "./repositories/skills";
 import { VectorIndex } from "./vector";
 
 export interface DatabaseService {
@@ -34,6 +35,7 @@ export interface DatabaseService {
   researchRuns: ResearchRunsRepository;
   imports: ImportsRepository;
   frameworkResults: FrameworkResultsRepository;
+  skills: SkillsRepository;
   vectorIndex: VectorIndex;
 }
 
@@ -70,6 +72,7 @@ export function initializeDatabase(dbPath?: string): DatabaseService {
     researchRuns: new ResearchRunsRepository(db),
     imports: new ImportsRepository(db),
     frameworkResults: new FrameworkResultsRepository(db),
+    skills: new SkillsRepository(db),
     vectorIndex: new VectorIndex(db),
   };
 

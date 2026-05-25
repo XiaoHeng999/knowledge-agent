@@ -6,6 +6,7 @@ import { initializeDatabase, shutdownDatabase } from "../server/db/index";
 import { initializePiMono, shutdownPiMono } from "../server/pi-mono/instance";
 import { startScheduler, stopScheduler } from "../server/services/research-scheduler";
 import { initializeTimelineExecutor } from "../server/services/timeline-engine";
+import { initializeSkillEngine } from "../server/services/skill-engine";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -33,6 +34,7 @@ if (!gotTheLock) {
 
     registerAllIpcHandlers();
     initializeTimelineExecutor();
+    initializeSkillEngine();
     startScheduler();
     mainWindow = createWindow();
 
