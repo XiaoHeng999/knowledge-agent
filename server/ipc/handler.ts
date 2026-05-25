@@ -180,4 +180,16 @@ export function unregisterAll(): void {
   ipcMain.removeHandler("security:bulkResolve");
   ipcMain.removeHandler("security:getAuditLog");
   ipcMain.removeHandler("security:generateDiff");
+  // Timeline
+  ipcMain.removeHandler("timeline:listPredictions");
+  ipcMain.removeHandler("timeline:getPrediction");
+  ipcMain.removeHandler("timeline:createPrediction");
+  ipcMain.removeHandler("timeline:updatePrediction");
+  ipcMain.removeHandler("timeline:verifyPrediction");
+  ipcMain.removeHandler("timeline:deletePrediction");
+  ipcMain.removeHandler("timeline:analyzeTrends");
+  ipcMain.removeHandler("timeline:generatePredictions");
+  ipcMain.removeHandler("timeline:getAccuracy");
+  ipcMain.removeHandler("timeline:expireOverdue");
+  ipcMain.removeHandler("timeline:getEvents");
 }

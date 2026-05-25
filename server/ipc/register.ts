@@ -19,6 +19,7 @@ import { registerInboxHandlers as registerInboxHandlersFromModule } from "./hand
 import { registerResearchHandlers as registerResearchHandlersFromModule } from "./handlers/research-handler";
 import { registerImportHandlers as registerImportHandlersFromModule } from "./handlers/import-handler";
 import { registerFrameworkHandlers as registerFrameworkHandlersFromModule } from "./handlers/framework-handler";
+import { registerTimelineHandlers as registerTimelineHandlersFromModule } from "./handlers/timeline-handler";
 
 // ---------------------------------------------------------------------------
 // Placeholder handlers — will be replaced by real service handlers later.
@@ -110,6 +111,10 @@ function registerFrameworkHandlers(): void {
   registerFrameworkHandlersFromModule();
 }
 
+function registerTimelineHandlers(): void {
+  registerTimelineHandlersFromModule();
+}
+
 function registerVersionControlHandlers(): void {
   registerVersionControlHandlersFromModule();
 }
@@ -170,5 +175,6 @@ export function registerAllIpcHandlers(): void {
   registerSettingsHandlers();
   registerImportHandlers();
   registerFrameworkHandlers();
+  registerTimelineHandlers();
   registerWindowHandlers();
 }

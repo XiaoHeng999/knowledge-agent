@@ -167,6 +167,21 @@ const api = {
     retrieveRelatedDecisions: (req: ChannelRequest<"framework:retrieveRelatedDecisions">) => invoke("framework:retrieveRelatedDecisions", req),
   },
 
+  // --- Timeline ---
+  timeline: {
+    listPredictions: (req: ChannelRequest<"timeline:listPredictions">) => invoke("timeline:listPredictions", req),
+    getPrediction: (req: ChannelRequest<"timeline:getPrediction">) => invoke("timeline:getPrediction", req),
+    createPrediction: (req: ChannelRequest<"timeline:createPrediction">) => invoke("timeline:createPrediction", req),
+    updatePrediction: (req: ChannelRequest<"timeline:updatePrediction">) => invoke("timeline:updatePrediction", req),
+    verifyPrediction: (req: ChannelRequest<"timeline:verifyPrediction">) => invoke("timeline:verifyPrediction", req),
+    deletePrediction: (req: ChannelRequest<"timeline:deletePrediction">) => invoke("timeline:deletePrediction", req),
+    analyzeTrends: (req: ChannelRequest<"timeline:analyzeTrends">) => invoke("timeline:analyzeTrends", req),
+    generatePredictions: (req: ChannelRequest<"timeline:generatePredictions">) => invoke("timeline:generatePredictions", req),
+    getAccuracy: (req: ChannelRequest<"timeline:getAccuracy">) => invoke("timeline:getAccuracy", req),
+    expireOverdue: () => invoke("timeline:expireOverdue"),
+    getEvents: (req: ChannelRequest<"timeline:getEvents">) => invoke("timeline:getEvents", req),
+  },
+
   // --- Event subscription (main → renderer pushes) ---
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args);
