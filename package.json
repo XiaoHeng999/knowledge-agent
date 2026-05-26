@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "concurrently -k \"npm run dev:next\" \"npm run dev:electron\"",
     "dev:next": "next dev --turbopack",
-    "dev:electron": "tsc -p electron/tsconfig.json && electron .",
-    "build": "next build && tsc -p electron/tsconfig.json",
-    "build:electron": "tsc -p electron/tsconfig.json",
+    "dev:electron": "esbuild electron/main.ts electron/preload.ts server/worker/worker-process.ts --bundle --platform=node --outdir=dist --external:electron --external:better-sqlite3 --external:electron-updater --external:jsdom --define:import.meta.url=__import_meta_url__ --banner:js=\"var __import_meta_url__=require('url').pathToFileURL(__filename).href;\" && electron . --no-sandbox",
+    "build": "next build && esbuild electron/main.ts electron/preload.ts server/worker/worker-process.ts --bundle --platform=node --outdir=dist --external:electron --external:better-sqlite3 --external:electron-updater --external:jsdom --define:import.meta.url=__import_meta_url__ --banner:js=\"var __import_meta_url__=require('url').pathToFileURL(__filename).href;\"",
+    "build:electron": "esbuild electron/main.ts electron/preload.ts server/worker/worker-process.ts --bundle --platform=node --outdir=dist --external:electron --external:better-sqlite3 --external:electron-updater --external:jsdom --define:import.meta.url=__import_meta_url__ --banner:js=\"var __import_meta_url__=require('url').pathToFileURL(__filename).href;\"",
     "pack": "npm run build && electron-builder --dir",
     "dist": "npm run build && electron-builder",
     "build:mac": "npm run build && electron-builder --mac",
@@ -47,6 +47,7 @@
     "concurrently": "^9.1.0",
     "electron": "^33.4.11",
     "electron-builder": "^25.1.0",
+    "esbuild": "^0.28.0",
     "eslint": "^9.16.0",
     "eslint-config-next": "^15.1.0",
     "typescript": "^5.7.0"
