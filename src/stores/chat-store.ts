@@ -6,6 +6,10 @@ import type {
   StreamChunk,
 } from '@/lib/ipc/channels';
 
+// Active stream handler reference — needed so abortStream can remove the listener
+let activeStreamHandler: ((...args: unknown[]) => void) | null = null;
+let activeStreamChannel: string | null = null;
+
 interface ChatState {
   conversations: ConversationInfo[];
   currentConversationId: string | null;
@@ -21,6 +25,7 @@ interface ChatState {
   streamingMessageId: string | null;
   streamingContent: string;
   streamError: string | null;
+  streamingUserMsgId: string | null;
 
   // Branch navigation
   activeBranchPaths: Record<string, number>; // parentId → active branchIndex
@@ -58,6 +63,7 @@ export const useChatStore = create<ChatState & ChatActions>()(
     streamingMessageId: null,
     streamingContent: '',
     streamError: null,
+    streamingUserMsgId: null,
 
     activeBranchPaths: {},
     collapsedNodeIds: new Set(),
@@ -148,11 +154,13 @@ export const useChatStore = create<ChatState & ChatActions>()(
     sendMessage: async (content, modelId) => {
       const { currentConversationId } = get();
       if (!currentConversationId) return;
+      if (get().streaming) return;
 
-      set({ streaming: true, streamingContent: '', streamError: null });
+      set({ streaming: true, streamingContent: '', streamError: null, streamingUserMsgId: null });
 
       // Subscribe to stream events
       const channel = `chat:stream:${currentConversationId}`;
+      activeStreamChannel = channel;
       const handler = (...args: unknown[]) => {
         const chunk = args[1] as StreamChunk;
         const state = get();
@@ -160,6 +168,7 @@ export const useChatStore = create<ChatState & ChatActions>()(
           case 'start':
             set({
               streamingMessageId: chunk.assistantMessageId ?? null,
+              streamingUserMsgId: chunk.userMessageId ?? null,
             });
             // Add user message to local state immediately
             if (chunk.userMessageId) {
@@ -181,27 +190,26 @@ export const useChatStore = create<ChatState & ChatActions>()(
             }
             break;
           case 'token':
-            set({ streamingContent: state.streamingContent + chunk.content });
+            set((s) => ({ streamingContent: s.streamingContent + chunk.content }));
             break;
           case 'tool_call':
-            set({ streamingContent: state.streamingContent + `\n\`\`\`tool:${chunk.content}\n\`\`\`\n` });
+            set((s) => ({ streamingContent: s.streamingContent + `\n\`\`\`tool:${chunk.content}\n\`\`\`\n` }));
             break;
           case 'done': {
-            // Finalize streaming message
             const streamingId = state.streamingMessageId;
             const finalContent = state.streamingContent;
+            const userMsgId = state.streamingUserMsgId;
             set((s) => ({
               streaming: false,
               streamingMessageId: null,
               streamingContent: '',
+              streamingUserMsgId: null,
               messages: [
                 ...s.messages,
                 {
                   id: streamingId ?? '',
                   conversationId: s.currentConversationId!,
-                  parentId: chunk.messageId === streamingId
-                    ? s.messages.find((m) => m.role === 'user')?.id ?? null
-                    : null,
+                  parentId: userMsgId,
                   role: 'assistant' as const,
                   content: finalContent,
                   modelId,
@@ -215,6 +223,8 @@ export const useChatStore = create<ChatState & ChatActions>()(
             }));
             // Unsubscribe
             window.api.removeListener(channel, handler);
+            activeStreamHandler = null;
+            activeStreamChannel = null;
             break;
           }
           case 'error':
@@ -223,11 +233,14 @@ export const useChatStore = create<ChatState & ChatActions>()(
               streamError: chunk.content,
             });
             window.api.removeListener(channel, handler);
+            activeStreamHandler = null;
+            activeStreamChannel = null;
             break;
         }
       };
 
       window.api.on(channel, handler);
+      activeStreamHandler = handler;
 
       try {
         await window.api.chat.sendMessage({
@@ -237,6 +250,8 @@ export const useChatStore = create<ChatState & ChatActions>()(
         });
       } catch (err) {
         window.api.removeListener(channel, handler);
+        activeStreamHandler = null;
+        activeStreamChannel = null;
         set({
           streaming: false,
           streamError: err instanceof Error ? err.message : String(err),
@@ -247,8 +262,16 @@ export const useChatStore = create<ChatState & ChatActions>()(
     abortStream: () => {
       const { currentConversationId } = get();
       if (!currentConversationId) return;
+
+      // Remove listener before clearing state to prevent stale handler firings
+      if (activeStreamHandler && activeStreamChannel) {
+        window.api.removeListener(activeStreamChannel, activeStreamHandler);
+        activeStreamHandler = null;
+        activeStreamChannel = null;
+      }
+
       window.api.chat.abortStream({ id: currentConversationId });
-      set({ streaming: false, streamingContent: '', streamingMessageId: null });
+      set({ streaming: false, streamingContent: '', streamingMessageId: null, streamingUserMsgId: null });
     },
 
     branchFromMessage: async (parentMessageId, content) => {
@@ -279,6 +302,11 @@ export const useChatStore = create<ChatState & ChatActions>()(
     },
 
     clearCurrent: () => {
+      if (activeStreamHandler && activeStreamChannel) {
+        window.api.removeListener(activeStreamChannel, activeStreamHandler);
+        activeStreamHandler = null;
+        activeStreamChannel = null;
+      }
       set({
         currentConversationId: null,
         currentConversation: null,
