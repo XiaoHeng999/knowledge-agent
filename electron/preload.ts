@@ -2,6 +2,15 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { ChannelName, ChannelRequest, ChannelResponse } from "../src/lib/ipc/channels";
 
 // ---------------------------------------------------------------------------
+// Subscription tracking: maps (channel, originalCallback) → wrapped subscription
+// ---------------------------------------------------------------------------
+
+type IpcListener = (event: Electron.IpcRendererEvent, ...args: unknown[]) => void;
+type UserCallback = (...args: unknown[]) => void;
+
+const subscriptionMap = new Map<string, Map<UserCallback, IpcListener>>();
+
+// ---------------------------------------------------------------------------
 // Type-safe invoke wrapper
 // ---------------------------------------------------------------------------
 
@@ -210,16 +219,28 @@ const api = {
   },
 
   // --- Event subscription (main → renderer pushes) ---
-  on: (channel: string, callback: (...args: unknown[]) => void) => {
-    const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args);
+  on: (channel: string, callback: UserCallback) => {
+    const subscription: IpcListener = (_event, ...args) => callback(...args);
+    let channelMap = subscriptionMap.get(channel);
+    if (!channelMap) {
+      channelMap = new Map<UserCallback, IpcListener>();
+      subscriptionMap.set(channel, channelMap);
+    }
+    channelMap.set(callback, subscription);
     ipcRenderer.on(channel, subscription);
     return () => {
       ipcRenderer.removeListener(channel, subscription);
+      subscriptionMap.get(channel)?.delete(callback);
     };
   },
 
-  removeListener: (channel: string, callback: (...args: unknown[]) => void) => {
-    ipcRenderer.removeListener(channel, callback);
+  removeListener: (channel: string, callback: UserCallback) => {
+    const channelMap = subscriptionMap.get(channel);
+    const subscription = channelMap?.get(callback);
+    if (subscription && channelMap) {
+      ipcRenderer.removeListener(channel, subscription);
+      channelMap.delete(callback);
+    }
   },
 };
 
