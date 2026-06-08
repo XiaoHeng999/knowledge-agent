@@ -83,7 +83,7 @@ export function useIpcQuery<T>(
 // ---------------------------------------------------------------------------
 
 export interface UseIpcMutationResult<TArgs extends unknown[], TResult> {
-  /** Fire-and-forget: errors are captured to `error` state, not re-thrown. */
+  /** Errors propagate to caller; also captured in `error` state. */
   mutate: (...args: TArgs) => Promise<TResult>;
   /** Returns the promise so callers can await / catch errors themselves. */
   mutateAsync: (...args: TArgs) => Promise<TResult>;
@@ -143,8 +143,7 @@ export function useIpcMutation<TArgs extends unknown[], TResult>(
   );
 
   const mutate = useCallback(
-    (...args: TArgs): Promise<TResult> =>
-      mutateAsync(...args).catch(() => null as unknown as TResult),
+    (...args: TArgs): Promise<TResult> => mutateAsync(...args),
     [mutateAsync],
   );
 

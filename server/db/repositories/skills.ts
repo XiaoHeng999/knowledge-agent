@@ -1,6 +1,6 @@
 import type { BetterSqlite3Database } from "../connection";
 import { BaseRepository } from "./base";
-import type { SkillRow } from "../schema";
+import type { SkillRow, SkillExecutionRow } from "../schema";
 
 export class SkillsRepository extends BaseRepository<SkillRow> {
   constructor(db: BetterSqlite3Database) {
@@ -81,5 +81,27 @@ export class SkillsRepository extends BaseRepository<SkillRow> {
     const sql = `DELETE FROM skills WHERE file_path = ?`;
     const result = this.db.prepare(sql).run(filePath);
     return result.changes > 0;
+  }
+
+  insertExecution(data: Omit<SkillExecutionRow, "created_at">): void {
+    const sql = `INSERT INTO skill_executions (id, skill_id, domain_id, status, started_at, completed_at, cost_usd, error_message, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`;
+    this.db.prepare(sql).run(
+      data.id, data.skill_id, data.domain_id, data.status,
+      data.started_at, data.completed_at, data.cost_usd, data.error_message,
+    );
+  }
+
+  getAvgExecutionTimeMs(skillId: string): number | null {
+    const sql = `SELECT AVG((julianday(completed_at) - julianday(started_at)) * 86400000) AS avg_ms FROM skill_executions WHERE skill_id = ? AND status = 'completed' AND completed_at IS NOT NULL`;
+    const row = this.db.prepare(sql).get(skillId) as { avg_ms: number | null } | undefined;
+    if (!row || row.avg_ms === null) return null;
+    return Math.round(row.avg_ms);
+  }
+
+  getAvgCostUsd(skillId: string): number | null {
+    const sql = `SELECT AVG(cost_usd) AS avg_cost FROM skill_executions WHERE skill_id = ? AND status = 'completed' AND cost_usd > 0`;
+    const row = this.db.prepare(sql).get(skillId) as { avg_cost: number | null } | undefined;
+    if (!row || row.avg_cost === null) return null;
+    return Math.round(row.avg_cost * 1e6) / 1e6;
   }
 }

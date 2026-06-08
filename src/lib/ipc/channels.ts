@@ -1078,8 +1078,8 @@ export interface SkillMetrics {
   invocationCount: number;
   successCount: number;
   successRate: number;
-  avgExecutionTimeMs: number;
-  avgCostUsd: number;
+  avgExecutionTimeMs: number | null;
+  avgCostUsd: number | null;
   avgUserRating: number | null;
 }
 

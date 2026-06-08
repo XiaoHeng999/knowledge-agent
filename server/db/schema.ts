@@ -209,6 +209,19 @@ export interface FrameworkResultRow {
 }
 
 export type SkillType = "builtin" | "custom" | "domain";
+export type SkillExecutionStatus = "running" | "completed" | "failed" | "cancelled";
+
+export interface SkillExecutionRow {
+  id: string;
+  skill_id: string;
+  domain_id: string;
+  status: SkillExecutionStatus;
+  started_at: string;
+  completed_at: string | null;
+  cost_usd: number;
+  error_message: string | null;
+  created_at: string;
+}
 
 export interface SkillRow {
   id: string;
@@ -294,6 +307,7 @@ export type TableRow =
   | DecisionRow
   | FrameworkResultRow
   | SkillRow
+  | SkillExecutionRow
   | ModelConfigRow
   | SettingsRow
   | ApiKeyRow;
@@ -315,6 +329,7 @@ export const TABLE_NAMES = {
   DECISIONS: "decisions",
   FRAMEWORK_RESULTS: "framework_results",
   SKILLS: "skills",
+  SKILL_EXECUTIONS: "skill_executions",
   MODEL_CONFIGS: "model_configs",
   SETTINGS: "settings",
   API_KEYS: "api_keys",
@@ -385,6 +400,10 @@ export const TABLE_COLUMNS: Record<TableName, ReadonlySet<string>> = {
     "id", "domain_id", "name", "description", "skill_type", "file_path",
     "config", "is_enabled", "execution_count", "success_count", "avg_user_rating",
     "created_at", "updated_at",
+  ]),
+  skill_executions: new Set<KeysOf<SkillExecutionRow>>([
+    "id", "skill_id", "domain_id", "status", "started_at", "completed_at",
+    "cost_usd", "error_message", "created_at",
   ]),
   model_configs: new Set<KeysOf<ModelConfigRow>>([
     "id", "provider", "model_id", "display_name", "api_base_url", "is_local",

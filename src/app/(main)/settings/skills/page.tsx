@@ -98,6 +98,18 @@ function SkillMetricsPanel({
           </span>
           <span className="skill-metrics-panel__label">Avg Rating</span>
         </div>
+        <div className="skill-metrics-panel__item">
+          <span className="skill-metrics-panel__value">
+            {metrics.avgExecutionTimeMs !== null ? `${metrics.avgExecutionTimeMs}ms` : 'N/A'}
+          </span>
+          <span className="skill-metrics-panel__label">Avg Execution Time</span>
+        </div>
+        <div className="skill-metrics-panel__item">
+          <span className="skill-metrics-panel__value">
+            {metrics.avgCostUsd !== null ? `$${metrics.avgCostUsd.toFixed(6)}` : 'N/A'}
+          </span>
+          <span className="skill-metrics-panel__label">Avg Cost</span>
+        </div>
       </div>
 
       <div className="skill-metrics-panel__rating">

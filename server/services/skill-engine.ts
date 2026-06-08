@@ -52,8 +52,8 @@ export interface SkillMetrics {
   invocationCount: number;
   successCount: number;
   successRate: number;
-  avgExecutionTimeMs: number;
-  avgCostUsd: number;
+  avgExecutionTimeMs: number | null;
+  avgCostUsd: number | null;
   avgUserRating: number | null;
 }
 
@@ -380,6 +380,19 @@ export async function executeSkill(
     activeExecutions.delete(executionId);
   }
 
+  const completedAt = new Date().toISOString();
+
+  db.skills.insertExecution({
+    id: executionId,
+    skill_id: skillId,
+    domain_id: domainId,
+    status,
+    started_at: startedAt,
+    completed_at: completedAt,
+    cost_usd: costUsd,
+    error_message: errorMessage,
+  });
+
   return {
     id: executionId,
     skillId,
@@ -389,7 +402,7 @@ export async function executeSkill(
     output: status === "completed" ? output : null,
     errorMessage,
     startedAt,
-    completedAt: new Date().toISOString(),
+    completedAt,
     costUsd,
   };
 }
@@ -421,8 +434,8 @@ export function getSkillMetrics(skillId: string): SkillMetrics {
     successRate: row.execution_count > 0
       ? Math.round((row.success_count / row.execution_count) * 100) / 100
       : 0,
-    avgExecutionTimeMs: 0, // Would need a separate log table for precise timing
-    avgCostUsd: 0,
+    avgExecutionTimeMs: db.skills.getAvgExecutionTimeMs(skillId),
+    avgCostUsd: db.skills.getAvgCostUsd(skillId),
     avgUserRating: row.avg_user_rating,
   };
 }
