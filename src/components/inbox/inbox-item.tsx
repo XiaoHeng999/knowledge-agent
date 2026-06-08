@@ -40,7 +40,7 @@ export function InboxItemCard({
 
   const sourceInfo = SOURCE_ICONS[item.source] ?? { label: item.source, color: '#6b7280' };
   const timeAgo = getRelativeTime(item.createdAt);
-  const isPending = item.status === 'pending';
+  const isPending = item.status === 'pending' || item.status === 'processing';
 
   const handleAccept = async () => {
     if (!selectedDomainId || !onAccept) return;
@@ -179,9 +179,9 @@ export function InboxItemCard({
 
           {!isPending && (
             <div className="inbox-item__status">
-              {item.status === 'processed' && (
-                <span className="inbox-item__status-tag inbox-item__status-tag--processed">
-                  Processed
+              {item.status === 'accepted' && (
+                <span className="inbox-item__status-tag inbox-item__status-tag--accepted">
+                  Accepted
                 </span>
               )}
               {item.status === 'rejected' && (

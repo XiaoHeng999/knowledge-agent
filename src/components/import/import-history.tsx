@@ -62,7 +62,7 @@ export function ImportHistory({ domainId }: ImportHistoryProps) {
               )}
             </div>
             <div style={actionsStyle}>
-              {item.status === "failed" && (
+              {(item.status === "failed" || item.status === "partial") && (
                 <button
                   style={actionBtnStyle}
                   onClick={() => handleRetry(item.id)}
@@ -127,11 +127,13 @@ const statusDotStyle = (status: string): React.CSSProperties => ({
   background:
     status === "completed"
       ? "#22c55e"
-      : status === "failed"
-        ? "#ef4444"
-        : status === "processing"
-          ? "var(--accent)"
-          : "var(--text-secondary)",
+      : status === "partial"
+        ? "#f59e0b"
+        : status === "failed"
+          ? "#ef4444"
+          : status === "processing"
+            ? "var(--accent)"
+            : "var(--text-secondary)",
 });
 
 const itemContentStyle: React.CSSProperties = {

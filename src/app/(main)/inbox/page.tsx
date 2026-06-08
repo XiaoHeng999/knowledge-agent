@@ -7,7 +7,7 @@ import { InboxItemCard } from '@/components/inbox/inbox-item';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ViewLoadingState } from '@/components/skeleton/view-loading';
 
-type FilterStatus = 'pending' | 'processed' | 'rejected';
+type FilterStatus = 'pending' | 'processing' | 'accepted' | 'rejected';
 
 export default function InboxPage() {
   const [filter, setFilter] = useState<FilterStatus>('pending');
@@ -73,7 +73,8 @@ export default function InboxPage() {
   const total = listData?.total ?? 0;
   const domains = domainsData?.domains ?? [];
   const pendingCount = stats?.pending ?? 0;
-  const processedCount = stats?.processed ?? 0;
+  const processingCount = stats?.processing ?? 0;
+  const acceptedCount = stats?.accepted ?? 0;
   const rejectedCount = stats?.rejected ?? 0;
   const totalPages = Math.ceil(total / 20);
 
@@ -112,10 +113,16 @@ export default function InboxPage() {
             Pending {pendingCount > 0 && <span className="inbox-page__filter-badge">{pendingCount}</span>}
           </button>
           <button
-            className={`inbox-page__filter-btn ${filter === 'processed' ? 'inbox-page__filter-btn--active' : ''}`}
-            onClick={() => { setFilter('processed'); setPage(1); }}
+            className={`inbox-page__filter-btn ${filter === 'processing' ? 'inbox-page__filter-btn--active' : ''}`}
+            onClick={() => { setFilter('processing'); setPage(1); }}
           >
-            Processed {processedCount > 0 && <span className="inbox-page__filter-badge">{processedCount}</span>}
+            Processing {processingCount > 0 && <span className="inbox-page__filter-badge">{processingCount}</span>}
+          </button>
+          <button
+            className={`inbox-page__filter-btn ${filter === 'accepted' ? 'inbox-page__filter-btn--active' : ''}`}
+            onClick={() => { setFilter('accepted'); setPage(1); }}
+          >
+            Accepted {acceptedCount > 0 && <span className="inbox-page__filter-badge">{acceptedCount}</span>}
           </button>
           <button
             className={`inbox-page__filter-btn ${filter === 'rejected' ? 'inbox-page__filter-btn--active' : ''}`}
@@ -132,9 +139,11 @@ export default function InboxPage() {
             title={
               filter === 'pending'
                 ? 'Your inbox is clear'
-                : filter === 'processed'
-                  ? 'No processed items yet'
-                  : 'No rejected items'
+                : filter === 'processing'
+                  ? 'No items being processed'
+                  : filter === 'accepted'
+                    ? 'No accepted items yet'
+                    : 'No rejected items'
             }
             description={
               filter === 'pending'

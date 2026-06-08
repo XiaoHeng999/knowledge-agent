@@ -31,7 +31,7 @@ function rowToStatus(row: ImportRow): ImportStatusResponse {
   const processed = row.processed_items || 0;
   return {
     id: row.id,
-    status: row.status === "partial" ? "completed" : row.status,
+    status: row.status,
     progress: Math.min(Math.round((processed / total) * 100), 100),
   };
 }

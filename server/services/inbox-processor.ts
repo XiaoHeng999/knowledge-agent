@@ -27,7 +27,7 @@ function rowToItem(row: InboxItemRow): InboxItem {
     title: extractTitle(row.raw_content, row.source_url),
     content: row.raw_content ?? "",
     source: row.source_type,
-    status: row.status === "accepted" ? "processed" : row.status === "processing" ? "pending" : row.status,
+    status: row.status,
     domainId: row.domain_id,
     summary: row.ai_summary,
     createdAt: row.created_at,
@@ -192,12 +192,7 @@ export function listItems(req: InboxListRequest): InboxListResponse {
   const pageSize = req.pageSize ?? 20;
   const offset = (page - 1) * pageSize;
 
-  // Map IPC status to DB status
-  let dbStatus: InboxItemStatus | undefined;
-  if (req.status === "processed") dbStatus = "accepted";
-  else if (req.status) dbStatus = req.status as InboxItemStatus;
-
-  const result = db.inbox.listByStatus(dbStatus, pageSize, offset);
+  const result = db.inbox.listByStatus(req.status as InboxItemStatus | undefined, pageSize, offset);
 
   return {
     items: result.items.map(rowToItem),
@@ -239,8 +234,9 @@ export function getStats(): InboxStatsResponse {
   const db = getDatabaseService();
   const stats = db.inbox.getStats();
   return {
-    pending: stats.pending + stats.processing,
-    processed: stats.accepted,
+    pending: stats.pending,
+    processing: stats.processing,
+    accepted: stats.accepted,
     rejected: stats.rejected,
   };
 }

@@ -246,7 +246,7 @@ export interface InboxItem {
   title: string;
   content: string;
   source: string;
-  status: "pending" | "processed" | "rejected";
+  status: "pending" | "processing" | "accepted" | "rejected";
   domainId: string | null;
   summary: string | null;
   createdAt: string;
@@ -483,7 +483,7 @@ export interface InboxAddRequest {
   source: string;
 }
 export interface InboxListRequest {
-  status?: "pending" | "processed" | "rejected";
+  status?: "pending" | "processing" | "accepted" | "rejected";
   page?: number;
   pageSize?: number;
 }
@@ -500,7 +500,8 @@ export interface InboxRejectRequest {
 }
 export interface InboxStatsResponse {
   pending: number;
-  processed: number;
+  processing: number;
+  accepted: number;
   rejected: number;
 }
 
@@ -557,7 +558,7 @@ export interface ImportFileRequest {
 }
 export interface ImportStatusResponse {
   id: string;
-  status: "pending" | "processing" | "completed" | "failed";
+  status: "pending" | "processing" | "completed" | "partial" | "failed";
   progress: number;
 }
 export interface ImportListRequest {

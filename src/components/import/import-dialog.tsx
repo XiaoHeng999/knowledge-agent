@@ -37,7 +37,7 @@ export function ImportDialog({ open, onClose, domainId }: ImportDialogProps) {
 
   // Poll for status updates while import is active
   useEffect(() => {
-    if (!activeImport || activeImport.status === "completed" || activeImport.status === "failed") {
+    if (!activeImport || activeImport.status === "completed" || activeImport.status === "partial" || activeImport.status === "failed") {
       return;
     }
     const interval = setInterval(() => {
@@ -49,7 +49,7 @@ export function ImportDialog({ open, onClose, domainId }: ImportDialogProps) {
   const handleImportUrl = useCallback(async () => {
     if (!urlInput.trim()) return;
     const result = await importUrl(urlInput.trim(), domainId);
-    if (result?.status === "completed") {
+    if (result?.status === "completed" || result?.status === "partial") {
       setTimeout(handleClose, 1500);
     }
   }, [urlInput, domainId, importUrl, handleClose]);
@@ -57,7 +57,7 @@ export function ImportDialog({ open, onClose, domainId }: ImportDialogProps) {
   const handleImportFile = useCallback(async () => {
     if (!filePathInput.trim()) return;
     const result = await importFile(filePathInput.trim(), domainId);
-    if (result?.status === "completed") {
+    if (result?.status === "completed" || result?.status === "partial") {
       setTimeout(handleClose, 1500);
     }
   }, [filePathInput, domainId, importFile, handleClose]);
@@ -88,7 +88,7 @@ export function ImportDialog({ open, onClose, domainId }: ImportDialogProps) {
   ];
 
   const progressPercent = activeImport?.progress ?? 0;
-  const isDone = activeImport?.status === "completed";
+  const isDone = activeImport?.status === "completed" || activeImport?.status === "partial";
   const isFailed = activeImport?.status === "failed";
 
   return (
@@ -247,7 +247,11 @@ export function ImportDialog({ open, onClose, domainId }: ImportDialogProps) {
 
           {/* Success */}
           {isDone && (
-            <div style={successStyle}>Import completed successfully.</div>
+            <div style={successStyle}>
+              {activeImport?.status === "partial"
+                ? "Import partially completed. Some items failed."
+                : "Import completed successfully."}
+            </div>
           )}
 
           {/* Error */}
