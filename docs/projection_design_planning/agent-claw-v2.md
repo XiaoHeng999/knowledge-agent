@@ -3,7 +3,7 @@
 > 版本: v2 (基于 v1 设计文档的补充修正版)
 > 更新日期: 2026-05-22
 > 状态: DRAFT
-> 关联文档: `docs/projection_design_planning/agent-claw.md` (v1 基础设计)
+> 关联文档: `docs/projection_design_planning/UI-UX-design-v2.md` (UI/UX 设计)
 
 ---
 
@@ -588,70 +588,74 @@ agentclaw/
 ├── electron/                    # Electron 主进程
 │   ├── main.ts                  # 入口
 │   ├── preload.ts               # 安全桥接
-│   └── platform/                # 平台适配
-│       ├── darwin.ts
-│       ├── win32.ts
-│       └── linux.ts
+│   └── window.ts                # BrowserWindow 管理
 ├── src/                         # Next.js 前端 (Renderer)
 │   ├── app/                     # App Router
 │   │   ├── (main)/
-│   │   │   ├── layout.tsx       # 主布局（侧边栏 + 主区域）
+│   │   │   ├── layout.tsx       # 三栏布局（侧边栏 + 主内容 + 详情面板）
 │   │   │   ├── page.tsx         # 首页/仪表盘
 │   │   │   ├── domain/
-│   │   │   │   └── [id]/
-│   │   │   │       ├── page.tsx # 领域视图
-│   │   │   │       └── chat/    # 专家对话
-│   │   │   ├── timeline/
-│   │   │   │   └── page.tsx     # 时间线视图
-│   │   │   ├── research/
-│   │   │   │   └── page.tsx     # 研究仪表盘
+│   │   │   │   ├── page.tsx     # 领域知识列表
+│   │   │   │   ├── graph/page.tsx # 知识图谱可视化
+│   │   │   │   └── [id]/chat/   # 专家对话（动态路由）
+│   │   │   ├── inbox/page.tsx   # 收件箱
+│   │   │   ├── research/page.tsx # 研究仪表盘
+│   │   │   ├── framework/page.tsx # 框架分析
+│   │   │   ├── timeline/page.tsx # 时间线与预测
 │   │   │   └── settings/
-│   │   │       ├── page.tsx     # 设置首页
+│   │   │       ├── page.tsx     # 设置主页（主题等）
 │   │   │       ├── models/      # 模型管理
-│   │   │       └── domains/     # 领域配置
+│   │   │       ├── domains/     # 领域配置
+│   │   │       └── skills/      # 技能管理
 │   │   └── globals.css
-│   ├── components/
-│   │   ├── ui/                  # 基础 UI 组件
-│   │   ├── editor/              # Markdown 编辑器
-│   │   ├── graph/               # 知识图谱可视化
-│   │   ├── timeline/            # 时间线组件
+│   ├── components/              # 20 个组件组
+│   │   ├── layout/              # 布局（sidebar, titlebar, statusbar, detail-panel）
+│   │   ├── ui/                  # 基础 UI 组件库
+│   │   ├── skeleton/            # 骨架屏视图组件
+│   │   ├── settings/            # 设置相关组件
+│   │   ├── domain/              # 域管理组件
+│   │   ├── cmd-palette/         # 命令面板
 │   │   ├── chat/                # 对话组件
-│   │   └── settings/            # 设置页组件
+│   │   ├── knowledge/           # 知识组件
+│   │   ├── graph/               # 知识图谱可视化
+│   │   ├── search/              # 混合搜索
+│   │   ├── inbox/               # 收件箱
+│   │   ├── security/            # 安全审核
+│   │   ├── framework/           # 框架分析
+│   │   ├── import/              # 导入管道
+│   │   ├── timeline/            # 时间线与预测
+│   │   ├── diff/                # 版本对比
+│   │   ├── onboarding/          # 首次使用引导
+│   │   ├── error/               # 错误处理
+│   │   ├── debug/               # 调试面板
+│   │   └── update/              # 自动更新
 │   ├── lib/
-│   │   ├── ipc/                 # IPC 通信层
-│   │   └── hooks/               # React Hooks
-│   └── stores/                  # 状态管理 (Zustand)
+│   │   ├── ipc/                 # IPC 通道定义
+│   │   ├── hooks/               # React Hooks
+│   │   ├── commands/            # 斜杠命令系统
+│   │   ├── error/               # 错误注册表与恢复
+│   │   └── platform.ts          # 平台检测
+│   ├── stores/                  # 13 个 Zustand 状态管理
+│   ├── styles/                  # tokens.css + 4 个主题样式
+│   └── types/                   # TypeScript 类型声明
 ├── server/                      # Node.js 后端（Electron Main 进程内）
-│   ├── services/
-│   │   ├── model-manager.ts     # 模型管理（pi-mono AuthStorage + ModelRegistry）
-│   │   ├── agent-pool.ts        # Agent 池管理
-│   │   ├── knowledge-graph.ts   # 知识图谱服务
-│   │   ├── search-engine.ts     # 混合搜索引擎
-│   │   ├── research-scheduler.ts# 研究调度器
-│   │   ├── import-pipeline.ts   # 导入管道
-│   │   └── skill-engine.ts      # 技能引擎
-│   ├── db/
-│   │   ├── schema.ts            # SQLite schema 定义
-│   │   ├── migrations/          # 数据库迁移
-│   │   ├── repositories/        # 数据访问层
-│   │   └── vector.ts            # SQLite-vss 向量操作
-│   └── pi-mono/
-│       ├── core.ts              # pi-mono 初始化
-│       ├── providers.ts         # Provider 注册
-│       ├── tools/               # 自定义工具
-│       └── extensions/          # 自定义扩展
-├── skills/                      # AgentClaw Skills（SKILL.md 格式）
+│   ├── services/                # 19 个业务服务
+│   ├── db/                      # SQLite + 迁移 + 16 个 Repository
+│   ├── fs/                      # 文件系统抽象层
+│   ├── ipc/                     # IPC Handler（13 个模块）
+│   ├── lib/                     # LRU 缓存 + 模型解析
+│   ├── pi-mono/                 # SDK 集成 + 工具 + 4 个扩展
+│   └── worker/                  # Utility Process Worker（4 种任务）
+├── resources/skills/            # 内置技能（SKILL.md 格式）
 │   ├── paper-summarizer/
 │   ├── trend-analyzer/
 │   ├── connection-finder/
 │   └── domain-expert/
-├── resources/                   # Electron 资源文件
-│   └── icon.png
+├── docs/                        # 文档
 ├── package.json
 ├── electron-builder.yml         # 跨平台构建配置
 ├── next.config.ts
-├── tsconfig.json
-└── turbo.json                   # Turbopack 配置
+└── tsconfig.json
 ```
 
 ### 5.2 IPC 通信架构
@@ -796,8 +800,6 @@ type AgentClawEvents = {
   // 知识事件
   "knowledge:created": { nodeId: string; domain: string; type: string };
   "knowledge:updated": { nodeId: string; changes: string[] };
-  "knowledge:created": { nodeId: string; domain: string; type: string };
-  "knowledge:updated": { nodeId: string; changes: string[] };
 
   // 研究事件
   "research:started": { domain: string; query: string };
@@ -822,6 +824,8 @@ CREATE TABLE domains (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
+  color TEXT,                   -- 领域颜色标记
+  icon TEXT,                    -- 领域图标
   config_path TEXT,
   default_model TEXT,
   created_at TEXT DEFAULT (datetime('now')),
@@ -833,9 +837,10 @@ CREATE TABLE knowledge_nodes (
   id TEXT PRIMARY KEY,
   domain_id TEXT NOT NULL REFERENCES domains(id),
   title TEXT NOT NULL,
-  type TEXT NOT NULL DEFAULT 'concept',  -- concept, person, technology, event, decision
+  type TEXT NOT NULL DEFAULT 'concept',  -- concept, person, technology, event, decision, resource, question
   content TEXT,
   frontmatter TEXT,  -- JSON
+  summary TEXT,      -- AI 生成的摘要
   comprehension INTEGER DEFAULT 0,  -- 0-5
   status TEXT DEFAULT 'draft',  -- draft, reviewed, verified
   created_at TEXT DEFAULT (datetime('now')),
@@ -847,7 +852,7 @@ CREATE TABLE knowledge_edges (
   id TEXT PRIMARY KEY,
   source_id TEXT NOT NULL REFERENCES knowledge_nodes(id),
   target_id TEXT NOT NULL REFERENCES knowledge_nodes(id),
-  relation TEXT NOT NULL,  -- related_to, depends_on, evolves_from, contradicts
+  relation TEXT NOT NULL,  -- related_to, depends_on, evolves_from, contradicts, derived_from, supports, part_of, precedes
   weight REAL DEFAULT 1.0,
   created_at TEXT DEFAULT (datetime('now'))
 );
@@ -930,6 +935,81 @@ CREATE TABLE decision_records (
   reasoning TEXT,
   outcome TEXT,
   status TEXT DEFAULT 'active',  -- active, superseded, revoked
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- 对话
+CREATE TABLE conversations (
+  id TEXT PRIMARY KEY,
+  domain_id TEXT REFERENCES domains(id),
+  title TEXT,
+  session_type TEXT NOT NULL DEFAULT 'expert',  -- expert, research, import
+  model_id TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+-- 消息（树结构）
+CREATE TABLE messages (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES conversations(id),
+  parent_id TEXT REFERENCES messages(id),
+  role TEXT NOT NULL,  -- user, assistant, system
+  content TEXT,
+  model_id TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- 预测
+CREATE TABLE predictions (
+  id TEXT PRIMARY KEY,
+  domain_id TEXT NOT NULL REFERENCES domains(id),
+  title TEXT NOT NULL,
+  description TEXT,
+  confidence REAL,  -- 0.0-1.0
+  target_date TEXT,
+  status TEXT DEFAULT 'pending',  -- pending, confirmed, rejected
+  source_node_id TEXT REFERENCES knowledge_nodes(id),
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- 技能执行记录
+CREATE TABLE skill_executions (
+  id TEXT PRIMARY KEY,
+  skill_name TEXT NOT NULL,
+  domain_id TEXT REFERENCES domains(id),
+  input TEXT,
+  output TEXT,
+  model_id TEXT,
+  cost_input REAL DEFAULT 0,
+  cost_output REAL DEFAULT 0,
+  duration_ms INTEGER,
+  status TEXT DEFAULT 'completed',  -- completed, failed
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- 研究运行
+CREATE TABLE research_runs (
+  id TEXT PRIMARY KEY,
+  domain_id TEXT NOT NULL REFERENCES domains(id),
+  query TEXT,
+  status TEXT DEFAULT 'pending',  -- pending, running, completed, failed
+  findings_count INTEGER DEFAULT 0,
+  cost_input REAL DEFAULT 0,
+  cost_output REAL DEFAULT 0,
+  started_at TEXT,
+  completed_at TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- 框架分析结果
+CREATE TABLE framework_results (
+  id TEXT PRIMARY KEY,
+  domain_id TEXT NOT NULL REFERENCES domains(id),
+  framework TEXT NOT NULL,
+  result TEXT,
+  summary TEXT,
+  model_id TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
 ```
@@ -1153,7 +1233,7 @@ docs/design-UI-UX-reuslt/
     "@mariozechner/pi-coding-agent": "^0.73.0",
     "better-sqlite3": "^11.0.0",
     "sqlite-vec": "^0.1.0",
-    "next": "^15.0.0",
+    "next": "^15.1.0",
     "react": "^19.0.0",
     "zustand": "^5.0.0",
     "d3": "^7.9.0",
@@ -1162,7 +1242,7 @@ docs/design-UI-UX-reuslt/
     "marked": "^12.0.0"
   },
   "devDependencies": {
-    "electron": "^33.0.0",
+    "electron": "^33.4.11",
     "electron-builder": "^25.0.0",
     "typescript": "^5.5.0",
     "@types/better-sqlite3": "^7.6.0"

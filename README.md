@@ -17,12 +17,12 @@ AgentClaw is a desktop application that uses multi-agent collaboration to collec
 - **Version Control** — Git-based automatic versioning for all knowledge changes with diff review and one-click rollback
 - **Security Gates** — Three-tier write permission system (auto-pass / confirm / explicit approval) with diff review queue
 - **Command Palette** — `Cmd/Ctrl+K` for instant search, navigation, and slash commands
-- **4 Theme Styles** — Tokyo Night, Linear, Cursor, Notion, PostHog — switch instantly
+- **4 Theme Styles** — Linear, Cursor, Notion, PostHog — switch instantly
 
 ## Tech Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript, CSS Variables
-- **Desktop**: Electron 35 with Utility Process workers
+- **Desktop**: Electron 33 with Utility Process workers
 - **Database**: SQLite with WAL mode, SQLite-vec for vector embeddings
 - **AI SDK**: pi-mono (multi-provider SDK supporting Anthropic, OpenAI, DeepSeek, Google, Groq, Ollama, OpenRouter, xAI, Mistral)
 - **Visualization**: D3.js force-directed graph with WebGL fallback for 1000+ nodes
@@ -33,16 +33,16 @@ AgentClaw is a desktop application that uses multi-agent collaboration to collec
 ### Prerequisites
 
 - Node.js 18+
-- npm 9+
+- pnpm 10+
 
 ### Development
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start dev mode (Next.js + Electron)
-npm run dev
+pnpm run dev
 ```
 
 The app launches an Electron window with Next.js rendering the UI via Turbopack HMR.
@@ -51,18 +51,18 @@ The app launches an Electron window with Next.js rendering the UI via Turbopack 
 
 ```bash
 # Type check
-npm run typecheck
+pnpm run typecheck
 
 # Lint
-npm run lint
+pnpm run lint
 
 # Build for current platform
-npm run dist
+pnpm run dist
 
 # Build for specific platform
-npm run build:mac    # macOS (DMG, arm64 + x64)
-npm run build:win    # Windows (NSIS + Portable, x64)
-npm run build:linux  # Linux (AppImage + deb + rpm, x64)
+pnpm run build:mac    # macOS (DMG, arm64 + x64)
+pnpm run build:win    # Windows (NSIS + Portable, x64)
+pnpm run build:linux  # Linux (AppImage + deb + rpm, x64)
 ```
 
 ## Project Structure
@@ -78,14 +78,14 @@ agentclaw/
 │   ├── fs/             # File system abstraction, domain directories
 │   ├── ipc/            # IPC handlers (13 modules)
 │   ├── pi-mono/        # AI SDK integration, custom tools, extensions
-│   ├── services/       # Business logic (20 services)
+│   ├── services/       # Business logic (19 services)
 │   └── worker/         # Utility Process workers (embedding, graph, PDF)
 ├── src/                # Renderer (Next.js)
 │   ├── app/            # App Router pages
-│   ├── components/     # UI components (19 groups)
+│   ├── components/     # UI components (20 groups)
 │   ├── stores/         # Zustand state management
 │   ├── lib/            # Utilities, hooks, commands, error handling
-│   ├── styles/         # Design tokens + 5 theme styles
+│   ├── styles/         # Design tokens + 4 theme styles
 │   └── types/          # TypeScript type definitions
 ├── resources/          # Built-in skills (SKILL.md files)
 └── docs/               # Design specs, history, reference

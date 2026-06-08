@@ -6,14 +6,14 @@ Thank you for your interest in contributing! This guide covers the basics.
 
 ```bash
 # Clone the repository
-git clone https://github.com/user/agentclaw.git
+git clone https://github.com/XiaoHeng999/knowledge-agent.git
 cd agentclaw
 
 # Install dependencies
-npm install
+pnpm install
 
 # Start development mode
-npm run dev
+pnpm run dev
 ```
 
 ## Development Workflow
@@ -22,8 +22,8 @@ npm run dev
 2. Make your changes
 3. Run checks before committing:
    ```bash
-   npm run typecheck
-   npm run lint
+   pnpm run typecheck
+   pnpm run lint
    ```
 4. Commit with conventional messages:
    - `feat: add ...` — new features
@@ -52,7 +52,7 @@ npm run dev
 
 - Keep PRs focused — one feature or fix per PR
 - Update `docs/file-map.md` if you add/remove/rename files
-- Run `npm run typecheck` and `npm run lint` before submitting
+- Run `pnpm run typecheck` and `pnpm run lint` before submitting
 - Include a clear description of what changed and why
 
 ## Reporting Issues

@@ -110,7 +110,6 @@ agentclaw/
 │   │   │   ├── approve-confirm.tsx       # 高风险操作确认（输入 APPROVE）
 │   │   │   └── pending-badge.tsx         # 输入区域待审核徽标
 │   │   │
-│   │   ├── research/              # 研究相关组件（4.1）
 │   │   ├── framework/             # 框架分析组件（4.3）
 │   │   │   ├── framework-result-card.tsx  # 分析结果卡片（展开/折叠）
 │   │   │   ├── decision-record-card.tsx   # ADR 决策记录卡片
@@ -199,6 +198,8 @@ agentclaw/
 │   │   ├── vector.ts             # 向量存储
 │   │   ├── migrations/           # 数据库迁移
 │   │   │   ├── 001_initial_schema.ts
+│   │   │   ├── 002_skill_executions.ts
+│   │   │   ├── index.ts         # 迁移 barrel 导出
 │   │   │   ├── runner.ts         # 迁移执行器
 │   │   │   └── types.ts
 │   │   └── repositories/         # 数据访问层
@@ -206,27 +207,28 @@ agentclaw/
 │   │       ├── domains.ts        # 域 CRUD
 │   │       ├── api-keys.ts       # API Key 存储
 │   │       ├── model-configs.ts  # 模型配置
-│   │       ├── sources.ts        # 知识源
 │   │       ├── inbox.ts          # 收件箱
+│   │       ├── inbox-items.ts    # 收件箱条目
 │   │       ├── knowledge-nodes.ts # 知识节点
 │   │       ├── knowledge-edges.ts # 知识边
-│   │       ├── timeline-entries.ts # 时间线
 │   │       ├── decision-records.ts # 决策记录
 │   │       ├── conversations.ts   # 对话 CRUD
 │   │       ├── messages.ts        # 消息 CRUD（树结构查询）
-│   │       └── research-runs.ts   # 研究运行 CRUD（4.1）
+│   │       ├── research-runs.ts   # 研究运行 CRUD（4.1）
 │   │       ├── imports.ts          # 导入记录 CRUD（4.2）
 │   │       ├── framework-results.ts # 框架分析结果 CRUD（4.3）
+│   │       ├── predictions.ts      # 预测 CRUD（4.4）
 │   │       └── skills.ts           # 技能 CRUD（4.5）
 │   │
 │   ├── fs/                       # 文件系统抽象层
 │   │   ├── index.ts              # 文件系统入口
-│   ├── lib/                      # 服务端共享工具
-│   │   └── lru-cache.ts          # LRU 缓存（搜索结果、嵌入缓存）
 │   │   ├── paths.ts              # 路径管理（跨平台：app.getPath('userData') + path.join）
 │   │   ├── provider.ts           # 文件系统 Provider（跨平台文件操作抽象）
 │   │   ├── domain-dirs.ts        # 域目录管理
 │   │   └── markdown-parser.ts    # Markdown 解析器
+│   ├── lib/                      # 服务端共享工具
+│   │   ├── lru-cache.ts          # LRU 缓存（搜索结果、嵌入缓存）
+│   │   └── model-resolver.ts     # 模型 ID 解析与成本估算
 │   │
 │   ├── ipc/                      # IPC Handler（主进程端）
 │   │   ├── register.ts           # 注册所有 handler
@@ -258,7 +260,8 @@ agentclaw/
 │   │   └── extensions/           # Agent 扩展
 │   │       ├── import-agent-extension.ts
 │   │       ├── research-agent-extension.ts
-│   │       └── knowledge-tools-extension.ts
+│   │       ├── knowledge-tools-extension.ts
+│   │       └── session-context.ts  # 会话上下文（领域信息注入）
 │   │
 │   ├── worker/                    # Utility Process Worker（5.7）
 │   │   ├── types.ts               # 消息协议、任务类型、payload/result 接口
@@ -301,7 +304,10 @@ agentclaw/
 
 ├── docs/                         # 文档
 │   ├── projection_design_planning/  # 设计规划文档（按需查阅）
-│   └── history/                     # 开发历史记录
+│   ├── design-UI-UX-reuslt/        # UI/UX 设计参考
+│   ├── history/                     # 开发历史记录
+│   ├── reference/                   # 技术参考文档
+│   └── risk/                        # 风险分析文档
 │
 └── openspec/                     # OpenSpec 任务与变更管理
 ```

@@ -17,13 +17,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm run typecheck
 
   build-matrix:
     name: Build (${{ matrix.os }})
@@ -33,22 +36,25 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            build_cmd: npm run build:mac
+            build_cmd: pnpm run build:mac
             artifact_pattern: "release/*.dmg"
           - os: windows-latest
-            build_cmd: npm run build:win
+            build_cmd: pnpm run build:win
             artifact_pattern: "release/*.exe"
           - os: ubuntu-latest
-            build_cmd: npm run build:linux
+            build_cmd: pnpm run build:linux
             artifact_pattern: "release/*.{AppImage,deb,rpm}"
 
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: pnpm
 
       # Linux dependencies for electron-builder
       - name: Install Linux dependencies
@@ -57,7 +63,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libarchive-tools rpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
       - run: ${{ matrix.build_cmd }}
         env:
           # macOS code signing (secrets required for real signing)
