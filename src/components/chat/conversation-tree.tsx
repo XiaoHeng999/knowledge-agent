@@ -14,6 +14,14 @@ interface TreeNode {
   depth: number;
 }
 
+interface FlatItem {
+  message: MessageInfo;
+  depth: number;
+  hasChildren: boolean;
+  totalBranches: number;
+  activeBranchIdx: number;
+}
+
 interface ConversationTreeProps {
   messages: MessageInfo[];
   rootId: string | null;
@@ -92,17 +100,31 @@ function buildTree(messages: MessageInfo[], rootId: string | null): TreeNode | n
   return buildNode(rootId, 0);
 }
 
-function flattenActiveBranch(tree: TreeNode | null, activePaths: Record<string, number>): MessageInfo[] {
+function flattenActiveBranch(
+  tree: TreeNode | null,
+  activePaths: Record<string, number>,
+  collapsedIds: Set<string>,
+): FlatItem[] {
   if (!tree) return [];
-  const result: MessageInfo[] = [tree.message];
+  const result: FlatItem[] = [];
+  const activeIdx = activePaths[tree.message.id] ?? 0;
 
-  if (tree.children.length > 0) {
-    const activeIdx = activePaths[tree.message.id] ?? 0;
-    const branchIdx = Math.min(activeIdx, tree.children.length - 1);
-    const activeBranch = tree.children[branchIdx];
-    for (const child of activeBranch) {
-      result.push(...flattenActiveBranch(child, activePaths));
-    }
+  result.push({
+    message: tree.message,
+    depth: tree.depth,
+    hasChildren: tree.children.length > 0,
+    totalBranches: tree.children.length,
+    activeBranchIdx: Math.min(activeIdx, tree.children.length - 1),
+  });
+
+  if (collapsedIds.has(tree.message.id) || tree.children.length === 0) {
+    return result;
+  }
+
+  const branchIdx = Math.min(activeIdx, tree.children.length - 1);
+  const activeBranch = tree.children[branchIdx];
+  for (const child of activeBranch) {
+    result.push(...flattenActiveBranch(child, activePaths, collapsedIds));
   }
 
   return result;
@@ -378,6 +400,127 @@ function useVirtualScroll(items: unknown[], containerRef: React.RefObject<HTMLDi
 }
 
 // ---------------------------------------------------------------------------
+// Flat message item renderer (used by virtualized path)
+// ---------------------------------------------------------------------------
+
+function FlatMessageItem({
+  item,
+  isCollapsed,
+  onSwitchBranch,
+  onToggleCollapse,
+  onBranch,
+  streaming,
+  streamingContent,
+  streamingMessageId,
+  isLast,
+}: {
+  item: FlatItem;
+  isCollapsed: boolean;
+  onSwitchBranch: (parentId: string, index: number) => void;
+  onToggleCollapse: (nodeId: string) => void;
+  onBranch: (parentMessageId: string) => void;
+  streaming?: boolean;
+  streamingContent?: string;
+  streamingMessageId?: string | null;
+  isLast: boolean;
+}) {
+  const { message, depth, hasChildren, totalBranches, activeBranchIdx } = item;
+  const isUser = message.role === "user";
+  const hasBranches = totalBranches > 1;
+
+  return (
+    <div className="tree-node" style={{ marginLeft: depth > 0 ? "24px" : "0" }}>
+      <div
+        className={`tree-node__message ${isUser ? "tree-node__message--user" : "tree-node__message--assistant"}`}
+        role="treeitem"
+        aria-expanded={!isCollapsed}
+        aria-selected={false}
+      >
+        <div className="tree-node__bubble">
+          <div className="tree-node__avatar">
+            {isUser ? (
+              <span role="img" aria-label="User avatar">&#x1F464;</span>
+            ) : (
+              <span role="img" aria-label="AI assistant avatar">&#x1F916;</span>
+            )}
+          </div>
+          <div className="tree-node__content">
+            <div
+              className="tree-node__text"
+              dangerouslySetInnerHTML={{ __html: escapeAndFormat(message.content) }}
+            />
+          </div>
+          <div className="tree-node__meta">
+            <span className="tree-node__time">
+              {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>
+            {isUser && (
+              <button
+                className="tree-node__branch-btn"
+                onClick={() => onBranch(message.id)}
+                aria-label="Create new branch from this message"
+                title="Create a sibling branch"
+              >
+                &#x21BB; Branch
+              </button>
+            )}
+            {hasChildren && (
+              <button
+                className="tree-node__collapse-btn"
+                onClick={() => onToggleCollapse(message.id)}
+                aria-label={isCollapsed ? "Expand messages" : "Collapse messages"}
+              >
+                {isCollapsed ? "&#x25B6;" : "&#x25BC;"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {isCollapsed && (
+          <button
+            className="tree-node__hidden"
+            onClick={() => onToggleCollapse(message.id)}
+          >
+            ... collapsed
+          </button>
+        )}
+      </div>
+
+      {hasBranches && !isCollapsed && (
+        <BranchSelector
+          parentId={message.id}
+          totalBranches={totalBranches}
+          currentIndex={activeBranchIdx}
+          onSelect={(idx) => onSwitchBranch(message.id, idx)}
+        />
+      )}
+
+      {streaming && isLast && (
+        <div className="tree-node tree-node--streaming" style={{ marginLeft: `${(depth + 1) * 24}px` }}>
+          <div className="tree-node__message tree-node__message--assistant">
+            <div className="tree-node__avatar">
+              <span role="img" aria-label="AI assistant avatar">&#x1F916;</span>
+            </div>
+            <div className="tree-node__content">
+              <div className="tree-node__header">
+                <span className="tree-node__role">Expert</span>
+                <span className="tree-node__typing">typing...</span>
+              </div>
+              {streamingContent && (
+                <div
+                  className="tree-node__text"
+                  dangerouslySetInnerHTML={{ __html: escapeAndFormat(streamingContent) }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main ConversationTree component
 // ---------------------------------------------------------------------------
 
@@ -398,9 +541,12 @@ export function ConversationTree({
   const branchFromMessage = useChatStore((s) => s.branchFromMessage);
 
   const tree = useMemo(() => buildTree(messages, rootId), [messages, rootId]);
-  const flatMessages = useMemo(() => flattenActiveBranch(tree, activePaths), [tree, activePaths]);
+  const flatItems = useMemo(
+    () => flattenActiveBranch(tree, activePaths, collapsedIds),
+    [tree, activePaths, collapsedIds],
+  );
 
-  const { startIndex, endIndex, shouldVirtualize } = useVirtualScroll(flatMessages, containerRef);
+  const { startIndex, endIndex, shouldVirtualize } = useVirtualScroll(flatItems, containerRef);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -413,7 +559,7 @@ export function ConversationTree({
         }
       }
     }
-  }, [flatMessages.length, streamingContent]);
+  }, [flatItems.length, streamingContent]);
 
   const handleSwitchBranch = useCallback(
     (parentId: string, index: number) => {
@@ -447,6 +593,23 @@ export function ConversationTree({
     );
   }
 
+  // Render the visible slice of the flat list
+  const collapsedSet = collapsedIds;
+  const renderItem = (item: FlatItem, index: number) => (
+    <FlatMessageItem
+      key={item.message.id}
+      item={item}
+      isCollapsed={collapsedSet.has(item.message.id)}
+      onSwitchBranch={handleSwitchBranch}
+      onToggleCollapse={handleToggleCollapse}
+      onBranch={handleBranch}
+      streaming={streaming}
+      streamingContent={streamingContent}
+      streamingMessageId={streamingMessageId}
+      isLast={index === flatItems.length - 1}
+    />
+  );
+
   return (
     <div
       className="conversation-tree"
@@ -457,31 +620,13 @@ export function ConversationTree({
       {shouldVirtualize ? (
         <>
           <div style={{ height: startIndex * ESTIMATED_ITEM_HEIGHT }} />
-          <MessageNode
-            node={tree}
-            activePaths={activePaths}
-            collapsedIds={collapsedIds}
-            onSwitchBranch={handleSwitchBranch}
-            onToggleCollapse={handleToggleCollapse}
-            onBranch={handleBranch}
-            streaming={streaming}
-            streamingContent={streamingContent}
-            streamingMessageId={streamingMessageId}
-          />
-          <div style={{ height: Math.max(0, (flatMessages.length - endIndex - 1) * ESTIMATED_ITEM_HEIGHT) }} />
+          {flatItems.slice(startIndex, endIndex + 1).map((item, i) =>
+            renderItem(item, startIndex + i),
+          )}
+          <div style={{ height: Math.max(0, (flatItems.length - endIndex - 1) * ESTIMATED_ITEM_HEIGHT) }} />
         </>
       ) : (
-        <MessageNode
-          node={tree}
-          activePaths={activePaths}
-          collapsedIds={collapsedIds}
-          onSwitchBranch={handleSwitchBranch}
-          onToggleCollapse={handleToggleCollapse}
-          onBranch={handleBranch}
-          streaming={streaming}
-          streamingContent={streamingContent}
-          streamingMessageId={streamingMessageId}
-        />
+        flatItems.map((item, i) => renderItem(item, i))
       )}
       <div ref={bottomRef} />
     </div>
