@@ -322,3 +322,79 @@ export const TABLE_NAMES = {
 } as const;
 
 export type TableName = (typeof TABLE_NAMES)[keyof typeof TABLE_NAMES];
+
+// ---------------------------------------------------------------------------
+// Table column whitelists — used by BaseRepository for SQL injection prevention
+// ---------------------------------------------------------------------------
+
+type KeysOf<T> = keyof T & string;
+
+export const TABLE_COLUMNS: Record<TableName, ReadonlySet<string>> = {
+  domains: new Set<KeysOf<DomainRow>>([
+    "id", "name", "description", "color", "icon", "config_path",
+    "default_expert_model", "default_research_model", "default_summary_model",
+    "research_schedule", "created_at", "updated_at",
+  ]),
+  knowledge_nodes: new Set<KeysOf<KnowledgeNodeRow>>([
+    "id", "domain_id", "title", "content", "summary", "node_type", "status",
+    "comprehension_score", "frontmatter", "source_ids", "created_at", "updated_at",
+  ]),
+  knowledge_edges: new Set<KeysOf<KnowledgeEdgeRow>>([
+    "id", "source_node_id", "target_node_id", "edge_type", "weight",
+    "description", "created_at", "updated_at",
+  ]),
+  conversations: new Set<KeysOf<ConversationRow>>([
+    "id", "domain_id", "title", "model_id", "session_type", "status",
+    "created_at", "updated_at",
+  ]),
+  messages: new Set<KeysOf<MessageRow>>([
+    "id", "conversation_id", "parent_id", "role", "content", "model_id",
+    "token_count", "cost_usd", "metadata", "branch_index", "created_at",
+  ]),
+  inbox_items: new Set<KeysOf<InboxItemRow>>([
+    "id", "source_type", "source_url", "raw_content", "ai_summary",
+    "suggested_domain_id", "suggested_tags", "status", "domain_id",
+    "knowledge_node_id", "created_at", "updated_at",
+  ]),
+  imports: new Set<KeysOf<ImportRow>>([
+    "id", "domain_id", "import_type", "source_url", "file_path", "status",
+    "total_items", "processed_items", "failed_items", "error_message",
+    "metadata", "created_at", "updated_at",
+  ]),
+  research_runs: new Set<KeysOf<ResearchRunRow>>([
+    "id", "domain_id", "trigger_type", "model_id", "status", "query",
+    "findings_summary", "knowledge_nodes_created", "cost_usd", "token_count",
+    "error_message", "started_at", "completed_at", "created_at",
+  ]),
+  predictions: new Set<KeysOf<PredictionRow>>([
+    "id", "domain_id", "content", "confidence", "predicted_date", "status",
+    "actual_outcome", "source_node_ids", "reasoning", "verified_at",
+    "created_at", "updated_at",
+  ]),
+  decisions: new Set<KeysOf<DecisionRow>>([
+    "id", "domain_id", "title", "decision_number", "context", "decision_text",
+    "rationale", "expected_outcome", "status", "superseded_by", "source_node_ids",
+    "file_path", "created_at", "updated_at",
+  ]),
+  framework_results: new Set<KeysOf<FrameworkResultRow>>([
+    "id", "domain_id", "framework_type", "title", "analysis_data",
+    "source_node_ids", "knowledge_node_ids", "model_id", "cost_usd",
+    "created_at", "updated_at",
+  ]),
+  skills: new Set<KeysOf<SkillRow>>([
+    "id", "domain_id", "name", "description", "skill_type", "file_path",
+    "config", "is_enabled", "execution_count", "success_count", "avg_user_rating",
+    "created_at", "updated_at",
+  ]),
+  model_configs: new Set<KeysOf<ModelConfigRow>>([
+    "id", "provider", "model_id", "display_name", "api_base_url", "is_local",
+    "is_active", "cost_per_million_input", "cost_per_million_output",
+    "max_context_tokens", "capabilities", "metadata", "created_at", "updated_at",
+  ]),
+  settings: new Set<KeysOf<SettingsRow>>(["key", "value", "updated_at"]),
+  api_keys: new Set<KeysOf<ApiKeyRow>>([
+    "id", "provider", "encrypted_key", "key_hint", "is_valid",
+    "last_validated_at", "created_at", "updated_at",
+  ]),
+  schema_migrations: new Set<KeysOf<SchemaMigrationRow>>(["version", "description", "applied_at"]),
+};

@@ -24,9 +24,14 @@ export class VectorIndex {
       throw new Error(`Knowledge node ${nodeId} not found — cannot upsert vector`);
     }
 
-    this.db.prepare("DELETE FROM vss_nodes WHERE rowid = ?").run(row.rowid);
     const buf = this.embeddingToBuffer(embedding);
-    this.db.prepare("INSERT INTO vss_nodes (rowid, embedding) VALUES (?, ?)").run(row.rowid, buf);
+    const rowid = row.rowid;
+
+    const txn = this.db.transaction(() => {
+      this.db.prepare("DELETE FROM vss_nodes WHERE rowid = ?").run(rowid);
+      this.db.prepare("INSERT INTO vss_nodes (rowid, embedding) VALUES (?, ?)").run(rowid, buf);
+    });
+    txn();
   }
 
   remove(nodeId: string): void {
@@ -56,18 +61,25 @@ export class VectorIndex {
   }
 
   fullTextSearch(query: string, limit = 20): VectorSearchResult[] {
-    const rows = this.db
-      .prepare(
-        `SELECT fts.rowid, fts.rank
-         FROM fts_knowledge fts
-         WHERE fts_knowledge MATCH ?
-         ORDER BY fts.rank
-         LIMIT ?`,
-      )
-      .all(query, limit) as { rowid: number; rank: number }[];
+    const sanitized = sanitizeFtsQuery(query);
+    if (!sanitized) return [];
 
-    if (rows.length === 0) return [];
-    return this.resolveNodeIds(rows.map((r) => ({ rowid: r.rowid, distance: r.rank })));
+    try {
+      const rows = this.db
+        .prepare(
+          `SELECT fts.rowid, fts.rank
+           FROM fts_knowledge fts
+           WHERE fts_knowledge MATCH ?
+           ORDER BY fts.rank
+           LIMIT ?`,
+        )
+        .all(sanitized, limit) as { rowid: number; rank: number }[];
+
+      if (rows.length === 0) return [];
+      return this.resolveNodeIds(rows.map((r) => ({ rowid: r.rowid, distance: r.rank })));
+    } catch {
+      return [];
+    }
   }
 
   hybridSearch(
@@ -121,4 +133,19 @@ export class VectorIndex {
     }
     return buf;
   }
+}
+
+// ---------------------------------------------------------------------------
+// FTS5 query sanitization
+// ---------------------------------------------------------------------------
+
+const FTS5_SPECIAL = /["*]/g;
+const FTS5_OPERATORS = /\b(AND|OR|NOT)\b/gi;
+
+function sanitizeFtsQuery(query: string): string {
+  let sanitized = query
+    .replace(FTS5_SPECIAL, "")
+    .replace(FTS5_OPERATORS, "")
+    .trim();
+  return sanitized || "";
 }
