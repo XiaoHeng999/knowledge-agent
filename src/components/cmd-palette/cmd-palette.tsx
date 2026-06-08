@@ -8,8 +8,9 @@ import {
   useMemo,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/stores/app-store';
-import { getAllCommands, findMatching } from '@/lib/commands/registry';
+import { getAllCommands, findMatching, getCommand } from '@/lib/commands/registry';
 import { fuzzyMatch } from './search';
 import { ResultList } from './result-list';
 import { ParameterInput } from './parameter-input';
@@ -60,6 +61,7 @@ export function CommandPalette() {
   const setOpen = useAppStore((s) => s.setCommandPaletteOpen);
   const currentDomainId = useAppStore((s) => s.currentDomainId);
   const setCurrentView = useAppStore((s) => s.setCurrentView);
+  const router = useRouter();
 
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<PaletteMode>('search');
@@ -67,6 +69,7 @@ export function CommandPalette() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [paramState, setParamState] = useState<ParameterState | null>(null);
   const [recentItems] = useState<PaletteResultItem[]>([]);
+  // TODO: Populate recentItems from persistent history (e.g. last executed commands / last visited pages)
 
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -137,12 +140,12 @@ export function CommandPalette() {
           label: nav.label,
           group: 'navigation' as ResultGroupType,
           action: () => {
-            window.location.hash = nav.path;
+            router.push(nav.path);
             setOpen(false);
           },
         }));
       } else if (cfg.type === 'knowledge') {
-        // Knowledge search requires IPC — placeholder for now
+        // TODO: Wire knowledge search via search:search IPC channel
         items = [];
       } else if (cfg.type === 'actions') {
         items = ACTION_ITEMS.filter((act) => {
@@ -170,7 +173,7 @@ export function CommandPalette() {
     }
 
     return result;
-  }, [query, currentDomainId, recentItems, setOpen]);
+  }, [query, currentDomainId, recentItems, setOpen, router]);
 
   // Flat items list for keyboard navigation
   useEffect(() => {
@@ -226,6 +229,12 @@ export function CommandPalette() {
           useAppStore.getState().setTheme(themes[(idx + 1) % themes.length] as 'tokyo-night');
           break;
         }
+        case 'import':
+          useAppStore.getState().setImportDialogOpen(true);
+          break;
+        case 'quick-record':
+          useAppStore.getState().setQuickRecordDialogOpen(true);
+          break;
       }
     },
     [setCurrentView],
@@ -257,11 +266,20 @@ export function CommandPalette() {
   }, []);
 
   const handleParamSubmit = useCallback(
-    (_params: Record<string, string>) => {
-      // Execute the command with params
+    (params: Record<string, string>) => {
+      if (!paramState) return;
+
+      const cmd = getCommand(paramState.commandName);
+      if (cmd) {
+        const args = cmd.params
+          .map((p) => params[p.name] ?? '')
+          .join(' ');
+        cmd.execute(args, { domainId: currentDomainId || '', conversationId: '', modelId: '' });
+      }
+
       setOpen(false);
     },
-    [setOpen],
+    [paramState, currentDomainId, setOpen],
   );
 
   const handleParamBack = useCallback(() => {

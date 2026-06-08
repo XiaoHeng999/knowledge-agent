@@ -1,19 +1,21 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useLayout } from './layout-context';
 import { DomainList } from '@/components/domain/domain-list';
 import { SearchBar } from '@/components/search/search-bar';
 import { useTheme } from '@/lib/hooks/use-theme';
 import { QuickRecordDialog } from '@/components/inbox/quick-record-dialog';
+import { useAppStore } from '@/stores/app-store';
 
 export function Sidebar() {
   const { isSidebarCollapsed } = useLayout();
   const router = useRouter();
   const pathname = usePathname();
   const { cycleTheme, themeMeta } = useTheme();
-  const [quickRecordOpen, setQuickRecordOpen] = useState(false);
+  const quickRecordOpen = useAppStore((s) => s.quickRecordDialogOpen);
+  const setQuickRecordOpen = useAppStore((s) => s.setQuickRecordDialogOpen);
 
   const handleSearchResultClick = useCallback(
     (nodeId: string) => {

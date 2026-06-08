@@ -10,6 +10,7 @@ import { ErrorBoundary } from '@/components/error/error-boundary';
 import { ToastProvider } from '@/components/ui/toast';
 import { LaunchLoader } from '@/components/ui/launch-loader';
 import { useRouteFocus } from '@/lib/hooks/use-route-focus';
+import { useAppStore } from '@/stores/app-store';
 
 // Lazy-load heavy/optional components — not needed for initial paint
 const OnboardingOverlay = lazy(() =>
@@ -21,9 +22,15 @@ const CommandPalette = lazy(() =>
 const UpdateNotification = lazy(() =>
   import('@/components/update/update-notification').then((m) => ({ default: m.UpdateNotification }))
 );
+const ImportDialog = lazy(() =>
+  import('@/components/import/import-dialog').then((m) => ({ default: m.ImportDialog }))
+);
 
 function AppShell({ children }: { children: React.ReactNode }) {
   useRouteFocus();
+  const importDialogOpen = useAppStore((s) => s.importDialogOpen);
+  const setImportDialogOpen = useAppStore((s) => s.setImportDialogOpen);
+  const currentDomainId = useAppStore((s) => s.currentDomainId);
 
   return (
     <div className="app-layout">
@@ -43,6 +50,11 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <OnboardingOverlay />
         <CommandPalette />
         <UpdateNotification />
+        <ImportDialog
+          open={importDialogOpen}
+          onClose={() => setImportDialogOpen(false)}
+          domainId={currentDomainId ?? undefined}
+        />
       </Suspense>
     </div>
   );

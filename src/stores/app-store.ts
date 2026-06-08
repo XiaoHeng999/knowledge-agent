@@ -19,6 +19,8 @@ interface AppState {
   theme: AppTheme;
   sidebarCollapsed: boolean;
   commandPaletteOpen: boolean;
+  importDialogOpen: boolean;
+  quickRecordDialogOpen: boolean;
 }
 
 interface AppActions {
@@ -28,6 +30,8 @@ interface AppActions {
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setCommandPaletteOpen: (open: boolean) => void;
+  setImportDialogOpen: (open: boolean) => void;
+  setQuickRecordDialogOpen: (open: boolean) => void;
 }
 
 export const useAppStore = create<AppState & AppActions>()(
@@ -38,6 +42,8 @@ export const useAppStore = create<AppState & AppActions>()(
       theme: 'tokyo-night',
       sidebarCollapsed: false,
       commandPaletteOpen: false,
+      importDialogOpen: false,
+      quickRecordDialogOpen: false,
 
       setCurrentDomain: (id) => set({ currentDomainId: id }),
       setCurrentView: (view) => set({ currentView: view }),
@@ -45,6 +51,8 @@ export const useAppStore = create<AppState & AppActions>()(
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
       setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+      setImportDialogOpen: (open) => set({ importDialogOpen: open }),
+      setQuickRecordDialogOpen: (open) => set({ quickRecordDialogOpen: open }),
     }),
     {
       name: 'app-store',
