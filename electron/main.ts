@@ -1,4 +1,4 @@
-import { app, BrowserWindow, globalShortcut } from "electron";
+import { app, BrowserWindow, dialog, globalShortcut } from "electron";
 import path from "path";
 import { createWindow } from "./window";
 import { registerAllIpcHandlers } from "../server/ipc/register";
@@ -40,7 +40,15 @@ if (!gotTheLock) {
 
   app.whenReady().then(async () => {
     logger.initialize();
-    initializeDatabase();
+
+    try {
+      initializeDatabase();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      dialog.showErrorBox("Database Error", message);
+      app.quit();
+      return;
+    }
 
     try {
       await initializePiMono();
@@ -78,6 +86,9 @@ if (!gotTheLock) {
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       mainWindow = createWindow();
+      mainWindow.on("closed", () => {
+        mainWindow = null;
+      });
     }
   });
 
