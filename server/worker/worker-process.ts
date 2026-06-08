@@ -217,6 +217,13 @@ function startMemoryMonitor(): void {
         error: `Memory usage at ${heapUsedMB.toFixed(0)}MB (limit: ${MEMORY_LIMIT_MB}MB). Pausing queue.`,
       });
       queue.pause();
+    } else if (queue.isPaused() && heapUsedMB < MEMORY_LIMIT_MB * 0.7) {
+      queue.resume();
+      send({
+        type: "WORKER_ERROR",
+        error: `Memory usage recovered to ${heapUsedMB.toFixed(0)}MB. Resuming queue.`,
+      });
+      processNextTask();
     }
 
     if (heapUsedMB > MEMORY_LIMIT_MB) {

@@ -12,9 +12,7 @@ export type WorkerTaskType =
   | "BATCH_EMBEDDINGS"
   | "VECTOR_INDEX_BUILD"
   | "GRAPH_LAYOUT_COMPUTE"
-  | "PDF_TEXT_EXTRACT"
-  | "RSS_FEED_FETCH"
-  | "DOMAIN_SUMMARY_GEN";
+  | "PDF_TEXT_EXTRACT";
 
 export type TaskPriority = "high" | "normal" | "low";
 
@@ -35,8 +33,6 @@ export const TASK_DEFAULT_TIMEOUTS: Record<WorkerTaskType, number> = {
   VECTOR_INDEX_BUILD: 600_000,
   GRAPH_LAYOUT_COMPUTE: 120_000,
   PDF_TEXT_EXTRACT: 120_000,
-  RSS_FEED_FETCH: 30_000,
-  DOMAIN_SUMMARY_GEN: 180_000,
 };
 
 // ---------------------------------------------------------------------------
@@ -114,42 +110,6 @@ export interface PdfExtractResult {
     author?: string;
     createdAt?: string;
   };
-}
-
-export interface RssFetchPayload {
-  feedUrl: string;
-  domainId: string;
-  lastEntryId?: string;
-}
-
-export interface RssFetchResult {
-  newEntries: Array<{
-    title: string;
-    url: string;
-    summary: string;
-    publishedAt: string;
-    author?: string;
-  }>;
-  totalEntries: number;
-  feedTitle: string;
-}
-
-export interface DomainSummaryPayload {
-  domainId: string;
-  contextNodes: Array<{
-    title: string;
-    content: string;
-    comprehensionLevel: number;
-  }>;
-  tier: "hot" | "warm" | "cold";
-  model: string;
-}
-
-export interface DomainSummaryResult {
-  summary: string;
-  tier: "hot" | "warm" | "cold";
-  tokenCount: number;
-  nodeCount: number;
 }
 
 // ---------------------------------------------------------------------------
