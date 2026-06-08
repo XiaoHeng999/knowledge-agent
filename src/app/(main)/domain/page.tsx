@@ -88,6 +88,7 @@ export default function DomainKnowledgePage() {
   const handleCreate = useCallback(
     async (data: { domainId: string; title: string; type: string; content: string; sources?: string[] }) => {
       const node = await createNode(data);
+      if (!node) return;
       setShowForm(false);
       selectNode(node.id);
       openPanel('knowledge-detail', 320, (

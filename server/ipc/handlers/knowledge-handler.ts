@@ -2,7 +2,13 @@
  * Knowledge graph IPC handlers — wires KNOWLEDGE_CHANNELS to KnowledgeGraph service.
  * Medium/high-risk operations go through the security gate before being applied.
  */
-import { KNOWLEDGE_CHANNELS } from "../../../src/lib/ipc/channels";
+import {
+  KNOWLEDGE_CHANNELS,
+  type KnowledgeNode,
+  type KnowledgeEdge,
+  type KnowledgeWriteResponse,
+  type KnowledgeWriteVoidResponse,
+} from "../../../src/lib/ipc/channels";
 import { registerHandler } from "../handler";
 import * as KnowledgeGraph from "../../services/knowledge-graph";
 import * as SearchEngine from "../../services/search-engine";
@@ -12,6 +18,24 @@ import {
   logAuditEntry,
 } from "../../services/security-gate";
 import type { PendingAudit } from "../../../src/lib/ipc/channels";
+
+function pendingAuditResult<T>(audit: PendingAudit): KnowledgeWriteResponse<T> {
+  return { result: null, pendingAudit: true, auditId: audit.id, risk: audit.risk };
+}
+
+function pendingAuditVoidResult(audit: PendingAudit): KnowledgeWriteVoidResponse {
+  return { pendingAudit: true, auditId: audit.id, risk: audit.risk };
+}
+
+function makeAuditEntry(operation: Parameters<typeof assessWriteRisk>[0], riskLevel: string, decision: string) {
+  return {
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+    operation,
+    riskLevel: riskLevel as PendingAudit["risk"]["level"],
+    decision: decision as "auto_approved" | "blocked",
+  };
+}
 
 export function registerKnowledgeHandlers(): void {
   registerHandler(KNOWLEDGE_CHANNELS.CREATE_NODE, async (_event, req) => {
@@ -24,28 +48,16 @@ export function registerKnowledgeHandlers(): void {
     const risk = assessWriteRisk(operation);
 
     if (risk.level === "blocked") {
-      logAuditEntry({
-        id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        operation,
-        riskLevel: risk.level,
-        decision: "blocked",
-      });
+      logAuditEntry(makeAuditEntry(operation, risk.level, "blocked"));
       throw new Error(`Write blocked: ${risk.reasons.join(", ")}`);
     }
 
     if (risk.autoApprove) {
-      logAuditEntry({
-        id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        operation,
-        riskLevel: risk.level,
-        decision: "auto_approved",
-      });
-      return KnowledgeGraph.createNode(req);
+      logAuditEntry(makeAuditEntry(operation, risk.level, "auto_approved"));
+      const result = await KnowledgeGraph.createNode(req);
+      return { result, pendingAudit: false } satisfies KnowledgeWriteResponse<KnowledgeNode>;
     }
 
-    // Queue for review
     const audit: PendingAudit = {
       id: crypto.randomUUID(),
       operation,
@@ -53,9 +65,7 @@ export function registerKnowledgeHandlers(): void {
       createdAt: new Date().toISOString(),
     };
     addPendingAudit(audit);
-    return { _pendingAudit: audit.id, risk } as unknown as Awaited<
-      ReturnType<typeof KnowledgeGraph.createNode>
-    >;
+    return pendingAuditResult<KnowledgeNode>(audit);
   });
 
   registerHandler(KNOWLEDGE_CHANNELS.UPDATE_NODE, async (_event, req) => {
@@ -71,28 +81,16 @@ export function registerKnowledgeHandlers(): void {
     const risk = assessWriteRisk(operation);
 
     if (risk.level === "blocked") {
-      logAuditEntry({
-        id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        operation,
-        riskLevel: risk.level,
-        decision: "blocked",
-      });
+      logAuditEntry(makeAuditEntry(operation, risk.level, "blocked"));
       throw new Error(`Write blocked: ${risk.reasons.join(", ")}`);
     }
 
     if (risk.autoApprove) {
-      logAuditEntry({
-        id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        operation,
-        riskLevel: risk.level,
-        decision: "auto_approved",
-      });
-      return KnowledgeGraph.updateNode(req);
+      logAuditEntry(makeAuditEntry(operation, risk.level, "auto_approved"));
+      const result = await KnowledgeGraph.updateNode(req);
+      return { result, pendingAudit: false } satisfies KnowledgeWriteResponse<KnowledgeNode>;
     }
 
-    // Medium/high risk: queue for review
     const audit: PendingAudit = {
       id: crypto.randomUUID(),
       operation,
@@ -100,9 +98,7 @@ export function registerKnowledgeHandlers(): void {
       createdAt: new Date().toISOString(),
     };
     addPendingAudit(audit);
-    return { _pendingAudit: audit.id, risk } as unknown as Awaited<
-      ReturnType<typeof KnowledgeGraph.updateNode>
-    >;
+    return pendingAuditResult<KnowledgeNode>(audit);
   });
 
   registerHandler(KNOWLEDGE_CHANNELS.DELETE_NODE, async (_event, req) => {
@@ -117,13 +113,7 @@ export function registerKnowledgeHandlers(): void {
     const risk = assessWriteRisk(operation);
 
     if (risk.level === "blocked") {
-      logAuditEntry({
-        id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        operation,
-        riskLevel: risk.level,
-        decision: "blocked",
-      });
+      logAuditEntry(makeAuditEntry(operation, risk.level, "blocked"));
       throw new Error(`Write blocked: ${risk.reasons.join(", ")}`);
     }
 
@@ -135,31 +125,78 @@ export function registerKnowledgeHandlers(): void {
       createdAt: new Date().toISOString(),
     };
     addPendingAudit(audit);
-    return { _pendingAudit: audit.id, risk } as unknown as void;
+    return pendingAuditVoidResult(audit);
   });
 
   registerHandler(KNOWLEDGE_CHANNELS.GET_NODE, async (_event, req) => {
-    const node = KnowledgeGraph.getNode(req.id);
-    return node;
+    return KnowledgeGraph.getNode(req.id);
   });
 
   registerHandler(KNOWLEDGE_CHANNELS.LIST_NODES, async (_event, req) => {
-    const result = KnowledgeGraph.listNodes(req);
-    return result;
+    return KnowledgeGraph.listNodes(req);
   });
 
   registerHandler(KNOWLEDGE_CHANNELS.CREATE_EDGE, async (_event, req) => {
-    const edge = KnowledgeGraph.createEdge(req);
-    return edge;
+    const sourceNode = KnowledgeGraph.getNode(req.sourceId);
+    const targetNode = KnowledgeGraph.getNode(req.targetId);
+    const domainId = sourceNode?.domainId ?? targetNode?.domainId ?? "";
+
+    const operation = {
+      type: "create" as const,
+      targetPath: `domain/${domainId}/knowledge/edge/${req.sourceId}-${req.targetId}`,
+      domainId,
+      newContent: `Edge: ${req.sourceId} → ${req.targetId} (${req.type})`,
+    };
+    const risk = assessWriteRisk(operation);
+
+    if (risk.level === "blocked") {
+      logAuditEntry(makeAuditEntry(operation, risk.level, "blocked"));
+      throw new Error(`Write blocked: ${risk.reasons.join(", ")}`);
+    }
+
+    if (risk.autoApprove) {
+      logAuditEntry(makeAuditEntry(operation, risk.level, "auto_approved"));
+      const result = KnowledgeGraph.createEdge(req);
+      return { result, pendingAudit: false } satisfies KnowledgeWriteResponse<KnowledgeEdge>;
+    }
+
+    const audit: PendingAudit = {
+      id: crypto.randomUUID(),
+      operation,
+      risk,
+      createdAt: new Date().toISOString(),
+    };
+    addPendingAudit(audit);
+    return pendingAuditResult<KnowledgeEdge>(audit);
   });
 
   registerHandler(KNOWLEDGE_CHANNELS.DELETE_EDGE, async (_event, req) => {
-    await KnowledgeGraph.deleteEdge(req.id);
+    const domainId = "";
+
+    const operation = {
+      type: "delete" as const,
+      targetPath: `domain/${domainId}/knowledge/edge/${req.id}`,
+      domainId,
+    };
+    const risk = assessWriteRisk(operation);
+
+    if (risk.level === "blocked") {
+      logAuditEntry(makeAuditEntry(operation, risk.level, "blocked"));
+      throw new Error(`Write blocked: ${risk.reasons.join(", ")}`);
+    }
+
+    const audit: PendingAudit = {
+      id: crypto.randomUUID(),
+      operation,
+      risk,
+      createdAt: new Date().toISOString(),
+    };
+    addPendingAudit(audit);
+    return pendingAuditVoidResult(audit);
   });
 
   registerHandler(KNOWLEDGE_CHANNELS.GET_GRAPH, async (_event, req) => {
-    const graph = KnowledgeGraph.getGraph(req.domainId);
-    return graph;
+    return KnowledgeGraph.getGraph(req.domainId);
   });
 
   registerHandler(KNOWLEDGE_CHANNELS.SEARCH, async (_event, req) => {

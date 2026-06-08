@@ -668,6 +668,15 @@ export interface SearchReindexResponse {
   indexed: number;
 }
 
+// --- Knowledge write (pending-audit union) ---
+export type KnowledgeWriteResponse<T> =
+  | { result: T; pendingAudit: false }
+  | { result: null; pendingAudit: true; auditId: string; risk: RiskAssessment };
+
+export type KnowledgeWriteVoidResponse =
+  | { pendingAudit: false }
+  | { pendingAudit: true; auditId: string; risk: RiskAssessment };
+
 // --- Security ---
 export type RiskLevel = "low" | "medium" | "high" | "blocked";
 
@@ -1182,13 +1191,13 @@ export interface IpcChannelMap {
   [DOMAIN_CHANNELS.GET_CONFIG]: { request: Pick<DomainInfo, "id">; response: DomainGetConfigResponse };
   [DOMAIN_CHANNELS.UPDATE_CONFIG]: { request: DomainUpdateConfigRequest; response: DomainGetConfigResponse };
   // Knowledge
-  [KNOWLEDGE_CHANNELS.CREATE_NODE]: { request: KnowledgeCreateNodeRequest; response: KnowledgeNode };
-  [KNOWLEDGE_CHANNELS.UPDATE_NODE]: { request: KnowledgeUpdateNodeRequest; response: KnowledgeNode };
-  [KNOWLEDGE_CHANNELS.DELETE_NODE]: { request: Pick<KnowledgeNode, "id">; response: void };
+  [KNOWLEDGE_CHANNELS.CREATE_NODE]: { request: KnowledgeCreateNodeRequest; response: KnowledgeWriteResponse<KnowledgeNode> };
+  [KNOWLEDGE_CHANNELS.UPDATE_NODE]: { request: KnowledgeUpdateNodeRequest; response: KnowledgeWriteResponse<KnowledgeNode> };
+  [KNOWLEDGE_CHANNELS.DELETE_NODE]: { request: Pick<KnowledgeNode, "id">; response: KnowledgeWriteVoidResponse };
   [KNOWLEDGE_CHANNELS.GET_NODE]: { request: Pick<KnowledgeNode, "id">; response: KnowledgeNode };
   [KNOWLEDGE_CHANNELS.LIST_NODES]: { request: KnowledgeListRequest; response: KnowledgeListResponse };
-  [KNOWLEDGE_CHANNELS.CREATE_EDGE]: { request: KnowledgeCreateEdgeRequest; response: KnowledgeEdge };
-  [KNOWLEDGE_CHANNELS.DELETE_EDGE]: { request: KnowledgeDeleteEdgeRequest; response: void };
+  [KNOWLEDGE_CHANNELS.CREATE_EDGE]: { request: KnowledgeCreateEdgeRequest; response: KnowledgeWriteResponse<KnowledgeEdge> };
+  [KNOWLEDGE_CHANNELS.DELETE_EDGE]: { request: KnowledgeDeleteEdgeRequest; response: KnowledgeWriteVoidResponse };
   [KNOWLEDGE_CHANNELS.GET_GRAPH]: { request: KnowledgeGraphRequest; response: KnowledgeGraphResponse };
   [KNOWLEDGE_CHANNELS.SEARCH]: { request: KnowledgeSearchRequest; response: KnowledgeSearchResponse };
   // Inbox

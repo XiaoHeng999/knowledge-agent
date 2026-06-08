@@ -15,8 +15,7 @@ import {
   logAuditEntry,
 } from "../../services/security-gate";
 import { generateDiff } from "../../services/diff-service";
-import type { PendingAudit, AuditTrailEntry } from "../../../src/lib/ipc/channels";
-import * as KnowledgeGraph from "../../services/knowledge-graph";
+import type { PendingAudit } from "../../../src/lib/ipc/channels";
 
 export function registerSecurityHandlers(): void {
   registerHandler(SECURITY_CHANNELS.ASSESS_WRITE, async (_event, req) => {
@@ -29,12 +28,10 @@ export function registerSecurityHandlers(): void {
         operation: req.operation,
         riskLevel: risk.level,
         decision: "auto_approved",
-        commitHash: undefined,
       });
     } else if (risk.level !== "blocked") {
-      const auditId = crypto.randomUUID();
       const audit: PendingAudit = {
-        id: auditId,
+        id: crypto.randomUUID(),
         operation: req.operation,
         risk,
         createdAt: new Date().toISOString(),
@@ -52,28 +49,10 @@ export function registerSecurityHandlers(): void {
 
   registerHandler(SECURITY_CHANNELS.RESOLVE_AUDIT, async (_event, req) => {
     resolveAuditService(req.auditId, req.action, req.editedContent);
-
-    logAuditEntry({
-      id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
-      operation: { type: "update", targetPath: "", domainId: "" },
-      riskLevel: "medium",
-      decision: req.action === "reject" ? "user_rejected" : "user_approved",
-      reviewer: "user",
-    });
   });
 
   registerHandler(SECURITY_CHANNELS.BULK_RESOLVE, async (_event, req) => {
     bulkResolveService(req.auditIds, req.action);
-
-    logAuditEntry({
-      id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
-      operation: { type: "update", targetPath: "", domainId: "" },
-      riskLevel: "medium",
-      decision: req.action === "reject_all" ? "user_rejected" : "user_approved",
-      reviewer: "user",
-    });
   });
 
   registerHandler(SECURITY_CHANNELS.GET_AUDIT_LOG, async (_event, req) => {

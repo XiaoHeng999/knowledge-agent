@@ -140,16 +140,43 @@ export function resolveAudit(
   action: "approve" | "reject" | "edit_and_approve",
   _editedContent?: string,
 ): boolean {
-  return pendingAudits.delete(auditId);
+  const audit = pendingAudits.get(auditId);
+  if (!audit) return false;
+
+  pendingAudits.delete(auditId);
+
+  const decision = action === "reject" ? "user_rejected" as const : "user_approved" as const;
+  logAuditEntry({
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+    operation: audit.operation,
+    riskLevel: audit.risk.level,
+    decision,
+    reviewer: "user",
+  });
+
+  return true;
 }
 
 export function bulkResolve(
   auditIds: string[],
   action: "approve_all" | "reject_all",
 ): number {
+  const decision = action === "reject_all" ? "user_rejected" as const : "user_approved" as const;
   let count = 0;
   for (const id of auditIds) {
-    if (pendingAudits.delete(id)) count++;
+    const audit = pendingAudits.get(id);
+    if (!audit) continue;
+    pendingAudits.delete(id);
+    count++;
+    logAuditEntry({
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      operation: audit.operation,
+      riskLevel: audit.risk.level,
+      decision,
+      reviewer: "user",
+    });
   }
   return count;
 }
@@ -158,10 +185,15 @@ export function bulkResolve(
 // Audit trail
 // ---------------------------------------------------------------------------
 
+const MAX_AUDIT_TRAIL_SIZE = 1000;
+
 const auditTrail: AuditTrailEntry[] = [];
 
 export function logAuditEntry(entry: AuditTrailEntry): void {
   auditTrail.push(entry);
+  while (auditTrail.length > MAX_AUDIT_TRAIL_SIZE) {
+    auditTrail.shift();
+  }
 }
 
 export function getAuditLog(
