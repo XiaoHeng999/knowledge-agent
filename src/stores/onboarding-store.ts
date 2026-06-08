@@ -7,6 +7,8 @@ export type OnboardingStep = 'welcome' | 'api-key' | 'create-domain' | 'guided-t
 interface OnboardingState {
   /** Whether onboarding has been completed (won't show again) */
   completed: boolean;
+  /** Whether the user skipped onboarding without completing */
+  skipped: boolean;
   /** Whether the guided tour has been completed */
   tourCompleted: boolean;
   /** Current active step */
@@ -44,12 +46,13 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
   persist(
     (set, get) => ({
       completed: false,
+      skipped: false,
       tourCompleted: false,
       currentStep: 'welcome',
       isOpen: false,
       hasApiKey: false,
 
-      start: () => set({ isOpen: true, currentStep: 'welcome', completed: false }),
+      start: () => set({ isOpen: true, currentStep: 'welcome', completed: false, skipped: false }),
 
       goToStep: (step) => set({ currentStep: step }),
 
@@ -71,9 +74,9 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
         }
       },
 
-      skip: () => set({ isOpen: false, completed: true }),
+      skip: () => set({ skipped: true, completed: false, isOpen: false }),
 
-      complete: () => set({ completed: true, isOpen: false }),
+      complete: () => set({ completed: true, skipped: false, isOpen: false }),
 
       completeTour: () => set({ tourCompleted: true }),
 
@@ -86,6 +89,7 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
       storage: persistedStorage,
       partialize: (state) => ({
         completed: state.completed,
+        skipped: state.skipped,
         tourCompleted: state.tourCompleted,
         hasApiKey: state.hasApiKey,
       }),

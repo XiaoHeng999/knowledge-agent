@@ -73,7 +73,6 @@ const api = {
     createEdge: (req: ChannelRequest<"knowledge:createEdge">) => invoke("knowledge:createEdge", req),
     deleteEdge: (req: ChannelRequest<"knowledge:deleteEdge">) => invoke("knowledge:deleteEdge", req),
     getGraph: (req: ChannelRequest<"knowledge:getGraph">) => invoke("knowledge:getGraph", req),
-    search: (req: ChannelRequest<"knowledge:search">) => invoke("knowledge:search", req),
   },
 
   // --- Inbox ---

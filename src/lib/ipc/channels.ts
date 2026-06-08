@@ -52,7 +52,6 @@ export const KNOWLEDGE_CHANNELS = {
   CREATE_EDGE: "knowledge:createEdge",
   DELETE_EDGE: "knowledge:deleteEdge",
   GET_GRAPH: "knowledge:getGraph",
-  SEARCH: "knowledge:search",
 } as const;
 
 export const INBOX_CHANNELS = {
@@ -460,20 +459,10 @@ export interface KnowledgeSearchFilters {
   dateFrom?: string;
   dateTo?: string;
 }
-export interface KnowledgeSearchRequest {
-  query: string;
-  domainId?: string;
-  limit?: number;
-  offset?: number;
-  filters?: KnowledgeSearchFilters;
-}
 export interface KnowledgeSearchResult {
   node: KnowledgeNode;
   score: number;
   matchType: "vector" | "fulltext" | "hybrid";
-}
-export interface KnowledgeSearchResponse {
-  results: KnowledgeSearchResult[];
 }
 
 // --- Inbox ---
@@ -657,7 +646,13 @@ export interface VcStatusResponse {
 }
 
 // --- Search ---
-export type SearchRequest = KnowledgeSearchRequest;
+export interface SearchRequest {
+  query: string;
+  domainId?: string;
+  limit?: number;
+  offset?: number;
+  filters?: KnowledgeSearchFilters;
+}
 export interface SearchResponse {
   results: KnowledgeSearchResult[];
   total: number;
@@ -1200,7 +1195,6 @@ export interface IpcChannelMap {
   [KNOWLEDGE_CHANNELS.CREATE_EDGE]: { request: KnowledgeCreateEdgeRequest; response: KnowledgeWriteResponse<KnowledgeEdge> };
   [KNOWLEDGE_CHANNELS.DELETE_EDGE]: { request: KnowledgeDeleteEdgeRequest; response: KnowledgeWriteVoidResponse };
   [KNOWLEDGE_CHANNELS.GET_GRAPH]: { request: KnowledgeGraphRequest; response: KnowledgeGraphResponse };
-  [KNOWLEDGE_CHANNELS.SEARCH]: { request: KnowledgeSearchRequest; response: KnowledgeSearchResponse };
   // Inbox
   [INBOX_CHANNELS.ADD_ITEM]: { request: InboxAddRequest; response: InboxItem };
   [INBOX_CHANNELS.LIST_ITEMS]: { request: InboxListRequest; response: InboxListResponse };

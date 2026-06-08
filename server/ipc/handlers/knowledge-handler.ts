@@ -11,7 +11,6 @@ import {
 } from "../../../src/lib/ipc/channels";
 import { registerHandler } from "../handler";
 import * as KnowledgeGraph from "../../services/knowledge-graph";
-import * as SearchEngine from "../../services/search-engine";
 import {
   assessWriteRisk,
   addPendingAudit,
@@ -197,10 +196,5 @@ export function registerKnowledgeHandlers(): void {
 
   registerHandler(KNOWLEDGE_CHANNELS.GET_GRAPH, async (_event, req) => {
     return KnowledgeGraph.getGraph(req.domainId);
-  });
-
-  registerHandler(KNOWLEDGE_CHANNELS.SEARCH, async (_event, req) => {
-    const result = await SearchEngine.search(req);
-    return { results: result.results };
   });
 }

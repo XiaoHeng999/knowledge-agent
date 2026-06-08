@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import type { DomainInfo } from '@/lib/ipc/channels';
+import { useAppStore } from './app-store';
 
 interface DomainState {
   domains: DomainInfo[];
-  currentDomainId: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -25,14 +25,11 @@ interface DomainActions {
     icon?: string;
   }) => Promise<void>;
   deleteDomain: (id: string) => Promise<void>;
-  setCurrentDomain: (id: string | null) => void;
-  getCurrentDomain: () => DomainInfo | null;
 }
 
 export const useDomainStore = create<DomainState & DomainActions>()(
-  (set, get) => ({
+  (set) => ({
     domains: [],
-    currentDomainId: null,
     loading: false,
     error: null,
 
@@ -41,6 +38,10 @@ export const useDomainStore = create<DomainState & DomainActions>()(
       try {
         const result = await window.api.domain.list();
         set({ domains: result.domains, loading: false });
+        const currentId = useAppStore.getState().currentDomainId;
+        if (!currentId && result.domains.length > 0) {
+          useAppStore.getState().setCurrentDomain(result.domains[0].id);
+        }
       } catch (err) {
         set({
           error: err instanceof Error ? err.message : String(err),
@@ -90,9 +91,11 @@ export const useDomainStore = create<DomainState & DomainActions>()(
         await window.api.domain.delete({ id });
         set((s) => ({
           domains: s.domains.filter((d) => d.id !== id),
-          currentDomainId: s.currentDomainId === id ? null : s.currentDomainId,
           loading: false,
         }));
+        if (useAppStore.getState().currentDomainId === id) {
+          useAppStore.getState().setCurrentDomain(null);
+        }
       } catch (err) {
         set({
           error: err instanceof Error ? err.message : String(err),
@@ -100,13 +103,6 @@ export const useDomainStore = create<DomainState & DomainActions>()(
         });
         throw err;
       }
-    },
-
-    setCurrentDomain: (id) => set({ currentDomainId: id }),
-
-    getCurrentDomain: () => {
-      const { domains, currentDomainId } = get();
-      return domains.find((d) => d.id === currentDomainId) ?? null;
     },
   }),
 );

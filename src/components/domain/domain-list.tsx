@@ -15,11 +15,10 @@ interface DomainListProps {
 export function DomainList({ collapsed, onDomainSelect }: DomainListProps) {
   const router = useRouter();
   const domains = useDomainStore((s) => s.domains);
-  const currentDomainId = useDomainStore((s) => s.currentDomainId);
   const loading = useDomainStore((s) => s.loading);
   const fetchDomains = useDomainStore((s) => s.fetchDomains);
-  const setCurrentDomain = useDomainStore((s) => s.setCurrentDomain);
-  const setAppCurrentDomain = useAppStore((s) => s.setCurrentDomain);
+  const currentDomainId = useAppStore((s) => s.currentDomainId);
+  const setCurrentDomain = useAppStore((s) => s.setCurrentDomain);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -29,11 +28,10 @@ export function DomainList({ collapsed, onDomainSelect }: DomainListProps) {
   const handleSelect = useCallback(
     (domain: DomainInfo) => {
       setCurrentDomain(domain.id);
-      setAppCurrentDomain(domain.id);
       router.push(`/domain?id=${domain.id}`);
       onDomainSelect?.(domain);
     },
-    [setCurrentDomain, setAppCurrentDomain, router, onDomainSelect],
+    [setCurrentDomain, router, onDomainSelect],
   );
 
   const handleCreated = useCallback(

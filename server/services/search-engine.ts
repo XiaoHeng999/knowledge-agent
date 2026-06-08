@@ -13,7 +13,7 @@ import { getDatabaseService } from "../db/index";
 import type { VectorSearchResult } from "../db/vector";
 import type {
   KnowledgeNode,
-  KnowledgeSearchRequest,
+  SearchRequest,
   KnowledgeSearchResult,
 } from "../../src/lib/ipc/channels";
 import { generateEmbedding } from "./embedding-service";
@@ -29,7 +29,7 @@ const resultCache = new LRUCache<{ results: KnowledgeSearchResult[]; total: numb
   ttlMs: 30_000, // 30s TTL for search results
 });
 
-function buildCacheKey(req: KnowledgeSearchRequest): string {
+function buildCacheKey(req: SearchRequest): string {
   const raw = JSON.stringify({
     q: req.query.trim().toLowerCase(),
     d: req.domainId ?? "",
@@ -45,7 +45,7 @@ function buildCacheKey(req: KnowledgeSearchRequest): string {
 // ---------------------------------------------------------------------------
 
 export async function search(
-  req: KnowledgeSearchRequest,
+  req: SearchRequest,
 ): Promise<{ results: KnowledgeSearchResult[]; total: number }> {
   const limit = req.limit ?? 20;
   const offset = req.offset ?? 0;
@@ -259,7 +259,7 @@ function determineMatchType(
 
 function applyFilters(
   results: KnowledgeSearchResult[],
-  filters?: KnowledgeSearchRequest["filters"],
+  filters?: SearchRequest["filters"],
 ): KnowledgeSearchResult[] {
   if (!filters) return results;
 
