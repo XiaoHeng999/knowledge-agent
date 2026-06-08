@@ -9,3 +9,11 @@ export { timelineAnalyzeTool, setTimelineAnalyzeExecutor, type TimelineAnalyzeEx
 export { knowledgeToolsExtension } from "./extensions/knowledge-tools-extension";
 export { researchAgentExtension } from "./extensions/research-agent-extension";
 export { importAgentExtension } from "./extensions/import-agent-extension";
+export {
+  setPendingDomain,
+  registerSession,
+  clearSession,
+  getDomainContext,
+  getSessionDomain,
+  type DomainContext,
+} from "./extensions/session-context";

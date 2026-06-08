@@ -14,6 +14,11 @@ import type { KnowledgeNodeType } from "../db/schema";
 import { domainResearchTool } from "../pi-mono/tools/domain-research";
 import { knowledgeWriteTool } from "../pi-mono/tools/knowledge-write";
 import { timelineAnalyzeTool } from "../pi-mono/tools/timeline-analyze";
+import {
+  setPendingDomain,
+  registerSession,
+  clearSession,
+} from "../pi-mono/extensions/session-context";
 
 // ---------------------------------------------------------------------------
 // Interface definitions
@@ -269,6 +274,9 @@ export class PiMonoWrapper implements IModelManager, IAgentPool {
       throw new Error(`Model not found or not available: ${modelId}`);
     }
 
+    // Register domain before session creation so session_start hooks can pick it up.
+    setPendingDomain(domainId);
+
     const { session } = await createAgentSession({
       model,
       authStorage: this.core.authStorage,
@@ -281,6 +289,11 @@ export class PiMonoWrapper implements IModelManager, IAgentPool {
 
     const sessionId = session.sessionId;
     this.sessions.set(sessionId, { session, domainId, modelId });
+
+    // Also register in the session-context so before_agent_start / tool_call hooks
+    // can look up the domain by sessionId even if session_start didn't fire.
+    registerSession(sessionId, domainId);
+
     return { sessionId, session };
   }
 
@@ -291,6 +304,7 @@ export class PiMonoWrapper implements IModelManager, IAgentPool {
 
   destroySession(sessionId: string): void {
     this.sessions.delete(sessionId);
+    clearSession(sessionId);
   }
 
   getSession(sessionId: string): AgentSession | undefined {
