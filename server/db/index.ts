@@ -4,8 +4,8 @@ import { MigrationRunner, loadMigrations } from "./migrations";
 import { DomainsRepository } from "./repositories/domains";
 import { KnowledgeNodesRepository } from "./repositories/knowledge-nodes";
 import { KnowledgeEdgesRepository } from "./repositories/knowledge-edges";
-import { SourcesRepository } from "./repositories/sources";
-import { TimelineEntriesRepository } from "./repositories/timeline-entries";
+import { InboxItemRepository } from "./repositories/inbox-items";
+import { PredictionRepository } from "./repositories/predictions";
 import { ModelConfigsRepository } from "./repositories/model-configs";
 import { ApiKeysRepository } from "./repositories/api-keys";
 import { InboxRepository } from "./repositories/inbox";
@@ -24,8 +24,8 @@ export interface DatabaseService {
   domains: DomainsRepository;
   knowledgeNodes: KnowledgeNodesRepository;
   knowledgeEdges: KnowledgeEdgesRepository;
-  sources: SourcesRepository;
-  timelineEntries: TimelineEntriesRepository;
+  inboxItems: InboxItemRepository;
+  predictions: PredictionRepository;
   modelConfigs: ModelConfigsRepository;
   apiKeys: ApiKeysRepository;
   inbox: InboxRepository;
@@ -61,8 +61,8 @@ export function initializeDatabase(dbPath?: string): DatabaseService {
     domains: new DomainsRepository(db),
     knowledgeNodes: new KnowledgeNodesRepository(db),
     knowledgeEdges: new KnowledgeEdgesRepository(db),
-    sources: new SourcesRepository(db),
-    timelineEntries: new TimelineEntriesRepository(db),
+    inboxItems: new InboxItemRepository(db),
+    predictions: new PredictionRepository(db),
     modelConfigs: new ModelConfigsRepository(db),
     apiKeys: new ApiKeysRepository(db),
     inbox: new InboxRepository(db),

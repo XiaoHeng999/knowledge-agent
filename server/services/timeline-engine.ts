@@ -4,6 +4,7 @@
  */
 import { getDatabaseService } from "../db/index";
 import { getPiMonoWrapper } from "../pi-mono/instance";
+import { resolveModelId } from "../lib/model-resolver";
 import { setTimelineAnalyzeExecutor } from "../pi-mono/tools/timeline-analyze";
 import { createNode } from "./knowledge-graph";
 import type { PredictionRow, PredictionStatus, KnowledgeNodeRow } from "../db/schema";
@@ -100,7 +101,7 @@ export function listPredictions(
   const { status, limit = 50, offset = 0 } = options ?? {};
 
   const result = status
-    ? db.timelineEntries.list({
+    ? db.predictions.list({
         where: "domain_id = ? AND status = ?",
         params: [domainId, status],
         limit,
@@ -108,7 +109,7 @@ export function listPredictions(
         orderBy: "predicted_date",
         orderDir: "DESC",
       })
-    : db.timelineEntries.listByDomain(domainId, limit, offset);
+    : db.predictions.listByDomain(domainId, limit, offset);
 
   return {
     items: result.items.map(rowToPrediction),
@@ -122,7 +123,7 @@ export function listPredictions(
 
 export function getPrediction(id: string): TimelinePrediction {
   const db = getDatabaseService();
-  const row = db.timelineEntries.findById(id);
+  const row = db.predictions.findById(id);
   if (!row) throw new Error(`Prediction not found: ${id}`);
   return rowToPrediction(row);
 }
@@ -140,7 +141,7 @@ export function createPrediction(params: {
   sourceNodeIds?: string[];
 }): TimelinePrediction {
   const db = getDatabaseService();
-  const row = db.timelineEntries.create({
+  const row = db.predictions.create({
     domain_id: params.domainId,
     content: params.content,
     confidence: params.confidence,
@@ -175,7 +176,7 @@ export function updatePrediction(
   if (data.predictedDate !== undefined) updateData.predicted_date = data.predictedDate;
   if (data.reasoning !== undefined) updateData.reasoning = data.reasoning;
 
-  const updated = db.timelineEntries.update(id, updateData);
+  const updated = db.predictions.update(id, updateData);
   if (!updated) throw new Error(`Prediction not found: ${id}`);
   return rowToPrediction(updated);
 }
@@ -190,7 +191,7 @@ export function verifyPrediction(
   actualOutcome?: string,
 ): TimelinePrediction {
   const db = getDatabaseService();
-  const existing = db.timelineEntries.findById(id);
+  const existing = db.predictions.findById(id);
   if (!existing) throw new Error(`Prediction not found: ${id}`);
 
   const updateData: Record<string, unknown> = {
@@ -199,7 +200,7 @@ export function verifyPrediction(
   };
   if (actualOutcome !== undefined) updateData.actual_outcome = actualOutcome;
 
-  const updated = db.timelineEntries.update(id, updateData);
+  const updated = db.predictions.update(id, updateData);
   return rowToPrediction(updated!);
 }
 
@@ -209,7 +210,7 @@ export function verifyPrediction(
 
 export function deletePrediction(id: string): void {
   const db = getDatabaseService();
-  const deleted = db.timelineEntries.delete(id);
+  const deleted = db.predictions.delete(id);
   if (!deleted) throw new Error(`Prediction not found: ${id}`);
 }
 
@@ -260,7 +261,7 @@ export function extractTimelineEvents(
   }
 
   // Also include predictions as timeline entries
-  const predictions = db.timelineEntries.listByDomain(domainId, 50, 0);
+  const predictions = db.predictions.listByDomain(domainId, 50, 0);
   for (const pred of predictions.items) {
     entries.push({
       id: pred.id,
@@ -313,7 +314,7 @@ export async function analyzeTrends(
   );
 
   // Collect existing predictions
-  const existingPredictions = db.timelineEntries.listByDomain(domainId, 20, 0);
+  const existingPredictions = db.predictions.listByDomain(domainId, 20, 0);
   const predictionSummaries = existingPredictions.items.map(
     (p) => `- [${p.status}] "${p.content}" (confidence: ${Math.round(p.confidence * 100)}%, target: ${p.predicted_date ?? "none"})`,
   );
@@ -373,7 +374,7 @@ export async function analyzeTrends(
 
   // Auto-create suggested predictions
   for (const suggestion of parsed.predictionSuggestions) {
-    db.timelineEntries.create({
+    db.predictions.create({
       domain_id: domainId,
       content: suggestion.content,
       confidence: suggestion.confidence,
@@ -424,7 +425,7 @@ export async function generatePredictions(
     (n) => `- [${n.node_type}] ${n.title}: ${(n.summary ?? "").slice(0, 100)}`,
   );
 
-  const existingPredictions = db.timelineEntries.listByDomain(domainId, 10, 0);
+  const existingPredictions = db.predictions.listByDomain(domainId, 10, 0);
   const existingSummaries = existingPredictions.items.map(
     (p) => `- "${p.content}" [${p.status}] confidence: ${Math.round(p.confidence * 100)}%`,
   );
@@ -456,7 +457,7 @@ export async function generatePredictions(
   const created: TimelinePrediction[] = [];
 
   for (const pred of suggestedPredictions) {
-    const row = db.timelineEntries.create({
+    const row = db.predictions.create({
       domain_id: domainId,
       content: pred.content,
       confidence: pred.confidence,
@@ -480,7 +481,7 @@ export async function generatePredictions(
 
 export function getPredictionAccuracy(domainId: string): PredictionAccuracy {
   const db = getDatabaseService();
-  const all = db.timelineEntries.list({
+  const all = db.predictions.list({
     where: "domain_id = ?",
     params: [domainId],
     limit: 10000,
@@ -514,10 +515,10 @@ export function getPredictionAccuracy(domainId: string): PredictionAccuracy {
 
 export function expireOverduePredictions(): number {
   const db = getDatabaseService();
-  const expired = db.timelineEntries.findExpired();
+  const expired = db.predictions.findExpired();
 
   for (const pred of expired) {
-    db.timelineEntries.update(pred.id, {
+    db.predictions.update(pred.id, {
       status: "expired",
       verified_at: new Date().toISOString(),
     } as unknown as Partial<PredictionRow>);
@@ -688,20 +689,4 @@ function parsePredictionsFromResponse(
   return predictions;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers: model resolution
-// ---------------------------------------------------------------------------
 
-async function resolveModelId(domainId: string, preferredModelId?: string): Promise<string> {
-  if (preferredModelId) return preferredModelId;
-
-  const db = getDatabaseService();
-  const domain = db.domains.findById(domainId);
-  if (domain?.default_expert_model) return domain.default_expert_model;
-
-  const wrapper = getPiMonoWrapper();
-  const models = await wrapper.listAvailableModels();
-  if (models.length > 0) return models[0].id;
-
-  throw new Error("No model available. Configure a model or add an API key.");
-}

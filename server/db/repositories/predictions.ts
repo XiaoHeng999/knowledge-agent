@@ -2,7 +2,7 @@ import type { BetterSqlite3Database } from "../connection";
 import type { PredictionRow } from "../schema";
 import { BaseRepository, type ListResult } from "./base";
 
-export class TimelineEntriesRepository extends BaseRepository<PredictionRow> {
+export class PredictionRepository extends BaseRepository<PredictionRow> {
   constructor(db: BetterSqlite3Database) {
     super(db, "predictions");
   }

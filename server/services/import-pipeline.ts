@@ -246,8 +246,8 @@ function stageInboxItem(
   } as unknown as Partial<InboxItemRow> & Record<string, unknown>);
 }
 
-/** Generate a simple AI summary from extracted content. */
-function generateImportSummary(extracted: ExtractedContent): string {
+/** Extract the first N lines of content as an excerpt preview. */
+function generateExcerpt(extracted: ExtractedContent): string {
   const lines = extracted.content.split("\n").filter((l) => l.trim());
   const keyPoints = lines.slice(0, 5).map((l) => l.trim());
 
@@ -497,7 +497,7 @@ async function processUrlImport(
     const inboxItem = stageInboxItem(extracted, "import", url, domainId);
 
     // Step 3: Generate summary
-    const summary = generateImportSummary(extracted);
+    const summary = generateExcerpt(extracted);
     db.db
       .prepare("UPDATE inbox_items SET ai_summary = ?, updated_at = datetime('now') WHERE id = ?")
       .run(summary, inboxItem.id);
@@ -592,7 +592,7 @@ async function processPdfImport(
     const inboxItem = stageInboxItem(extracted, "pdf", null, domainId);
 
     // Generate summary
-    const summary = generateImportSummary(extracted);
+    const summary = generateExcerpt(extracted);
     db.db
       .prepare("UPDATE inbox_items SET ai_summary = ?, updated_at = datetime('now') WHERE id = ?")
       .run(summary, inboxItem.id);

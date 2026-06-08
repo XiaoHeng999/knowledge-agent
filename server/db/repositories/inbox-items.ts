@@ -2,7 +2,7 @@ import type { BetterSqlite3Database } from "../connection";
 import type { InboxItemRow } from "../schema";
 import { BaseRepository, type ListResult } from "./base";
 
-export class SourcesRepository extends BaseRepository<InboxItemRow> {
+export class InboxItemRepository extends BaseRepository<InboxItemRow> {
   constructor(db: BetterSqlite3Database) {
     super(db, "inbox_items");
   }

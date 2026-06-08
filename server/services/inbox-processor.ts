@@ -124,10 +124,10 @@ function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 // ---------------------------------------------------------------------------
-// AI summary generation
+// Excerpt generation — truncates first N lines as a preview
 // ---------------------------------------------------------------------------
 
-export async function generateSummary(itemId: string): Promise<string> {
+export async function generateExcerpt(itemId: string): Promise<string> {
   const db = getDatabaseService();
 
   const item = db.inbox.findById(itemId);
@@ -135,7 +135,7 @@ export async function generateSummary(itemId: string): Promise<string> {
 
   const content = item.raw_content ?? "";
   if (!content.trim()) {
-    return "No content available for summarization.";
+    return "No content available for excerpt.";
   }
 
   // Mark as processing
@@ -143,11 +143,11 @@ export async function generateSummary(itemId: string): Promise<string> {
     `UPDATE inbox_items SET status = 'processing', updated_at = datetime('now') WHERE id = ?`,
   ).run(itemId);
 
-  // Generate a structured summary using embedding-based keyword extraction
+  // Extract first 5 lines as excerpt preview
   const lines = content.split("\n").filter((l) => l.trim());
   const keyPoints = lines.slice(0, 5).map((l) => l.trim());
 
-  const summary = [
+  const excerpt = [
     `**Key Points:**`,
     ...keyPoints.map((p) => `- ${p.slice(0, 200)}`),
     "",
@@ -155,12 +155,12 @@ export async function generateSummary(itemId: string): Promise<string> {
     `**Source Type:** ${item.source_type}`,
   ].join("\n");
 
-  // Store the summary
+  // Store the excerpt
   db.db.prepare(
     `UPDATE inbox_items SET ai_summary = ?, updated_at = datetime('now') WHERE id = ?`,
-  ).run(summary, itemId);
+  ).run(excerpt, itemId);
 
-  return summary;
+  return excerpt;
 }
 
 // ---------------------------------------------------------------------------
