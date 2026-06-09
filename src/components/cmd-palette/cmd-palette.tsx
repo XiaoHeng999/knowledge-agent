@@ -11,7 +11,16 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/stores/app-store';
 import { getAllCommands, findMatching, getCommand } from '@/lib/commands/registry';
+import {
+  addHistoryEntry,
+  getRecentItems as getHistoryEntries,
+  initHistory,
+  clearHistory,
+  type HistoryEntry,
+  type HistoryStorage,
+} from '@/lib/commands/history';
 import { fuzzyMatch } from './search';
+import { mapKnowledgeResults } from './map-knowledge-results';
 import { ResultList } from './result-list';
 import { ParameterInput } from './parameter-input';
 import type {
@@ -68,8 +77,9 @@ export function CommandPalette() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [paramState, setParamState] = useState<ParameterState | null>(null);
-  const [recentItems] = useState<PaletteResultItem[]>([]);
-  // TODO: Populate recentItems from persistent history (e.g. last executed commands / last visited pages)
+  const [recentItems, setRecentItems] = useState<PaletteResultItem[]>([]);
+  const [knowledgeItems, setKnowledgeItems] = useState<PaletteResultItem[]>([]);
+  const historyReady = useRef(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -145,8 +155,7 @@ export function CommandPalette() {
           },
         }));
       } else if (cfg.type === 'knowledge') {
-        // TODO: Wire knowledge search via search:search IPC channel
-        items = [];
+        items = knowledgeItems;
       } else if (cfg.type === 'actions') {
         items = ACTION_ITEMS.filter((act) => {
           if (!q) return true;
@@ -173,45 +182,7 @@ export function CommandPalette() {
     }
 
     return result;
-  }, [query, currentDomainId, recentItems, setOpen, router]);
-
-  // Flat items list for keyboard navigation
-  useEffect(() => {
-    const flat: PaletteResultItem[] = [];
-    for (const g of groups) {
-      const visible = expandedGroups.has(g.type) ? g.items : g.items.slice(0, MAX_PER_GROUP);
-      flat.push(...visible);
-    }
-    flatItemsRef.current = flat;
-  }, [groups, expandedGroups]);
-
-  // Focus management
-  useEffect(() => {
-    if (!open) {
-      setQuery('');
-      setMode('search');
-      setSelectedId(null);
-      setExpandedGroups(new Set());
-      setParamState(null);
-      return;
-    }
-
-    triggerRef.current = document.activeElement as HTMLElement;
-    requestAnimationFrame(() => inputRef.current?.focus());
-  }, [open]);
-
-  // Global Cmd+K handler
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        e.stopPropagation();
-        setOpen(!open);
-      }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [open, setOpen]);
+  }, [query, currentDomainId, recentItems, knowledgeItems, setOpen, router]);
 
   const handleAction = useCallback(
     (actionId: string) => {
@@ -240,6 +211,122 @@ export function CommandPalette() {
     [setCurrentView],
   );
 
+  // Reconstruct PaletteResultItems from HistoryEntries
+  const rebuildRecentItems = useCallback((): PaletteResultItem[] => {
+    return getHistoryEntries(MAX_RECENT).map((entry) => {
+      if (entry.group === 'navigation') {
+        const path = entry.id.replace(/^nav-/, '');
+        return { ...entry, action: () => { router.push(path); setOpen(false); } };
+      }
+      if (entry.group === 'commands') {
+        const name = entry.id.replace(/^cmd-/, '');
+        return {
+          ...entry,
+          action: () => {
+            const cmd = getCommand(name);
+            if (cmd) cmd.execute('', { domainId: currentDomainId || '', conversationId: '', modelId: '' });
+            setOpen(false);
+          },
+        };
+      }
+      if (entry.group === 'actions') {
+        const actionId = entry.id.replace(/^act-/, '');
+        return { ...entry, action: () => { handleAction(actionId); setOpen(false); } };
+      }
+      return { ...entry, action: () => setOpen(false) };
+    });
+  }, [router, setOpen, currentDomainId, handleAction]);
+
+  // Execute an item and record it in history
+  const executeItem = useCallback((item: PaletteResultItem) => {
+    const { action, ...entry } = item;
+    addHistoryEntry(entry as HistoryEntry);
+    setRecentItems(rebuildRecentItems());
+    action();
+  }, [rebuildRecentItems]);
+
+  // Knowledge search (debounced)
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setKnowledgeItems([]);
+      return;
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await window.api.search.search({ query: q, limit: 5 });
+        setKnowledgeItems(mapKnowledgeResults(res.results, (path) => {
+          router.push(path);
+          setOpen(false);
+        }));
+      } catch {
+        setKnowledgeItems([]);
+      }
+    }, 200);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query, router, setOpen]);
+
+  // Flat items list for keyboard navigation
+  useEffect(() => {
+    const flat: PaletteResultItem[] = [];
+    for (const g of groups) {
+      const visible = expandedGroups.has(g.type) ? g.items : g.items.slice(0, MAX_PER_GROUP);
+      flat.push(...visible);
+    }
+    flatItemsRef.current = flat;
+  }, [groups, expandedGroups]);
+
+  // Init history storage once
+  useEffect(() => {
+    if (historyReady.current) return;
+    historyReady.current = true;
+    const storage: HistoryStorage = {
+      load: async () => {
+        const result = await window.api.settings.get({ key: 'agentclaw:cmd-history' });
+        return result as string | null;
+      },
+      save: async (data: string) => {
+        await window.api.settings.set({ key: 'agentclaw:cmd-history', value: data });
+      },
+    };
+    initHistory(storage).then(() => setRecentItems(rebuildRecentItems()));
+  }, [rebuildRecentItems]);
+
+  // Focus management
+  useEffect(() => {
+    if (!open) {
+      setQuery('');
+      setMode('search');
+      setSelectedId(null);
+      setExpandedGroups(new Set());
+      setKnowledgeItems([]);
+      setParamState(null);
+      return;
+    }
+
+    triggerRef.current = document.activeElement as HTMLElement;
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, [open]);
+
+  // Global Cmd+K handler
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen(!open);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open, setOpen]);
+
   const handleInputChange = useCallback((value: string) => {
     setQuery(value);
     setSelectedId(null);
@@ -247,9 +334,9 @@ export function CommandPalette() {
 
   const handleSelectItem = useCallback(
     (item: PaletteResultItem) => {
-      item.action();
+      executeItem(item);
     },
-    [],
+    [executeItem],
   );
 
   const handleHoverItem = useCallback((id: string) => {
@@ -338,7 +425,7 @@ export function CommandPalette() {
         case 'Enter': {
           e.preventDefault();
           if (currentIdx >= 0) {
-            items[currentIdx].action();
+            executeItem(items[currentIdx]);
           }
           break;
         }
@@ -361,7 +448,7 @@ export function CommandPalette() {
         }
       }
     },
-    [mode, selectedId, groups, setOpen],
+    [mode, selectedId, groups, setOpen, executeItem],
   );
 
   const scrollToItem = useCallback((id: string) => {

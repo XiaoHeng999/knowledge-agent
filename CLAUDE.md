@@ -25,10 +25,12 @@ Agent 开发 AI 编程助手，负责 AgentClaw 全栈开发（Electron + Next.j
 - Electron：IPC + `contextBridge`；禁止渲染进程用 Node API；通道命名 `module:action`
 - Agent：模块独立，明确接口，优先事件驱动
 
+## 测试
+
+- 测试文件统一放在 `tests/` 目录下，按 `tests/{domain}/` 组织（如 `tests/src/`、`tests/server/`、`tests/electron/`）
+- 禁止在 `src/` 目录内放置测试文件
+- 导入被测模块使用 `@/` 路径别名
+
 ## 包管理
 
-项目强制使用 **pnpm**。禁止使用 npm / npx / yarn。已被 hook 拦截。
-
-## 提交前检查
-
-CI 反馈循环以 `ralph/prompt.md` 的 FEEDBACK LOOPS 章节为准。
+使用 **pnpm**。

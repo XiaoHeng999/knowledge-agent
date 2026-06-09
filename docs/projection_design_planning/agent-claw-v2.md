@@ -24,11 +24,11 @@
 
 ## 一、v1 修正点
 
-### 1.1 向量搜索：确认使用 SQLite-vss
+### 1.1 向量搜索：确认使用 SQLite-vec
 
-v1 中的开放问题已解决。选择 SQLite-vss 的理由：
+v1 中的开放问题已解决。选择 SQLite-vec 的理由：
 
-| 因素 | SQLite-vss | Qdrant |
+| 因素 | SQLite-vec | Qdrant |
 |------|-----------|--------|
 | 部署复杂度 | 零（嵌入式） | 需要独立进程 |
 | 依赖管理 | 单个 npm 包 | 需要安装和运维 |
@@ -37,7 +37,7 @@ v1 中的开放问题已解决。选择 SQLite-vss 的理由：
 | 与 SQLite 集成 | 同一数据库 | 需要同步两个存储 |
 | 备份/恢复 | 单文件 | 额外步骤 |
 
-**决策**：使用 SQLite-vss，与主数据库共用一个 `.db` 文件。如果未来数据量超过百万级向量，可以迁移到 Qdrant，但通过抽象层保证接口不变。
+**决策**：使用 SQLite-vec，与主数据库共用一个 `.db` 文件。如果未来数据量超过百万级向量，可以迁移到 Qdrant，但通过抽象层保证接口不变。
 
 ### 1.2 跨平台要求
 
@@ -686,7 +686,7 @@ Renderer (Next.js)          Main (Electron + pi-mono)
                                       │
                                       ▼
                             ┌───────────────────────┐
-                            │ SQLite + SQLite-vss   │
+                            │ SQLite + SQLite-vec   │
                             │ (单文件数据库)          │
                             └───────────────────────┘
 ```
@@ -909,7 +909,7 @@ CREATE TABLE api_keys (
   last_verified TEXT
 );
 
--- 向量索引（SQLite-vss）
+-- 向量索引（SQLite-vec）
 CREATE VIRTUAL TABLE knowledge_vectors USING vss0(
   embedding(1536)  -- text-embedding-3-large 维度
 );
@@ -1052,7 +1052,7 @@ Week 1:
 ├── Day 3-4: SQLite 数据库层
 │   ├── schema.ts (全部表定义)
 │   ├── migration 系统
-│   ├── SQLite-vss 向量索引
+│   ├── SQLite-vec 向量索引
 │   └── 基础 Repository 层 (CRUD)
 │
 └── Day 5: pi-mono SDK 集成
@@ -1096,7 +1096,7 @@ Week 3:
 │   └── 斜杠命令框架 (/daily, /deep-dive 等)
 │
 └── Day 5: 混合搜索引擎 (F6)
-    ├── SQLite-vss 向量搜索
+    ├── SQLite-vec 向量搜索
     ├── BM25 全文搜索
     └── RRF 融合排序
 

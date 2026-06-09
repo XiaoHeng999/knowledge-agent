@@ -2,12 +2,7 @@
  * GRAPH_LAYOUT_COMPUTE task handler.
  * Force-directed layout computation for knowledge graph visualization.
  */
-import type { GraphLayoutPayload, GraphLayoutResult } from "../types";
-
-interface TaskContext {
-  signal: AbortSignal;
-  reportProgress: (progress: number, message?: string) => void;
-}
+import type { GraphLayoutPayload, GraphLayoutResult, WorkerHandlerContext } from "../types";
 
 interface SimNode {
   id: string;
@@ -23,7 +18,7 @@ const CONVERGENCE_PATIENCE = 3;
 
 export async function handleGraphLayoutCompute(
   payload: GraphLayoutPayload,
-  ctx: TaskContext,
+  ctx: WorkerHandlerContext,
 ): Promise<GraphLayoutResult> {
   const startTime = Date.now();
   const { nodes, edges, algorithm, maxIterations = 300 } = payload;

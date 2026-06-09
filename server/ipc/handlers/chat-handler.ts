@@ -11,6 +11,9 @@ import {
   addMessage,
   branchFromMessage,
 } from "../../services/conversation-service";
+import { createLogger } from "../../services/logger";
+
+const log = createLogger("Chat");
 
 export function registerChatHandlers(): void {
   registerHandler(CHAT_CHANNELS.CREATE_CONVERSATION, async (_event, req) => {
@@ -43,7 +46,7 @@ export function registerChatHandlers(): void {
     if (!sender) throw new Error("No browser window found");
     // Fire-and-forget streaming — handler returns immediately
     sendMessageStream(sender, req.conversationId, req.content, req.modelId).catch((err) => {
-      console.error("[Chat] Stream error:", err);
+      log.error("Stream error", err instanceof Error ? err : undefined);
     });
   });
 

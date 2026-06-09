@@ -1,5 +1,8 @@
 import { ipcMain, IpcMainInvokeEvent } from "electron";
 import type { ChannelName, ChannelRequest, ChannelResponse } from "../../src/lib/ipc/channels";
+import { createLogger } from "../services/logger";
+
+const log = createLogger("IPC");
 
 // ---------------------------------------------------------------------------
 // IPC Error — normalised error type that crosses the IPC boundary
@@ -74,18 +77,18 @@ export function registerHandler<C extends ChannelName>(
       );
 
       const duration = Math.round(performance.now() - start);
-      console.log(`${logPrefix} OK (${duration}ms)`);
+      log.info(`${channel} OK (${duration}ms)`);
       return result;
     } catch (err: unknown) {
       const duration = Math.round(performance.now() - start);
 
       if (err instanceof IpcError) {
-        console.error(`${logPrefix} IpcError [${err.code}] (${duration}ms): ${err.message}`);
+        log.error(`IpcError [${err.code}] (${duration}ms): ${err.message}`);
         return err.toJSON();
       }
 
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`${logPrefix} Unhandled error (${duration}ms): ${message}`);
+      log.error(`Unhandled error (${duration}ms): ${message}`);
 
       const wrapped = new IpcError("INTERNAL_ERROR", message);
       return wrapped.toJSON();

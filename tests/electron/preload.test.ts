@@ -38,7 +38,7 @@ let capturedApi: {
 beforeEach(async () => {
   listeners.clear();
   vi.clearAllMocks();
-  await import("./preload");
+  await import("../../electron/preload");
 });
 
 function emitEvent(channel: string, ...args: unknown[]) {

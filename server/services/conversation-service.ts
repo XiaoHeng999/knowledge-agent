@@ -33,6 +33,7 @@ export interface MessageInfo {
   costUsd: number | null;
   metadata: Record<string, unknown> | null;
   branchIndex: number;
+  status: "complete" | "incomplete";
   createdAt: string;
 }
 
@@ -79,6 +80,7 @@ function rowToMessage(row: MessageRow): MessageInfo {
     costUsd: row.cost_usd,
     metadata: row.metadata ? JSON.parse(row.metadata) : null,
     branchIndex: row.branch_index,
+    status: row.status,
     createdAt: row.created_at,
   };
 }
@@ -234,6 +236,7 @@ export function addMessage(
     cost_usd: null,
     metadata: null,
     branch_index: branchIndex,
+    status: "complete",
   } as unknown as Partial<MessageRow> & Record<string, unknown>);
 
   // Update conversation timestamp

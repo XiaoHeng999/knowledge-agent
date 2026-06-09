@@ -13,6 +13,9 @@ import type {
 } from "./types";
 import { TASK_DEFAULT_TIMEOUTS as defaultTimeouts } from "./types";
 import { randomUUID } from "crypto";
+import { createLogger } from "../services/logger";
+
+const log = createLogger("Worker");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -231,7 +234,7 @@ export class WorkerBridge {
         this.restartAttempts = 0;
         for (const cb of this.readyCallbacks) cb();
         this.readyCallbacks = [];
-        console.log("[Worker] Ready");
+        log.info("Ready");
         break;
 
       case "TASK_PROGRESS": {
@@ -268,7 +271,7 @@ export class WorkerBridge {
       }
 
       case "WORKER_ERROR":
-        console.error("[Worker]", msg.error);
+        log.error(msg.error.message);
         break;
 
       case "QUEUE_STATUS":
@@ -282,7 +285,7 @@ export class WorkerBridge {
 
   private handleWorkerExit(code: number | null): void {
     this.workerReady = false;
-    console.error(`[Worker] Process exited with code ${code}`);
+    log.error(`Process exited with code ${code}`);
 
     // Notify all pending tasks
     for (const [, pending] of this.pendingTasks) {
@@ -301,15 +304,15 @@ export class WorkerBridge {
     if (this.restartAttempts < this.maxRestartAttempts) {
       const delay = Math.min(1000 * Math.pow(2, this.restartAttempts), 30000);
       this.restartAttempts++;
-      console.log(`[Worker] Restarting in ${delay}ms (attempt ${this.restartAttempts})`);
+      log.info(`Restarting in ${delay}ms (attempt ${this.restartAttempts})`);
 
       setTimeout(() => {
         this.initialize().catch((err) => {
-          console.error("[Worker] Restart failed:", err);
+          log.error("Restart failed", err instanceof Error ? err : undefined);
         });
       }, delay);
     } else {
-      console.error("[Worker] Max restart attempts reached");
+      log.error("Max restart attempts reached");
     }
   }
 }

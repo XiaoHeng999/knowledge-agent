@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { select } from 'd3-selection';
-import { zoom as d3Zoom, zoomIdentity } from 'd3-zoom';
 import { drag as d3Drag } from 'd3-drag';
+import { attachZoomBehavior, zoomIn, zoomOut, zoomReset, mergeSelections } from './d3-zoom-helpers';
 import {
   forceSimulation,
   forceLink,
@@ -226,8 +226,7 @@ export function ForceGraph({
       .attr('stroke-opacity', 0.6)
       .attr('marker-end', 'url(#arrowhead)');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const linkAll = linkEnter.merge(link as any);
+    const linkAll = mergeSelections(linkEnter, link);
 
     // Data join for nodes
     const node = nodeGroup
@@ -254,8 +253,7 @@ export function ForceGraph({
         .attr('pointer-events', 'none');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const nodeAll = nodeEnter.merge(node as any);
+    const nodeAll = mergeSelections(nodeEnter, node);
 
     // Update attributes on all nodes (enter + update)
     nodeAll
@@ -318,18 +316,10 @@ export function ForceGraph({
 
     // Zoom behavior — only bind once
     if (!((svgEl as unknown) as Record<string, unknown>).__zoomBound) {
-      const zoomBehavior = d3Zoom<SVGSVGElement, unknown>()
-        .scaleExtent([0.1, 4])
-        .on('zoom', (event) => {
-          g.attr('transform', event.transform);
-        });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (svg as any).call(zoomBehavior);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (svg as any).call(
-        zoomBehavior.transform,
-        zoomIdentity.translate(width / 2, height / 2),
-      );
+      attachZoomBehavior(svg, g, {
+        scaleExtent: [0.1, 4],
+        initialCenter: { width, height },
+      });
       ((svgEl as unknown) as Record<string, unknown>).__zoomBound = true;
     }
 
@@ -362,24 +352,18 @@ export function ForceGraph({
 
   // Public zoom controls
   const handleZoomIn = useCallback(() => {
-    const svg = select(svgRef.current);
-    const zoomBehavior = d3Zoom<SVGSVGElement, unknown>().scaleExtent([0.1, 4]);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (svg.transition().duration(300) as any).call(zoomBehavior.scaleBy, 1.4);
+    if (!svgRef.current) return;
+    zoomIn(select(svgRef.current));
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    const svg = select(svgRef.current);
-    const zoomBehavior = d3Zoom<SVGSVGElement, unknown>().scaleExtent([0.1, 4]);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (svg.transition().duration(300) as any).call(zoomBehavior.scaleBy, 0.7);
+    if (!svgRef.current) return;
+    zoomOut(select(svgRef.current));
   }, []);
 
   const handleZoomReset = useCallback(() => {
-    const svg = select(svgRef.current);
-    const zoomBehavior = d3Zoom<SVGSVGElement, unknown>().scaleExtent([0.1, 4]);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (svg.transition().duration(500) as any).call(zoomBehavior.transform, zoomIdentity);
+    if (!svgRef.current) return;
+    zoomReset(select(svgRef.current));
   }, []);
 
   if (simNodes.length === 0) {

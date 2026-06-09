@@ -146,8 +146,8 @@ export const useModelStore = create<ModelState & ModelActions>()(
             },
           }));
         }
-      } catch {
-        // Silently fail — default is optional
+      } catch (err) {
+        console.warn('[ModelStore] Failed to load default model:', err);
       }
     },
   }),

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDomainStore } from '@/stores/domain-store';
 import { useResearchStore } from '@/stores/research-store';
+import { useAppStore } from '@/stores/app-store';
 import { useLayout } from '@/components/layout/layout-context';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ComprehensionRing } from '@/components/knowledge/comprehension-ring';
@@ -60,8 +61,9 @@ function useDashboardData(): DashboardData {
           setInboxStats(stats);
           setInboxPreview(list.items);
         }
-      } catch {
-        // IPC may not be available in dev mode
+      } catch (err) {
+        console.warn('[Dashboard] Failed to load inbox data:', err);
+        useAppStore.getState().setGlobalError('Failed to load dashboard data');
       } finally {
         if (mounted) setInboxLoading(false);
       }

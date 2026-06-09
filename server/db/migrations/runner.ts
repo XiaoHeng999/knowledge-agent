@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 );
 `;
 
+// Note: Logger not yet available during early init — MigrationRunner runs before Logger.initialize()
 export class MigrationRunner {
   constructor(private db: BetterSqlite3Database) {}
 

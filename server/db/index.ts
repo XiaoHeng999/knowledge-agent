@@ -16,6 +16,7 @@ import { ResearchRunsRepository } from "./repositories/research-runs";
 import { ImportsRepository } from "./repositories/imports";
 import { FrameworkResultsRepository } from "./repositories/framework-results";
 import { SkillsRepository } from "./repositories/skills";
+import { SettingsRepository } from "./repositories/settings";
 import { VectorIndex } from "./vector";
 
 export interface DatabaseService {
@@ -36,6 +37,7 @@ export interface DatabaseService {
   imports: ImportsRepository;
   frameworkResults: FrameworkResultsRepository;
   skills: SkillsRepository;
+  settings: SettingsRepository;
   vectorIndex: VectorIndex;
 }
 
@@ -48,6 +50,7 @@ export function initializeDatabase(dbPath?: string): DatabaseService {
   const migrations = new MigrationRunner(db);
   const allMigrations = loadMigrations();
 
+  // Note: Logger not yet available during early init
   const result = migrations.run(allMigrations);
   if (result.applied > 0) {
     console.log(`[DB] Applied ${result.applied} migrations. Current version: ${result.currentVersion}`);
@@ -73,6 +76,7 @@ export function initializeDatabase(dbPath?: string): DatabaseService {
     imports: new ImportsRepository(db),
     frameworkResults: new FrameworkResultsRepository(db),
     skills: new SkillsRepository(db),
+    settings: new SettingsRepository(db),
     vectorIndex: new VectorIndex(db),
   };
 

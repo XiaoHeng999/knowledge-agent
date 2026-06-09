@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import type { KnowledgeNode, KnowledgeEdge } from '@/lib/ipc/channels';
+import { buildCircleFan } from './webgl-circle';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -287,28 +288,14 @@ export function WebGLGraph({
       const alpha = isSelected ? 1.0 : 0.85;
       const strokeWidth = isSelected ? 2 : 1;
 
-      // Outer ring for selected
+      // Outer ring for selected (circle)
       if (isSelected) {
         const rs = r + strokeWidth;
-        nodeVerts.push(
-          cx - rs, cy - rs, 1, 1, 1, 1,
-          cx + rs, cy - rs, 1, 1, 1, 1,
-          cx, cy, 1, 1, 1, 1,
-          cx - rs, cy + rs, 1, 1, 1, 1,
-          cx + rs, cy + rs, 1, 1, 1, 1,
-          cx, cy, 1, 1, 1, 1,
-        );
+        nodeVerts.push(...buildCircleFan(cx, cy, rs, 1, 1, 1, 1));
       }
 
-      // Node circle (two triangles)
-      nodeVerts.push(
-        cx - r, cy - r, cr, cg, cb, alpha,
-        cx + r, cy - r, cr, cg, cb, alpha,
-        cx, cy, cr, cg, cb, alpha,
-        cx - r, cy + r, cr, cg, cb, alpha,
-        cx + r, cy + r, cr, cg, cb, alpha,
-        cx, cy, cr, cg, cb, alpha,
-      );
+      // Node circle (triangle-list fan)
+      nodeVerts.push(...buildCircleFan(cx, cy, r, cr, cg, cb, alpha));
     }
 
     if (nodeVerts.length > 0) {

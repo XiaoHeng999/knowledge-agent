@@ -8,6 +8,15 @@ import type { ResearchRunRow, ResearchRunStatus, ResearchTriggerType } from "../
 import type { ResearchStatus, ResearchDashboardResponse } from "../../src/lib/ipc/channels";
 import { readConfig, type DomainConfigFile } from "./domain-config";
 import { createNode } from "./knowledge-graph";
+import {
+  startTracking,
+  stopTracking,
+  resolveBudgetStatus,
+  type AggregatedUsage,
+} from "./research-cost-tracker";
+import { createLogger } from "./logger";
+
+const log = createLogger("ResearchScheduler");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,7 +38,7 @@ function rowToStatus(row: ResearchRunRow): ResearchStatus {
     id: row.id,
     domainId: row.domain_id,
     status: row.status as ResearchStatus["status"],
-    progress: row.status === "completed" ? 100 : row.status === "failed" ? 0 : 50,
+    progress: row.status === "completed" || row.status === "over_budget" ? 100 : row.status === "failed" ? 0 : 50,
     startedAt: row.started_at,
     completedAt: row.completed_at,
   };
@@ -207,14 +216,15 @@ async function executeResearchRun(
   } as unknown as Partial<ResearchRunRow>);
 
   let fullContent = "";
-  let tokenCount = 0;
-  let costUsd = 0;
   let sessionId: string | null = null;
 
   try {
     // Create agent session
     const result = await wrapper.createExpertSession(domainId, modelId);
     sessionId = result.sessionId;
+
+    // Start tracking real token usage from turn_end events
+    startTracking(sessionId, runId);
 
     // Subscribe to events for content collection
     const unsubscribe = result.session.subscribe((event) => {
@@ -231,7 +241,8 @@ async function executeResearchRun(
     await result.session.prompt(prompt);
     unsubscribe();
 
-    // Clean up session
+    // Collect aggregated usage from turn_end hook, then clean up
+    const usage: AggregatedUsage | null = sessionId ? stopTracking(sessionId) : null;
     wrapper.destroySession(sessionId);
 
     if (abortSignal.aborted) {
@@ -242,26 +253,11 @@ async function executeResearchRun(
       return;
     }
 
-    // Estimate cost (rough: based on model pricing and content length)
-    const models = await wrapper.listAvailableModels();
-    const model = models.find((m) => m.id === modelId);
-    if (model) {
-      const inputChars = prompt.length;
-      const outputChars = fullContent.length;
-      const inputTokens = Math.ceil(inputChars / 4);
-      const outputTokens = Math.ceil(outputChars / 4);
-      tokenCount = inputTokens + outputTokens;
-      costUsd =
-        (inputTokens / 1_000_000) * model.costPerMillionInput +
-        (outputTokens / 1_000_000) * model.costPerMillionOutput;
-    }
+    const tokenCount = usage?.inputTokens ?? 0 + (usage?.outputTokens ?? 0);
+    const costUsd = usage?.costUsd ?? 0;
 
-    // Check budget
-    if (costUsd > config.research.maxCostPerRunUsd) {
-      throw new Error(
-        `Research cost ($${costUsd.toFixed(4)}) exceeds budget ($${config.research.maxCostPerRunUsd})`,
-      );
-    }
+    // Post-completion budget check — mark over_budget but keep results
+    const budgetStatus = resolveBudgetStatus(costUsd, config.research.maxCostPerRunUsd);
 
     // Process results: create knowledge node(s) from findings
     let nodesCreated = 0;
@@ -276,9 +272,9 @@ async function executeResearchRun(
       nodesCreated = 1;
     }
 
-    // Update run as completed
+    // Update run with real cost data and budget status
     db.researchRuns.update(runId, {
-      status: "completed" as ResearchRunStatus,
+      status: budgetStatus as ResearchRunStatus,
       findings_summary: fullContent.slice(0, 1000),
       knowledge_nodes_created: nodesCreated,
       cost_usd: costUsd,
@@ -288,14 +284,15 @@ async function executeResearchRun(
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
 
-    // Clean up session
+    // Collect any usage gathered before failure, then clean up
+    const usage: AggregatedUsage | null = sessionId ? stopTracking(sessionId) : null;
     if (sessionId) wrapper.destroySession(sessionId);
 
     db.researchRuns.update(runId, {
       status: "failed" as ResearchRunStatus,
       error_message: errorMessage,
-      cost_usd: costUsd,
-      token_count: tokenCount,
+      cost_usd: usage?.costUsd ?? 0,
+      token_count: (usage?.inputTokens ?? 0) + (usage?.outputTokens ?? 0),
       completed_at: new Date().toISOString(),
     } as unknown as Partial<ResearchRunRow>);
 
@@ -345,7 +342,7 @@ export async function triggerResearch(
   // Execute asynchronously
   executeResearchRun(domainId, triggerType, runId, abortController.signal)
     .catch((err) => {
-      console.error(`[Research] Run ${runId} failed:`, err.message);
+      log.error(`Run ${runId} failed`, err instanceof Error ? err : undefined);
     })
     .finally(() => {
       activeRuns.delete(runId);
@@ -450,11 +447,11 @@ export function startScheduler(): void {
   schedulerInterval = setInterval(() => {
     const now = new Date();
     checkAllSchedules(now).catch((err) => {
-      console.error("[Research Scheduler] Error:", err.message);
+      log.error("Scheduler tick error", err instanceof Error ? err : undefined);
     });
   }, 60_000);
 
-  console.log("[Research Scheduler] Started — checking schedules every 60s");
+  log.info("Started — checking schedules every 60s");
 }
 
 export function stopScheduler(): void {
@@ -468,7 +465,7 @@ export function stopScheduler(): void {
   }
   cronTimers.clear();
 
-  console.log("[Research Scheduler] Stopped");
+  log.info("Stopped");
 }
 
 async function checkAllSchedules(now: Date): Promise<void> {
@@ -485,10 +482,11 @@ async function checkAllSchedules(now: Date): Promise<void> {
     if (shouldRunNow(domain.research_schedule, now)) {
       try {
         await triggerResearch(domain.id, "scheduled");
-        console.log(`[Research Scheduler] Triggered scheduled research for domain: ${domain.name}`);
+        log.info(`Triggered scheduled research for domain: ${domain.name}`);
       } catch (err) {
-        console.error(
-          `[Research Scheduler] Failed to trigger for ${domain.name}: ${err instanceof Error ? err.message : err}`,
+        log.error(
+          `Failed to trigger for ${domain.name}`,
+          err instanceof Error ? err : undefined,
         );
       }
     }

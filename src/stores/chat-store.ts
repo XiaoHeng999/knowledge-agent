@@ -39,6 +39,7 @@ interface ChatActions {
   deleteConversation: (conversationId: string) => Promise<void>;
 
   sendMessage: (content: string, modelId: string) => Promise<void>;
+  retryLastMessage: (modelId: string) => Promise<void>;
   abortStream: () => void;
 
   branchFromMessage: (parentMessageId: string, content: string) => Promise<MessageInfo>;
@@ -184,6 +185,7 @@ export const useChatStore = create<ChatState & ChatActions>()(
                   costUsd: null,
                   metadata: null,
                   branchIndex: 0,
+                  status: 'complete' as const,
                   createdAt: new Date().toISOString(),
                 }],
               }));
@@ -217,6 +219,7 @@ export const useChatStore = create<ChatState & ChatActions>()(
                   costUsd: null,
                   metadata: null,
                   branchIndex: 0,
+                  status: 'complete' as const,
                   createdAt: new Date().toISOString(),
                 },
               ],
@@ -227,15 +230,39 @@ export const useChatStore = create<ChatState & ChatActions>()(
             activeStreamChannel = null;
             break;
           }
-          case 'error':
-            set({
+          case 'error': {
+            const partialContent = state.streamingContent;
+            const errMsgId = state.streamingMessageId;
+            const errUserMsgId = state.streamingUserMsgId;
+            const hasPartial = partialContent.length > 0 && errMsgId;
+            set((s) => ({
               streaming: false,
+              streamingMessageId: null,
+              streamingContent: '',
+              streamingUserMsgId: null,
               streamError: chunk.content,
-            });
+              ...(hasPartial ? {
+                messages: [...s.messages, {
+                  id: errMsgId!,
+                  conversationId: s.currentConversationId!,
+                  parentId: errUserMsgId,
+                  role: 'assistant' as const,
+                  content: `⚠️ Response interrupted\n\n${partialContent}`,
+                  modelId: null,
+                  tokenCount: null,
+                  costUsd: null,
+                  metadata: null,
+                  branchIndex: 0,
+                  status: 'incomplete' as const,
+                  createdAt: new Date().toISOString(),
+                }],
+              } : {}),
+            }));
             window.api.removeListener(channel, handler);
             activeStreamHandler = null;
             activeStreamChannel = null;
             break;
+          }
         }
       };
 
@@ -256,6 +283,22 @@ export const useChatStore = create<ChatState & ChatActions>()(
           streaming: false,
           streamError: err instanceof Error ? err.message : String(err),
         });
+      }
+    },
+
+    retryLastMessage: async (modelId) => {
+      const { messages } = get();
+      // Find the last incomplete assistant message and its parent user message
+      for (let i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].role === 'assistant' && messages[i].status === 'incomplete') {
+          const parentId = messages[i].parentId;
+          const userMsg = parentId ? messages.find((m) => m.id === parentId) : null;
+          const content = userMsg?.content ?? '';
+          if (content) {
+            await get().sendMessage(content, modelId);
+          }
+          return;
+        }
       }
     },
 

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { PendingAudit } from "@/lib/ipc/channels";
+import { useAppStore } from "./app-store";
 
 interface SecurityState {
   pendingAudits: PendingAudit[];
@@ -36,7 +37,9 @@ export const useSecurityStore = create<SecurityState & SecurityActions>()(
           pendingCount: result.count,
           loading: false,
         });
-      } catch {
+      } catch (err) {
+        console.warn('[SecurityStore] Failed to load:', err);
+        useAppStore.getState().setGlobalError('Failed to fetch pending audits');
         set({ loading: false });
       }
     },

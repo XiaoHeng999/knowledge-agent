@@ -162,7 +162,7 @@ const api = {
 
   // --- Framework ---
   framework: {
-    listFrameworks: () => invoke("framework:listFrameworks"),
+    listFrameworks: (req?: { domainId?: string }) => invoke("framework:listFrameworks", req ?? {}),
     execute: (req: ChannelRequest<"framework:execute">) => invoke("framework:execute", req),
     listResults: (req: ChannelRequest<"framework:listResults">) => invoke("framework:listResults", req),
     getResult: (req: ChannelRequest<"framework:getResult">) => invoke("framework:getResult", req),

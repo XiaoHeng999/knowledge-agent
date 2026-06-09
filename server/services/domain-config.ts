@@ -39,8 +39,16 @@ export interface DomainConfigFile {
     enabled: boolean;
     schedule: string;
   }>;
+  customFramework: CustomFrameworkConfig | null;
   tags: string[];
   skills: string[];
+}
+
+export interface CustomFrameworkConfig {
+  name: string;
+  description: string;
+  dimensions: string[];
+  scoringPrompt: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -247,7 +255,7 @@ export function toIpcDomainConfig(config: DomainConfigFile): DomainConfig {
 // Minimal YAML parser/serializer (domain config is simple enough)
 // ---------------------------------------------------------------------------
 
-function parseConfigYaml(raw: string): DomainConfigFile {
+export function parseConfigYaml(raw: string): DomainConfigFile {
   const parsed = parseSimpleYaml(raw);
 
   return {
@@ -268,6 +276,7 @@ function parseConfigYaml(raw: string): DomainConfigFile {
     },
     sources: asSourceArray(parsed.sources),
     frameworks: asFrameworkArray(parsed.frameworks),
+    customFramework: asCustomFramework(parsed.custom_framework),
     tags: asStringArray(parsed.tags),
     skills: asStringArray(parsed.skills),
   };
@@ -359,7 +368,7 @@ function parseScalar(val: string): unknown {
 // YAML serializer
 // ---------------------------------------------------------------------------
 
-function serializeConfigYaml(config: DomainConfigFile): string {
+export function serializeConfigYaml(config: DomainConfigFile): string {
   const lines: string[] = [];
   lines.push(`name: ${quoteYaml(config.name)}`);
   lines.push(`description: ${quoteYaml(config.description)}`);
@@ -399,6 +408,18 @@ function serializeConfigYaml(config: DomainConfigFile): string {
   }
   if (config.frameworks.length === 0) lines.push("  []");
   lines.push("");
+  if (config.customFramework) {
+    lines.push("custom_framework:");
+    lines.push(`  name: ${quoteYaml(config.customFramework.name)}`);
+    lines.push(`  description: ${quoteYaml(config.customFramework.description)}`);
+    lines.push("  dimensions:");
+    for (const d of config.customFramework.dimensions) {
+      lines.push(`    - ${quoteYaml(d)}`);
+    }
+    if (config.customFramework.dimensions.length === 0) lines.push("    []");
+    lines.push(`  scoring_prompt: ${quoteYaml(config.customFramework.scoringPrompt)}`);
+    lines.push("");
+  }
   lines.push("tags:");
   for (const t of config.tags) {
     lines.push(`  - ${quoteYaml(t)}`);
@@ -477,4 +498,15 @@ function asFrameworkArray(val: unknown): DomainConfigFile["frameworks"] {
     }
     return { type: String(v), enabled: true, schedule: "" };
   });
+}
+
+function asCustomFramework(val: unknown): CustomFrameworkConfig | null {
+  if (!val || typeof val !== "object") return null;
+  const obj = val as Record<string, unknown>;
+  return {
+    name: String(obj.name ?? ""),
+    description: String(obj.description ?? ""),
+    dimensions: asStringArray(obj.dimensions),
+    scoringPrompt: String(obj.scoring_prompt ?? obj.scoringPrompt ?? ""),
+  };
 }

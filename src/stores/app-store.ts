@@ -21,6 +21,7 @@ interface AppState {
   commandPaletteOpen: boolean;
   importDialogOpen: boolean;
   quickRecordDialogOpen: boolean;
+  globalError: string | null;
 }
 
 interface AppActions {
@@ -32,6 +33,7 @@ interface AppActions {
   setCommandPaletteOpen: (open: boolean) => void;
   setImportDialogOpen: (open: boolean) => void;
   setQuickRecordDialogOpen: (open: boolean) => void;
+  setGlobalError: (error: string | null) => void;
 }
 
 export const useAppStore = create<AppState & AppActions>()(
@@ -44,6 +46,7 @@ export const useAppStore = create<AppState & AppActions>()(
       commandPaletteOpen: false,
       importDialogOpen: false,
       quickRecordDialogOpen: false,
+      globalError: null,
 
       setCurrentDomain: (id) => set({ currentDomainId: id }),
       setCurrentView: (view) => set({ currentView: view }),
@@ -53,6 +56,7 @@ export const useAppStore = create<AppState & AppActions>()(
       setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
       setImportDialogOpen: (open) => set({ importDialogOpen: open }),
       setQuickRecordDialogOpen: (open) => set({ quickRecordDialogOpen: open }),
+      setGlobalError: (error) => set({ globalError: error }),
     }),
     {
       name: 'app-store',

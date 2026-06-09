@@ -9,6 +9,7 @@ import type {
   BatchEmbeddingPayload,
   BatchEmbeddingResult,
   WorkerTaskType,
+  WorkerHandlerContext,
 } from "../types";
 
 const EMBEDDING_DIMENSION = 1536;
@@ -50,14 +51,9 @@ function generateHashEmbedding(text: string): { vector: number[]; tokenCount: nu
   return { vector: result, tokenCount };
 }
 
-interface TaskContext {
-  signal: AbortSignal;
-  reportProgress: (progress: number, message?: string) => void;
-}
-
 export async function handleEmbeddingGeneration(
   payload: EmbeddingPayload,
-  ctx: TaskContext,
+  ctx: WorkerHandlerContext,
 ): Promise<EmbeddingResult> {
   if (ctx.signal.aborted) throw new Error("Cancelled");
 
@@ -69,7 +65,7 @@ export async function handleEmbeddingGeneration(
 
 export async function handleBatchEmbeddings(
   payload: BatchEmbeddingPayload,
-  ctx: TaskContext,
+  ctx: WorkerHandlerContext,
 ): Promise<BatchEmbeddingResult> {
   const results: BatchEmbeddingResult["results"] = [];
   const total = payload.items.length;

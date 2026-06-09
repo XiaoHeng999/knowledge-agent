@@ -72,8 +72,8 @@ export function LaunchLoader({ onReady }: LaunchLoaderProps) {
             }, remaining);
             return;
           }
-        } catch {
-          // API not ready yet
+        } catch (err) {
+          console.warn('[LaunchLoader] API not ready yet:', err);
         }
         // Wait 200ms before retrying
         await new Promise((r) => setTimeout(r, 200));

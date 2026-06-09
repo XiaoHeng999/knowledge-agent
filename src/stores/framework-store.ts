@@ -26,7 +26,7 @@ interface FrameworkState {
   summary: DomainSummaryResult | null;
   memoryStats: MemoryLayerStats | null;
 
-  fetchFrameworks: () => Promise<void>;
+  fetchFrameworks: (domainId?: string) => Promise<void>;
   fetchResults: (domainId: string, frameworkType?: string) => Promise<void>;
   executeAnalysis: (domainId: string, frameworkType: string, modelId?: string) => Promise<FrameworkAnalysisResult | null>;
   getResult: (id: string) => Promise<void>;
@@ -62,10 +62,10 @@ export const useFrameworkStore = create<FrameworkState>((set) => ({
   summary: null,
   memoryStats: null,
 
-  fetchFrameworks: async () => {
+  fetchFrameworks: async (domainId) => {
     set({ loading: true, error: null });
     try {
-      const data = await window.api.framework.listFrameworks();
+      const data = await window.api.framework.listFrameworks(domainId ? { domainId } : undefined);
       set({ frameworks: data.frameworks, loading: false });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Failed to load frameworks", loading: false });

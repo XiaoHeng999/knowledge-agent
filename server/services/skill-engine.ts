@@ -13,6 +13,9 @@ import { resolveModelId } from "../lib/model-resolver";
 import { parseMarkdownFile } from "../fs/markdown-parser";
 import { getFileSystemProvider, type IFileSystemProvider } from "../fs/provider";
 import { getDataDir, getDomainDir, DOMAIN_SUBPATHS } from "../fs/paths";
+import { createLogger } from "./logger";
+
+const log = createLogger("SkillEngine");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -203,7 +206,7 @@ async function discoverAndRegisterSkills(
 
       registered++;
     } catch (err) {
-      console.error(`[SkillEngine] Failed to parse ${skillMdPath}:`, err);
+      log.error(`Failed to parse ${skillMdPath}`, err instanceof Error ? err : undefined);
     }
   }
 
@@ -494,6 +497,6 @@ function buildSkillPrompt(
 export async function initializeSkillEngine(): Promise<void> {
   const builtinCount = await registerBuiltinSkills();
   if (builtinCount > 0) {
-    console.log(`[SkillEngine] Registered ${builtinCount} built-in skills`);
+    log.info(`Registered ${builtinCount} built-in skills`);
   }
 }

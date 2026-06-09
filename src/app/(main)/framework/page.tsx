@@ -46,6 +46,13 @@ export default function FrameworkPage() {
     fetchDomains();
   }, [fetchFrameworks, fetchDomains]);
 
+  // Re-fetch frameworks when selected domain changes (to include/exclude custom)
+  useEffect(() => {
+    if (selectedDomainId) {
+      fetchFrameworks(selectedDomainId);
+    }
+  }, [selectedDomainId, fetchFrameworks]);
+
   useEffect(() => {
     if (!selectedDomainId && domains.length > 0) {
       setSelectedDomainId(domains[0].id);

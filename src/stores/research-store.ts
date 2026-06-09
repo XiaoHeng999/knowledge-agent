@@ -80,8 +80,8 @@ export const useResearchStore = create<ResearchState>((set) => ({
     try {
       const status = await window.api.research.getStatus({ id: runId });
       set({ activeRun: status });
-    } catch {
-      // Status lookup failed — run may have been cleaned up
+    } catch (err) {
+      console.warn('[ResearchStore] Failed to refresh status:', err);
     }
   },
 }));

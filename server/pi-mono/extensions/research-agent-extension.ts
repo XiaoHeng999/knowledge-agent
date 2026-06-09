@@ -11,6 +11,8 @@ import {
   registerSession,
   getDomainContext,
 } from "./session-context";
+import { createTurnEndHandler } from "./turn-end-handler";
+import { getPiMonoWrapper } from "../instance";
 
 export const researchAgentExtension: ExtensionFactory = (pi: ExtensionAPI) => {
   pi.registerTool(timelineAnalyzeTool);
@@ -45,10 +47,20 @@ export const researchAgentExtension: ExtensionFactory = (pi: ExtensionAPI) => {
     return { systemPrompt: `${event.systemPrompt}\n\n${contextBlock}` };
   });
 
-  // --- turn_end: cost tracking placeholder ---
-  pi.on("turn_end", async (_event, _ctx) => {
-    // Cost aggregation is handled in the wrapper layer.
-    // This hook is reserved for per-turn cost logging when needed.
+  // --- turn_end: extract real token usage from LLM API ---
+  pi.on("turn_end", async (event, ctx) => {
+    const sessionId = ctx.sessionManager.getSessionId();
+    const handler = createTurnEndHandler(sessionId, async (modelId: string) => {
+      const wrapper = getPiMonoWrapper();
+      const models = await wrapper.listAvailableModels();
+      const model = models.find((m) => m.id === modelId);
+      if (!model) return null;
+      return {
+        costPerMillionInput: model.costPerMillionInput,
+        costPerMillionOutput: model.costPerMillionOutput,
+      };
+    });
+    await handler(event as Parameters<typeof handler>[0]);
   });
 
   // --- tool_call: intercept high-risk research operations ---

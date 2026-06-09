@@ -50,6 +50,7 @@ if (!gotTheLock) {
       return;
     }
 
+    // Note: Logger not yet available during early init
     try {
       await initializePiMono();
       console.log("[PiMono] Initialized successfully");
@@ -61,6 +62,7 @@ if (!gotTheLock) {
     initializeTimelineExecutor();
     initializeSkillEngine();
 
+    // Note: Logger not yet available during early init
     try {
       await initializeWorker();
       console.log("[Worker] Utility process initialized");

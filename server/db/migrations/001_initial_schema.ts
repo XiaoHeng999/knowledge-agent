@@ -97,6 +97,7 @@ const migration: Migration = {
         cost_usd REAL,
         metadata TEXT,
         branch_index INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'complete' CHECK (status IN ('complete', 'incomplete')),
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
         FOREIGN KEY (parent_id) REFERENCES messages(id) ON DELETE CASCADE

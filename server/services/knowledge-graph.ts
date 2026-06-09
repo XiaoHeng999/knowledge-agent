@@ -19,6 +19,9 @@ import type {
   KnowledgeListRequest,
 } from "../../src/lib/ipc/channels";
 import { indexNode, removeFromIndex } from "./search-engine";
+import { createLogger } from "./logger";
+
+const log = createLogger("KnowledgeGraph");
 
 // ---------------------------------------------------------------------------
 // Row → IPC type mapping
@@ -73,7 +76,7 @@ export function createNode(req: KnowledgeCreateNodeRequest): KnowledgeNode {
   // Auto-index for vector search (fire-and-forget)
   const indexText = [req.title, req.content].filter(Boolean).join(" ");
   indexNode(node.id, indexText).catch((err) => {
-    console.warn(`[Search] Failed to index node ${node.id}:`, err.message);
+    log.warn(`Failed to index node ${node.id}`, { error: err.message });
   });
 
   return node;
@@ -103,7 +106,7 @@ export function updateNode(req: KnowledgeUpdateNodeRequest): KnowledgeNode {
   if (req.title !== undefined || req.content !== undefined) {
     const indexText = [node.title, node.content].filter(Boolean).join(" ");
     indexNode(node.id, indexText).catch((err) => {
-      console.warn(`[Search] Failed to re-index node ${node.id}:`, err.message);
+      log.warn(`Failed to re-index node ${node.id}`, { error: err.message });
     });
   }
 
@@ -128,7 +131,7 @@ export function deleteNode(id: string): void {
 
   // Remove from vector index
   removeFromIndex(id).catch((err) => {
-    console.warn(`[Search] Failed to remove node ${id} from index:`, err.message);
+    log.warn(`Failed to remove node ${id} from index`, { error: err.message });
   });
 }
 

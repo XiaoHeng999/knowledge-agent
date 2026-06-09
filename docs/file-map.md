@@ -15,6 +15,7 @@ agentclaw/
 │   ├── app/                      # Next.js App Router 页面
 │   │   ├── layout.tsx            # 根布局
 │   │   ├── error.tsx             # 全局错误边界页面（5.3）
+│   │   ├── global-error.tsx      # 根级全局错误边界（捕获 Next.js 未处理异常）
 │   │   └── (main)/               # 主布局路由组
 │   │       ├── layout.tsx        # 三栏布局（侧边栏 + 主内容 + 详情面板）
 │   │       ├── page.tsx          # 首页
@@ -34,9 +35,12 @@ agentclaw/
 │   │       │   └── page.tsx      # 时间线与预测页（垂直时间线 + 预测卡片 + 趋势分析 + 筛选）
 │   │       └── settings/         # 设置页
 │   │           ├── page.tsx      # 设置主页
-│   │           ├── models/       # 模型管理
-│   │           ├── domains/      # 域管理
-│   │           └── skills/       # 技能管理（4.5）
+│   │           ├── models/
+│   │           │   └── page.tsx  # 模型管理
+│   │           ├── domains/
+│   │           │   └── page.tsx  # 域管理
+│   │           └── skills/
+│   │               └── page.tsx  # 技能管理（4.5）
 │   │
 │   ├── components/
 │   │   ├── layout/               # 布局组件
@@ -48,7 +52,18 @@ agentclaw/
 │   │   │
 │   │   ├── ui/                   # 基础 UI 组件库
 │   │   │   ├── index.ts          # 统一导出（Button, Input, Dialog, Toast, Tabs, ...）
+│   │   │   ├── badge.tsx         # 徽标组件
+│   │   │   ├── button.tsx        # 按钮组件
+│   │   │   ├── dialog.tsx        # 对话框组件
+│   │   │   ├── dropdown.tsx      # 下拉菜单组件
+│   │   │   ├── empty-state.tsx   # 空状态占位组件
+│   │   │   ├── input.tsx         # 输入框组件
+│   │   │   ├── progress.tsx      # 进度条组件
+│   │   │   ├── segmented-control.tsx # 分段控制组件
 │   │   │   ├── skeleton.tsx      # 骨架屏基元组件（Skeleton, SkeletonCircle, SkeletonLine 等）
+│   │   │   ├── tabs.tsx          # 标签页组件
+│   │   │   ├── toast.tsx         # Toast 通知组件
+│   │   │   ├── tooltip.tsx       # 提示框组件
 │   │   │   ├── loading-timeout.tsx # 加载超时状态组件（超时提示 + 重试/取消）
 │   │   │   └── launch-loader.tsx # 首次启动加载动画
 │   │   │
@@ -73,6 +88,7 @@ agentclaw/
 │   │   │   ├── result-group.tsx  # 单分组（header+items）
 │   │   │   ├── result-item.tsx   # 单个结果项
 │   │   │   ├── parameter-input.tsx # 参数输入模式
+│   │   │   ├── map-knowledge-results.ts # 知识搜索结果映射
 │   │   │   └── empty-state.tsx   # 无结果状态
 │   │   │
 │   │   ├── chat/                 # 对话组件
@@ -92,6 +108,8 @@ agentclaw/
 │   │   ├── graph/                # 知识图谱可视化
 │   │   │   ├── force-graph.tsx           # D3.js 力导向图
 │   │   │   ├── webgl-graph.tsx           # WebGL 降级（>1000 节点）
+│   │   │   ├── webgl-circle.ts           # WebGL 圆形绘制工具
+│   │   │   ├── d3-zoom-helpers.ts        # D3 缩放辅助函数
 │   │   │   ├── graph-controls.tsx        # 图谱控制面板（布局/筛选）
 │   │   │   └── graph-view.tsx            # 图谱/列表视图切换容器
 │   │   │
@@ -119,7 +137,11 @@ agentclaw/
 │   │   │   ├── import-dialog.tsx        # 导入对话框（URL/PDF/RSS + 进度 + 结果预览）
 │   │   │   └── import-history.tsx       # 导入历史列表（重试/取消）
 │   │   ├── timeline/              # 时间线与预测组件（4.4）
-│   │   │   └── timeline-event-card.tsx  # 时间线事件卡片 + 预测卡片 + 趋势分析 + 准确率面板
+│   │   │   ├── timeline-event-card.tsx      # 时间线事件卡片
+│   │   │   ├── timeline-event-list.tsx      # 时间线事件列表
+│   │   │   ├── timeline-filters.tsx         # 时间线筛选组件
+│   │   │   ├── timeline-prediction-panel.tsx # 预测面板
+│   │   │   └── timeline-trend-analysis.tsx  # 趋势分析组件
 │   │   ├── diff/                 # 版本对比组件
 │   │   │   ├── diff-viewer.tsx
 │   │   │   └── version-history.tsx
@@ -153,8 +175,8 @@ agentclaw/
 │   │   ├── security-store.ts     # 安全审核状态（待审核队列）
 │   │   ├── research-store.ts     # 研究仪表盘状态（4.1）
 │   │   ├── import-store.ts       # 导入管道状态（4.2）
-│   │   └── framework-store.ts    # 框架分析状态（4.3）
-│   │   └── timeline-store.ts     # 时间线与预测状态（4.4）
+│   │   ├── framework-store.ts    # 框架分析状态（4.3）
+│   │   ├── timeline-store.ts     # 时间线与预测状态（4.4）
 │   │   └── skill-store.ts        # 技能系统状态（4.5）
 │   │
 │   ├── lib/
@@ -163,7 +185,28 @@ agentclaw/
 │   │   │   ├── error-registry.ts     # 错误注册表（43 个结构化错误定义）
 │   │   │   └── error-recovery.ts     # 错误恢复（重试退避 + 错误 store + 日志 store）
 │   │   ├── ipc/
-│   │   │   └── channels.ts       # IPC 通道注册表（类型安全的 channel 定义）
+│   │   │   └── channels/          # IPC 通道注册表（按模块拆分，类型安全 channel 定义）
+│   │   │       ├── index.ts       # 统一导出
+│   │   │       ├── shared.ts      # 共享类型与工具函数
+│   │   │       ├── app.ts
+│   │   │       ├── chat.ts
+│   │   │       ├── db.ts
+│   │   │       ├── domain.ts
+│   │   │       ├── framework.ts
+│   │   │       ├── import.ts
+│   │   │       ├── inbox.ts
+│   │   │       ├── knowledge.ts
+│   │   │       ├── model.ts
+│   │   │       ├── research.ts
+│   │   │       ├── search.ts
+│   │   │       ├── security.ts
+│   │   │       ├── settings.ts
+│   │   │       ├── skill.ts
+│   │   │       ├── timeline.ts
+│   │   │       ├── update.ts
+│   │   │       ├── vc.ts
+│   │   │       ├── window.ts
+│   │   │       └── worker.ts
 │   │   ├── hooks/
 │   │   │   ├── use-ipc.ts        # IPC 调用 hook
 │   │   │   ├── use-theme.ts      # 主题切换 hook
@@ -177,7 +220,8 @@ agentclaw/
 │   │       ├── types.ts           # 命令类型定义（CommandDefinition, ParsedCommand 等）
 │   │       ├── parser.ts          # 命令解析器（识别 /command [args] 格式）
 │   │       ├── registry.ts        # 命令注册表（注册、查找、执行路由）
-│   │       └── builtins.ts        # 10 个内置斜杠命令
+│   │       ├── builtins.ts        # 10 个内置斜杠命令
+│   │       └── history.ts         # 命令历史记录
 │   │
 │   ├── styles/
 │   │   ├── tokens.css            # 设计 token（颜色、间距、圆角变量）
@@ -199,6 +243,8 @@ agentclaw/
 │   │   ├── migrations/           # 数据库迁移
 │   │   │   ├── 001_initial_schema.ts
 │   │   │   ├── 002_skill_executions.ts
+│   │   │   ├── 003_message_status.ts
+│   │   │   ├── 004_research_over_budget.ts
 │   │   │   ├── index.ts         # 迁移 barrel 导出
 │   │   │   ├── runner.ts         # 迁移执行器
 │   │   │   └── types.ts
@@ -218,6 +264,7 @@ agentclaw/
 │   │       ├── imports.ts          # 导入记录 CRUD（4.2）
 │   │       ├── framework-results.ts # 框架分析结果 CRUD（4.3）
 │   │       ├── predictions.ts      # 预测 CRUD（4.4）
+│   │       ├── settings.ts         # 应用设置 CRUD
 │   │       └── skills.ts           # 技能 CRUD（4.5）
 │   │
 │   ├── fs/                       # 文件系统抽象层
@@ -243,8 +290,8 @@ agentclaw/
 │   │       ├── research-handler.ts      # 研究 IPC handler（4.1）
 │   │       ├── import-handler.ts        # 导入管道 IPC handler（4.2）
 │   │       ├── framework-handler.ts     # 框架分析 IPC handler（4.3）
-│       ├── timeline-handler.ts      # 时间线与预测 IPC handler（4.4）
-│       ├── skill-handler.ts         # 技能系统 IPC handler（4.5）
+│   │       ├── timeline-handler.ts      # 时间线与预测 IPC handler（4.4）
+│   │       ├── skill-handler.ts         # 技能系统 IPC handler（4.5）
 │   │       ├── security-handler.ts
 │   │       └── version-control-handler.ts
 │   │
@@ -261,7 +308,8 @@ agentclaw/
 │   │       ├── import-agent-extension.ts
 │   │       ├── research-agent-extension.ts
 │   │       ├── knowledge-tools-extension.ts
-│   │       └── session-context.ts  # 会话上下文（领域信息注入）
+│   │       ├── session-context.ts  # 会话上下文（领域信息注入）
+│   │       └── turn-end-handler.ts # 对话轮次结束处理
 │   │
 │   ├── worker/                    # Utility Process Worker（5.7）
 │   │   ├── types.ts               # 消息协议、任务类型、payload/result 接口
@@ -283,6 +331,7 @@ agentclaw/
 │       ├── search-engine.ts      # 混合搜索引擎（向量 + BM25 + RRF）
 │       ├── inbox-processor.ts    # 收件箱处理（AI 摘要 + 领域建议 + 确认/拒绝）
 │       ├── research-scheduler.ts # 定时研究调度器（4.1：cron 调度 + Agent 执行 + 结果入库）
+│       ├── research-cost-tracker.ts # 研究成本追踪（token 用量 + 费用估算）
 │       ├── import-pipeline.ts    # 导入管道（4.2：URL/PDF/RSS 导入 + AI 摘要 + 来源追踪）
 │       ├── framework-engine.ts   # 框架分析引擎（4.3：内置框架 + ADR + 三层记忆 + 领域摘要）
 │       ├── timeline-engine.ts    # 时间线引擎（4.4：时间线CRUD + 趋势分析 + 预测生成 + 准确率追踪）
@@ -292,7 +341,7 @@ agentclaw/
 │       ├── diff-service.ts       # Diff 生成服务（行级内容比较）
 │       ├── security-gate.ts      # 安全网关（风险评估 + 审核队列）
 │       ├── pi-mono-wrapper.ts    # Pi Mono 服务包装
-│       └── logger.ts             # 结构化日志服务（5.3：JSON 格式 + 操作成本追踪）
+│       ├── logger.ts             # 结构化日志服务（5.3：JSON 格式 + 操作成本追踪）
 │       └── auto-updater.ts       # 自动更新服务（5.8：electron-updater + GitHub Releases）
 
 ├── resources/                    # 内置资源
@@ -309,7 +358,46 @@ agentclaw/
 │   ├── reference/                   # 技术参考文档
 │   └── risk/                        # 风险分析文档
 │
-└── openspec/                     # OpenSpec 任务与变更管理
+├── openspec/                     # OpenSpec 任务与变更管理
+│
+└── tests/                        # 测试文件（按领域组织）
+    ├── electron/
+    │   └── preload.test.ts
+    ├── server/
+    │   ├── db/
+    │   │   ├── repositories/settings.test.ts
+    │   │   └── migrations/migrations.test.ts
+    │   ├── lib/lru-cache.test.ts
+    │   ├── services/
+    │   │   ├── budget-check.test.ts
+    │   │   ├── custom-framework.test.ts
+    │   │   ├── logger.test.ts
+    │   │   ├── research-cost-tracker.test.ts
+    │   │   ├── security-gate.test.ts
+    │   │   └── turn-end-handler.test.ts
+    │   └── worker/worker-process.test.ts
+    └── src/
+        ├── components/
+        │   ├── conversation-tree.test.tsx
+        │   ├── cmd-palette/map-knowledge-results.test.ts
+        │   ├── graph/
+        │   │   ├── d3-zoom-helpers.test.ts
+        │   │   └── webgl-circle.test.ts
+        │   └── timeline/
+        │       ├── timeline-event-list.test.tsx
+        │       ├── timeline-filters.test.tsx
+        │       ├── timeline-prediction-panel.test.tsx
+        │       └── timeline-trend-analysis.test.tsx
+        ├── lib/
+        │   ├── channels-exports.test.ts
+        │   └── commands/history.test.ts
+        └── stores/
+            ├── app-store.test.ts
+            ├── chat-store.test.ts
+            ├── model-store.test.ts
+            ├── research-store.test.ts
+            ├── security-store.test.ts
+            └── skill-store.test.ts
 ```
 
 ## 关键文件速查
@@ -320,7 +408,7 @@ agentclaw/
 | 加新布局组件 | `src/components/layout/<name>.tsx` |
 | 加新 UI 组件 | `src/components/ui/<name>.tsx` + 更新 `index.ts` 导出 |
 | 加新状态 | `src/stores/<name>-store.ts` |
-| 加新 IPC 通道 | `src/lib/ipc/channels.ts` 定义 → `electron/preload.ts` 暴露 → `server/ipc/handlers/` 实现 → `server/ipc/register.ts` 注册 |`
+| 加新 IPC 通道 | `src/lib/ipc/channels/<module>.ts` 定义 → `electron/preload.ts` 暴露 → `server/ipc/handlers/` 实现 → `server/ipc/register.ts` 注册 |
 | 加新数据库表 | `server/db/schema.ts` 定义 → `server/db/migrations/` 迁移 → `server/db/repositories/` 数据访问 |
 | 加新 Agent 工具 | `server/pi-mono/tools/<name>.ts` → `server/pi-mono/extensions/` 注册扩展 |
 | 修改主题/样式 | `src/styles/tokens.css`（变量）或 `src/styles/themes/<name>.css` |

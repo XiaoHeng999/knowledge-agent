@@ -159,3 +159,13 @@ class LoggerService {
 
 // Singleton instance
 export const logger = new LoggerService();
+
+/** Create a module-scoped logger that delegates to the singleton */
+export function createLogger(module: string) {
+  return {
+    debug: (message: string, data?: Record<string, unknown>) => logger.debug(module, message, data),
+    info: (message: string, data?: Record<string, unknown>) => logger.info(module, message, data),
+    warn: (message: string, data?: Record<string, unknown>) => logger.warn(module, message, data),
+    error: (message: string, error?: Error, data?: Record<string, unknown>) => logger.error(module, message, error, data),
+  };
+}

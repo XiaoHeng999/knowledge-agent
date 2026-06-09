@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useIpcQuery } from '@/lib/hooks/use-ipc';
+import { useAppStore } from '@/stores/app-store';
 import type { InboxListResponse, InboxStatsResponse, DomainListResponse, DomainSuggestion } from '@/lib/ipc/channels';
 import { InboxItemCard } from '@/components/inbox/inbox-item';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -62,7 +63,9 @@ export default function InboxPage() {
       try {
         const result = await window.api.inbox.suggestDomains({ itemId });
         return result.suggestions;
-      } catch {
+      } catch (err) {
+        console.warn('[Inbox] Failed to load suggestions:', err);
+        useAppStore.getState().setGlobalError('Failed to load domain suggestions');
         return [];
       }
     },
@@ -156,7 +159,9 @@ export default function InboxPage() {
                     label: 'Import your first source',
                     onClick: () => {
                       if (typeof window !== 'undefined' && window.api) {
-                        window.api.import.importUrl({ url: '', domainId: '' }).catch(() => {});
+                        window.api.import.importUrl({ url: '', domainId: '' }).catch((err: unknown) => {
+                          console.warn('[Inbox] Failed to open import dialog:', err);
+                        });
                       }
                     },
                   }

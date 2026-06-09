@@ -16,8 +16,8 @@ import {
 import type { FrameworkType } from "../../db/schema";
 
 export function registerFrameworkHandlers(): void {
-  registerHandler(FRAMEWORK_CHANNELS.LIST_FRAMEWORKS, async () => {
-    const frameworks = listFrameworks();
+  registerHandler(FRAMEWORK_CHANNELS.LIST_FRAMEWORKS, async (_event, req?: { domainId?: string }) => {
+    const frameworks = await listFrameworks(req?.domainId);
     return { frameworks };
   });
 

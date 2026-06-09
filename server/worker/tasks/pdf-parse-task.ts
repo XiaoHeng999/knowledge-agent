@@ -2,19 +2,14 @@
  * PDF_TEXT_EXTRACT task handler.
  * Extracts text content from PDF files using pdf-parse.
  */
-import type { PdfExtractPayload, PdfExtractResult } from "../types";
-
-interface TaskContext {
-  signal: AbortSignal;
-  reportProgress: (progress: number, message?: string) => void;
-}
+import type { PdfExtractPayload, PdfExtractResult, WorkerHandlerContext } from "../types";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 const MAX_PAGES = 500;
 
 export async function handlePdfTextExtract(
   payload: PdfExtractPayload,
-  ctx: TaskContext,
+  ctx: WorkerHandlerContext,
 ): Promise<PdfExtractResult> {
   const fs = await import("fs");
 

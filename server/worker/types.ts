@@ -153,6 +153,34 @@ export type WorkerToMainMessage =
   | { type: "WORKER_ERROR"; error: string };
 
 // ---------------------------------------------------------------------------
+// Handler context & generic handler type
+// ---------------------------------------------------------------------------
+
+export interface WorkerHandlerContext {
+  signal: AbortSignal;
+  reportProgress: (progress: number, message?: string) => void;
+}
+
+export type WorkerHandler<P = unknown, R = unknown> = (
+  payload: P,
+  ctx: WorkerHandlerContext,
+) => Promise<R>;
+
+// ---------------------------------------------------------------------------
+// Task-specific payloads & results (used by handler map)
+// ---------------------------------------------------------------------------
+
+export interface VectorIndexTaskPayload extends VectorIndexPayload {
+  /** Node data sent from main process */
+  nodes: Array<{ id: string; title: string; content: string; summary: string | null }>;
+}
+
+export interface VectorIndexTaskResult extends VectorIndexResult {
+  /** Generated vectors for main process to upsert */
+  vectors: Array<{ nodeId: string; vector: number[] }>;
+}
+
+// ---------------------------------------------------------------------------
 // Error class
 // ---------------------------------------------------------------------------
 

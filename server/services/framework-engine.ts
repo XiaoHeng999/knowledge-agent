@@ -8,6 +8,7 @@ import { getPiMonoWrapper } from "../pi-mono/instance";
 import { resolveModelId } from "../lib/model-resolver";
 import { createNode } from "./knowledge-graph";
 import { readConfig } from "./domain-config";
+import type { CustomFrameworkConfig } from "./domain-config";
 import type {
   FrameworkType,
   FrameworkResultRow,
@@ -224,30 +225,56 @@ const BUILT_IN_FRAMEWORKS: FrameworkDefinition[] = [
       tags: ["framework", "hype-cycle"],
     }),
   },
-  {
+];
+
+// ---------------------------------------------------------------------------
+// Custom framework builder
+// ---------------------------------------------------------------------------
+
+export function buildCustomFrameworkDefinition(cfg: CustomFrameworkConfig): FrameworkDefinition {
+  return {
     type: "custom",
-    name: "Custom Framework",
-    description: "A placeholder for user-defined custom analysis frameworks.",
+    name: cfg.name,
+    description: cfg.description,
     minNodes: 1,
-    promptTemplate: (domain, summaries, _decisions) => {
+    promptTemplate: (domainName, nodeSummaries, decisionSummaries) => {
       const parts: string[] = [];
-      parts.push(`Analyze the "${domain}" domain based on the following knowledge:`);
+      parts.push(`You are analyzing the "${domainName}" domain using the "${cfg.name}" framework.`);
       parts.push("");
-      for (const s of summaries) {
-        parts.push(`- ${s}`);
+      parts.push(`## Framework: ${cfg.name}`);
+      parts.push(cfg.description);
+      parts.push("");
+      parts.push("## Dimensions");
+      for (const dim of cfg.dimensions) {
+        parts.push(`- ${dim}`);
       }
       parts.push("");
-      parts.push("Provide a comprehensive analysis with key findings, implications, and recommendations.");
+      if (nodeSummaries.length > 0) {
+        parts.push("## Knowledge Nodes");
+        for (const s of nodeSummaries) {
+          parts.push(`- ${s}`);
+        }
+        parts.push("");
+      }
+      if (decisionSummaries.length > 0) {
+        parts.push("## Previous Decisions");
+        for (const d of decisionSummaries) {
+          parts.push(`- ${d}`);
+        }
+        parts.push("");
+      }
+      parts.push("## Scoring Instructions");
+      parts.push(cfg.scoringPrompt);
       return parts.join("\n");
     },
     parseResult: (raw) => ({
-      title: "Custom Analysis",
+      title: cfg.name,
       summary: raw.slice(0, 300).trim(),
       details: raw,
       tags: ["framework", "custom-analysis"],
     }),
-  },
-];
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Row → IPC type mapping
@@ -283,20 +310,49 @@ function rowToDecisionResult(row: DecisionRow): DecisionRecordResult {
   };
 }
 
+export function extractSlugFromConfigPath(configPath: string): string {
+  // configPath is like /path/to/domains/my-domain/config.yaml — extract "my-domain"
+  const parts = configPath.replace(/\\/g, "/").split("/");
+  const domainsIdx = parts.lastIndexOf("domains");
+  if (domainsIdx >= 0 && parts.length > domainsIdx + 1) {
+    return parts[domainsIdx + 1];
+  }
+  return parts[parts.length - 2] ?? "";
+}
+
 // ---------------------------------------------------------------------------
 // Public API: Framework listing
 // ---------------------------------------------------------------------------
 
-export function listFrameworks(): Array<{ type: FrameworkType; name: string; description: string; minNodes: number }> {
-  return BUILT_IN_FRAMEWORKS.map((f) => ({
+export async function listFrameworks(domainId?: string): Promise<Array<{ type: FrameworkType; name: string; description: string; minNodes: number }>> {
+  const builtIn = BUILT_IN_FRAMEWORKS.map((f) => ({
     type: f.type,
     name: f.name,
     description: f.description,
     minNodes: f.minNodes,
   }));
+
+  if (!domainId) return builtIn;
+
+  const db = getDatabaseService();
+  const domain = db.domains.findById(domainId);
+  if (!domain) return builtIn;
+
+  const domainSlug = extractSlugFromConfigPath(domain.config_path);
+  const config = await readConfig(domainSlug);
+  if (config?.customFramework) {
+    const custom = buildCustomFrameworkDefinition(config.customFramework);
+    return [...builtIn, { type: custom.type, name: custom.name, description: custom.description, minNodes: custom.minNodes }];
+  }
+
+  return builtIn;
 }
 
-export function getFrameworkDefinition(type: FrameworkType): FrameworkDefinition | undefined {
+export async function getFrameworkDefinition(type: FrameworkType, domainSlug?: string): Promise<FrameworkDefinition | undefined> {
+  if (type === "custom" && domainSlug) {
+    const config = await readConfig(domainSlug);
+    if (config?.customFramework) return buildCustomFrameworkDefinition(config.customFramework);
+  }
   return BUILT_IN_FRAMEWORKS.find((f) => f.type === type);
 }
 
@@ -310,7 +366,21 @@ export async function executeFrameworkAnalysis(
   modelId?: string,
 ): Promise<FrameworkAnalysisResult> {
   const db = getDatabaseService();
-  const framework = BUILT_IN_FRAMEWORKS.find((f) => f.type === frameworkType);
+
+  // Get domain info
+  const domain = db.domains.findById(domainId);
+  if (!domain) throw new Error(`Domain not found: ${domainId}`);
+
+  // Resolve framework definition (custom reads from domain config)
+  let framework: FrameworkDefinition | undefined;
+  if (frameworkType === "custom") {
+    const domainSlug = extractSlugFromConfigPath(domain.config_path);
+    const config = await readConfig(domainSlug);
+    if (!config?.customFramework) throw new Error("No custom framework defined for this domain");
+    framework = buildCustomFrameworkDefinition(config.customFramework);
+  } else {
+    framework = BUILT_IN_FRAMEWORKS.find((f) => f.type === frameworkType);
+  }
   if (!framework) throw new Error(`Unknown framework type: ${frameworkType}`);
 
   // Collect knowledge nodes
@@ -337,10 +407,6 @@ export async function executeFrameworkAnalysis(
   const decisionSummaries = decisionsResult.items.map(
     (d) => `ADR-${String(d.decision_number).padStart(3, "0")}: ${d.title} [${d.status}]`,
   );
-
-  // Get domain info
-  const domain = db.domains.findById(domainId);
-  if (!domain) throw new Error(`Domain not found: ${domainId}`);
 
   // Resolve model
   const resolvedModelId = await resolveModelId(domainId, modelId);

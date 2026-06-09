@@ -4,7 +4,7 @@
  * the vectors so the main process can upsert them into the vector index.
  */
 import { createHash } from "crypto";
-import type { VectorIndexPayload, VectorIndexResult } from "../types";
+import type { VectorIndexPayload, VectorIndexResult, WorkerHandlerContext, VectorIndexTaskPayload, VectorIndexTaskResult } from "../types";
 
 const EMBEDDING_DIMENSION = 1536;
 
@@ -40,24 +40,9 @@ function generateHashEmbedding(text: string): number[] {
   return result;
 }
 
-export interface VectorIndexTaskPayload extends VectorIndexPayload {
-  /** Node data sent from main process */
-  nodes: Array<{ id: string; title: string; content: string; summary: string | null }>;
-}
-
-interface TaskContext {
-  signal: AbortSignal;
-  reportProgress: (progress: number, message?: string) => void;
-}
-
-export interface VectorIndexTaskResult extends VectorIndexResult {
-  /** Generated vectors for main process to upsert */
-  vectors: Array<{ nodeId: string; vector: number[] }>;
-}
-
 export async function handleVectorIndexBuild(
   payload: VectorIndexTaskPayload,
-  ctx: TaskContext,
+  ctx: WorkerHandlerContext,
 ): Promise<VectorIndexTaskResult> {
   const startTime = Date.now();
   const nodes = payload.nodes;

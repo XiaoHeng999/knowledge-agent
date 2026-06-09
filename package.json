@@ -2,7 +2,7 @@
   "name": "agentclaw",
   "version": "0.1.0",
   "private": true,
-  "description": "Agent-based intelligent knowledge base — comprehension over retrieval",
+  "description": "Agent-based intelligent knowledge base \u2014 comprehension over retrieval",
   "main": "dist/electron/main.js",
   "scripts": {
     "dev": "concurrently -k \"pnpm run dev:next\" \"pnpm run dev:electron\"",
@@ -57,5 +57,10 @@
     "jsdom": "^29.1.1",
     "typescript": "^5.7.0",
     "vitest": "^4.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }

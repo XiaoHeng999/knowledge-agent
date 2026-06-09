@@ -84,6 +84,7 @@ export interface ConversationRow {
 }
 
 export type MessageRole = "user" | "assistant" | "system";
+export type MessageStatus = "complete" | "incomplete";
 
 export interface MessageRow {
   id: string;
@@ -96,6 +97,7 @@ export interface MessageRow {
   cost_usd: number | null;
   metadata: string | null;
   branch_index: number;
+  status: MessageStatus;
   created_at: string;
 }
 
@@ -137,7 +139,7 @@ export interface ImportRow {
 }
 
 export type ResearchTriggerType = "scheduled" | "manual" | "slash_command";
-export type ResearchRunStatus = "running" | "completed" | "failed" | "cancelled";
+export type ResearchRunStatus = "running" | "completed" | "failed" | "cancelled" | "over_budget";
 
 export interface ResearchRunRow {
   id: string;
@@ -364,7 +366,7 @@ export const TABLE_COLUMNS: Record<TableName, ReadonlySet<string>> = {
   ]),
   messages: new Set<KeysOf<MessageRow>>([
     "id", "conversation_id", "parent_id", "role", "content", "model_id",
-    "token_count", "cost_usd", "metadata", "branch_index", "created_at",
+    "token_count", "cost_usd", "metadata", "branch_index", "status", "created_at",
   ]),
   inbox_items: new Set<KeysOf<InboxItemRow>>([
     "id", "source_type", "source_url", "raw_content", "ai_summary",

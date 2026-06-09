@@ -111,24 +111,22 @@ function registerResearchHandlers(): void {
 function registerSettingsHandlers(): void {
   registerHandler(SETTINGS_CHANNELS.GET, async (_event, req) => {
     const db = getDatabaseService();
-    const row = db.db.prepare("SELECT value FROM settings WHERE key = ?").get(req.key) as { value: string } | undefined;
-    return row?.value ?? null;
+    return db.settings.get(req.key);
   });
 
   registerHandler(SETTINGS_CHANNELS.SET, async (_event, req) => {
     const db = getDatabaseService();
-    db.db.prepare("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))").run(req.key, JSON.stringify(req.value));
+    db.settings.set(req.key, req.value);
   });
 
   registerHandler(SETTINGS_CHANNELS.GET_THEME, async () => {
     const db = getDatabaseService();
-    const row = db.db.prepare("SELECT value FROM settings WHERE key = 'theme'").get() as { value: string } | undefined;
-    return row?.value ?? "tokyo-night";
+    return db.settings.get("theme") ?? "tokyo-night";
   });
 
   registerHandler(SETTINGS_CHANNELS.SET_THEME, async (_event, req) => {
     const db = getDatabaseService();
-    db.db.prepare("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('theme', ?, datetime('now'))").run(JSON.stringify(req.value));
+    db.settings.set("theme", req.value);
   });
 }
 

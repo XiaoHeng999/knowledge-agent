@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { SkillInfo, SkillExecution, SkillMetrics } from "../lib/ipc/channels";
+import { useAppStore } from "./app-store";
 
 interface SkillState {
   skills: SkillInfo[];
@@ -85,7 +86,9 @@ export const useSkillStore = create<SkillState>((set) => ({
     try {
       const result = await window.api.skill.cancel({ id: executionId });
       return result.cancelled;
-    } catch {
+    } catch (err) {
+      console.warn('[SkillStore] Failed to cancel execution:', err);
+      useAppStore.getState().setGlobalError('Failed to cancel skill execution');
       return false;
     }
   },
@@ -93,7 +96,9 @@ export const useSkillStore = create<SkillState>((set) => ({
   getMetrics: async (skillId: string) => {
     try {
       return await window.api.skill.metrics({ skillId });
-    } catch {
+    } catch (err) {
+      console.warn('[SkillStore] Failed to load metrics:', err);
+      useAppStore.getState().setGlobalError('Failed to load skill metrics');
       return null;
     }
   },

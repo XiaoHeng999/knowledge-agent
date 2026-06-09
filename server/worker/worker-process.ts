@@ -12,6 +12,18 @@ import type {
   MainToWorkerMessage,
   WorkerToMainMessage,
   WorkerTaskPayload,
+  WorkerHandler,
+  WorkerHandlerContext,
+  EmbeddingPayload,
+  EmbeddingResult,
+  BatchEmbeddingPayload,
+  BatchEmbeddingResult,
+  VectorIndexTaskPayload,
+  VectorIndexTaskResult,
+  GraphLayoutPayload,
+  GraphLayoutResult,
+  PdfExtractPayload,
+  PdfExtractResult,
 } from "./types";
 import { TASK_DEFAULT_TIMEOUTS } from "./types";
 
@@ -25,13 +37,15 @@ import { handlePdfTextExtract } from "./tasks/pdf-parse-task";
 // Handler type & registry
 // ---------------------------------------------------------------------------
 
-type TaskHandler = (
-  payload: unknown,
-  ctx: { signal: AbortSignal; reportProgress: (p: number, m?: string) => void },
-) => Promise<unknown>;
+interface TaskHandlerMap {
+  EMBEDDING_GENERATION: WorkerHandler<EmbeddingPayload, EmbeddingResult>;
+  BATCH_EMBEDDINGS: WorkerHandler<BatchEmbeddingPayload, BatchEmbeddingResult>;
+  VECTOR_INDEX_BUILD: WorkerHandler<VectorIndexTaskPayload, VectorIndexTaskResult>;
+  GRAPH_LAYOUT_COMPUTE: WorkerHandler<GraphLayoutPayload, GraphLayoutResult>;
+  PDF_TEXT_EXTRACT: WorkerHandler<PdfExtractPayload, PdfExtractResult>;
+}
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const handlers: Record<string, (payload: any, ctx: any) => Promise<unknown>> = {
+const handlers: TaskHandlerMap = {
   EMBEDDING_GENERATION: handleEmbeddingGeneration,
   BATCH_EMBEDDINGS: handleBatchEmbeddings,
   VECTOR_INDEX_BUILD: handleVectorIndexBuild,
@@ -66,8 +80,8 @@ function send(msg: WorkerToMainMessage): void {
 // ---------------------------------------------------------------------------
 
 async function executeTask(task: WorkerTaskPayload): Promise<void> {
-  const handler = handlers[task.type];
-  if (!handler) {
+  const typedHandler = handlers[task.type];
+  if (!typedHandler) {
     send({
       type: "TASK_ERROR",
       taskId: task.id,
@@ -79,6 +93,10 @@ async function executeTask(task: WorkerTaskPayload): Promise<void> {
     });
     return;
   }
+
+  // TaskHandlerMap guarantees the correct handler for each type,
+  // but at runtime the payload is unknown — widen to WorkerHandler for invocation.
+  const handler: WorkerHandler = typedHandler;
 
   const abortController = new AbortController();
   const timeout = task.timeout ?? TASK_DEFAULT_TIMEOUTS[task.type];
@@ -95,10 +113,11 @@ async function executeTask(task: WorkerTaskPayload): Promise<void> {
 
   try {
     reportProgress(0, "Starting task...");
-    const result = await handler(task.payload, {
+    const ctx: WorkerHandlerContext = {
       signal: abortController.signal,
       reportProgress,
-    });
+    };
+    const result = await handler(task.payload, ctx);
     clearTimeout(timeoutId);
     send({ type: "TASK_COMPLETE", taskId: task.id, result });
   } catch (error) {

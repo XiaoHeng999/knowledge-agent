@@ -182,6 +182,7 @@ function MessageNode({
   onSwitchBranch,
   onToggleCollapse,
   onBranch,
+  onRetry,
   streaming,
   streamingContent,
   streamingMessageId,
@@ -192,6 +193,7 @@ function MessageNode({
   onSwitchBranch: (parentId: string, index: number) => void;
   onToggleCollapse: (nodeId: string) => void;
   onBranch: (parentMessageId: string) => void;
+  onRetry?: (messageId: string) => void;
   streaming?: boolean;
   streamingContent?: string;
   streamingMessageId?: string | null;
@@ -256,6 +258,16 @@ function MessageNode({
                 aria-label={isCollapsed ? "Expand messages" : "Collapse messages"}
               >
                 {isCollapsed ? "&#x25B6;" : "&#x25BC;"}
+              </button>
+            )}
+            {!isUser && message.status === "incomplete" && onRetry && (
+              <button
+                className="tree-node__retry-btn"
+                onClick={() => onRetry(message.id)}
+                aria-label="Retry generating response"
+                title="Retry"
+              >
+                &#x21BB; Retry
               </button>
             )}
           </div>
@@ -409,6 +421,7 @@ function FlatMessageItem({
   onSwitchBranch,
   onToggleCollapse,
   onBranch,
+  onRetry,
   streaming,
   streamingContent,
   streamingMessageId,
@@ -419,6 +432,7 @@ function FlatMessageItem({
   onSwitchBranch: (parentId: string, index: number) => void;
   onToggleCollapse: (nodeId: string) => void;
   onBranch: (parentMessageId: string) => void;
+  onRetry?: (messageId: string) => void;
   streaming?: boolean;
   streamingContent?: string;
   streamingMessageId?: string | null;
@@ -471,6 +485,16 @@ function FlatMessageItem({
                 aria-label={isCollapsed ? "Expand messages" : "Collapse messages"}
               >
                 {isCollapsed ? "&#x25B6;" : "&#x25BC;"}
+              </button>
+            )}
+            {!isUser && message.status === "incomplete" && onRetry && (
+              <button
+                className="tree-node__retry-btn"
+                onClick={() => onRetry(message.id)}
+                aria-label="Retry generating response"
+                title="Retry"
+              >
+                &#x21BB; Retry
               </button>
             )}
           </div>
@@ -539,6 +563,7 @@ export function ConversationTree({
   const switchBranch = useChatStore((s) => s.switchBranch);
   const toggleCollapse = useChatStore((s) => s.toggleCollapse);
   const branchFromMessage = useChatStore((s) => s.branchFromMessage);
+  const retryLastMessage = useChatStore((s) => s.retryLastMessage);
 
   const tree = useMemo(() => buildTree(messages, rootId), [messages, rootId]);
   const flatItems = useMemo(
@@ -585,6 +610,16 @@ export function ConversationTree({
     [messages, branchFromMessage],
   );
 
+  const handleRetry = useCallback(
+    (messageId: string) => {
+      const msg = messages.find((m) => m.id === messageId);
+      if (msg?.modelId) {
+        retryLastMessage(msg.modelId);
+      }
+    },
+    [messages, retryLastMessage],
+  );
+
   if (!tree) {
     return (
       <div className="conversation-tree conversation-tree--empty">
@@ -603,6 +638,7 @@ export function ConversationTree({
       onSwitchBranch={handleSwitchBranch}
       onToggleCollapse={handleToggleCollapse}
       onBranch={handleBranch}
+      onRetry={handleRetry}
       streaming={streaming}
       streamingContent={streamingContent}
       streamingMessageId={streamingMessageId}
