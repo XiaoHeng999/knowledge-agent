@@ -5,7 +5,6 @@ import { registerAllIpcHandlers } from "../server/ipc/register";
 import { initializeDatabase, shutdownDatabase } from "../server/db/index";
 import { initializePiMono, shutdownPiMono } from "../server/pi-mono/instance";
 import { startScheduler, stopScheduler } from "../server/services/research-scheduler";
-import { initializeTimelineExecutor } from "../server/services/timeline-engine";
 import { initializeSkillEngine } from "../server/services/skill-engine";
 import { initializeWorker, shutdownWorker } from "../server/worker/worker-bridge";
 import { initializeAutoUpdater, shutdownAutoUpdater } from "../server/services/auto-updater";
@@ -59,7 +58,6 @@ if (!gotTheLock) {
     }
 
     registerAllIpcHandlers();
-    initializeTimelineExecutor();
     initializeSkillEngine();
 
     // Note: Logger not yet available during early init

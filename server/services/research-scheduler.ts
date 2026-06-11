@@ -2,21 +2,15 @@
  * ResearchScheduler service — cron-based research scheduling, agent execution,
  * result processing, and cost tracking for the F2 scheduled research agent.
  */
-import { getDatabaseService } from "../db/index";
-import { getPiMonoWrapper } from "../pi-mono/instance";
+import type { FullDeps } from "./types";
 import type { ResearchRunRow, ResearchRunStatus, ResearchTriggerType } from "../db/schema";
 import type { ResearchStatus, ResearchDashboardResponse } from "../../src/lib/ipc/channels";
 import { readConfig, type DomainConfigFile } from "./domain-config";
 import { createNode } from "./knowledge-graph";
-import {
-  startTracking,
-  stopTracking,
-  resolveBudgetStatus,
-  type AggregatedUsage,
-} from "./research-cost-tracker";
+import { resolveBudgetStatus } from "./research-cost-tracker";
 import { createLogger } from "./logger";
-
-const log = createLogger("ResearchScheduler");
+import { createSessionRunner } from "./session-runner";
+import { createTrackerCostEstimator } from "./cost-estimator";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,13 +37,6 @@ function rowToStatus(row: ResearchRunRow): ResearchStatus {
     completedAt: row.completed_at,
   };
 }
-
-// ---------------------------------------------------------------------------
-// In-memory state
-// ---------------------------------------------------------------------------
-
-const activeRuns = new Map<string, ActiveRun>();
-const cronTimers = new Map<string, ReturnType<typeof setInterval>>();
 
 // ---------------------------------------------------------------------------
 // Cron expression parser (simplified: only standard 5-field cron)
@@ -151,353 +138,314 @@ function buildResearchPrompt(config: DomainConfigFile): string {
 }
 
 // ---------------------------------------------------------------------------
-// Resolve research model — use domain config, or fallback to cheapest
+// Factory
 // ---------------------------------------------------------------------------
 
-async function resolveResearchModel(domainId: string, config: DomainConfigFile): Promise<string> {
-  if (config.models.research) return config.models.research;
+export function createResearchScheduler(deps: FullDeps) {
+  const { db, piMono } = deps;
+  const log = createLogger("ResearchScheduler");
 
-  const wrapper = getPiMonoWrapper();
-  const models = await wrapper.listAvailableModels();
+  const activeRuns = new Map<string, ActiveRun>();
+  const cronTimers = new Map<string, ReturnType<typeof setInterval>>();
+  let schedulerInterval: ReturnType<typeof setInterval> | null = null;
 
-  // Prefer DeepSeek or other cheap models
-  const cheapProviders = ["deepseek", "groq", "ollama"];
-  for (const provider of cheapProviders) {
-    const match = models.find(
-      (m) => m.provider === provider && m.available,
-    );
-    if (match) return match.id;
+  // -------------------------------------------------------------------------
+  // Resolve research model — use domain config, or fallback to cheapest
+  // -------------------------------------------------------------------------
+
+  async function resolveResearchModel(config: DomainConfigFile): Promise<string> {
+    if (config.models.research) return config.models.research;
+
+    const models = await piMono.listAvailableModels();
+
+    const cheapProviders = ["deepseek", "groq", "ollama"];
+    for (const provider of cheapProviders) {
+      const match = models.find(
+        (m) => m.provider === provider && m.available,
+      );
+      if (match) return match.id;
+    }
+
+    if (models.length > 0) return models[0].id;
+
+    throw new Error("No model available for research. Configure a research model or add an API key.");
   }
 
-  // Fallback to first available
-  if (models.length > 0) return models[0].id;
+  // -------------------------------------------------------------------------
+  // Core: execute a research run
+  // -------------------------------------------------------------------------
 
-  throw new Error("No model available for research. Configure a research model or add an API key.");
-}
+  async function executeResearchRun(
+    domainId: string,
+    triggerType: ResearchTriggerType,
+    runId: string,
+    abortSignal: AbortSignal,
+  ): Promise<void> {
+    const domain = db.domains.findById(domainId);
+    if (!domain) throw new Error(`Domain not found: ${domainId}`);
 
-// ---------------------------------------------------------------------------
-// Core: execute a research run
-// ---------------------------------------------------------------------------
+    const config = await readConfig(domain.config_path);
+    if (!config) throw new Error(`Domain config not found: ${domain.config_path}`);
 
-async function executeResearchRun(
-  domainId: string,
-  triggerType: ResearchTriggerType,
-  runId: string,
-  abortSignal: AbortSignal,
-): Promise<void> {
-  const db = getDatabaseService();
-  const wrapper = getPiMonoWrapper();
+    const todayRuns = db.researchRuns.countByDomainToday(domainId);
+    if (todayRuns >= config.research.maxDailyRuns) {
+      throw new Error(`Daily research limit reached (${config.research.maxDailyRuns}) for domain ${config.name}`);
+    }
 
-  // Read domain config
-  const domain = db.domains.findById(domainId);
-  if (!domain) throw new Error(`Domain not found: ${domainId}`);
+    const modelId = await resolveResearchModel(config);
 
-  const config = await readConfig(domain.config_path);
-  if (!config) throw new Error(`Domain config not found: ${domain.config_path}`);
+    const prompt = buildResearchPrompt(config);
 
-  // Check daily limit
-  const todayRuns = db.researchRuns.countByDomainToday(domainId);
-  if (todayRuns >= config.research.maxDailyRuns) {
-    throw new Error(`Daily research limit reached (${config.research.maxDailyRuns}) for domain ${config.name}`);
+    db.researchRuns.update(runId, {
+      model_id: modelId,
+      query: prompt.slice(0, 500),
+      status: "running" as ResearchRunStatus,
+    } as unknown as Partial<ResearchRunRow>);
+
+    let fullContent = "";
+
+    const { estimator, onSessionCreated } = createTrackerCostEstimator(runId);
+    const runner = createSessionRunner(estimator, onSessionCreated);
+
+    try {
+      const result = await runner.runPrompt(domainId, modelId, prompt);
+      fullContent = result.content;
+
+      if (abortSignal.aborted) {
+        db.researchRuns.update(runId, {
+          status: "cancelled" as ResearchRunStatus,
+          completed_at: new Date().toISOString(),
+        } as unknown as Partial<ResearchRunRow>);
+        return;
+      }
+
+      const budgetStatus = resolveBudgetStatus(result.estimatedCost, config.research.maxCostPerRunUsd);
+
+      let nodesCreated = 0;
+      if (fullContent.trim()) {
+        createNode({
+          domainId,
+          title: `Research: ${config.name} — ${new Date().toLocaleDateString()}`,
+          type: "resource",
+          content: fullContent,
+          sources: config.sources.map((s) => s.url),
+        });
+        nodesCreated = 1;
+      }
+
+      db.researchRuns.update(runId, {
+        status: budgetStatus as ResearchRunStatus,
+        findings_summary: fullContent.slice(0, 1000),
+        knowledge_nodes_created: nodesCreated,
+        cost_usd: result.estimatedCost,
+        token_count: result.estimatedTokens,
+        completed_at: new Date().toISOString(),
+      } as unknown as Partial<ResearchRunRow>);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+
+      const trackedUsage = estimator.estimateTokens("", "");
+      const trackedCost = estimator.estimateCost(trackedUsage, modelId);
+
+      db.researchRuns.update(runId, {
+        status: "failed" as ResearchRunStatus,
+        error_message: errorMessage,
+        cost_usd: trackedCost,
+        token_count: trackedUsage.input + trackedUsage.output,
+        completed_at: new Date().toISOString(),
+      } as unknown as Partial<ResearchRunRow>);
+
+      throw err;
+    }
   }
 
-  // Resolve model
-  const modelId = await resolveResearchModel(domainId, config);
+  // -------------------------------------------------------------------------
+  // Cron scheduler — tick every minute, check all domain schedules
+  // -------------------------------------------------------------------------
 
-  // Build prompt
-  const prompt = buildResearchPrompt(config);
+  async function checkAllSchedules(now: Date): Promise<void> {
+    const domains = db.domains.list({ limit: 1000, offset: 0 });
 
-  // Create run record
-  const startedAt = new Date().toISOString();
-  db.researchRuns.update(runId, {
-    model_id: modelId,
-    query: prompt.slice(0, 500),
-    status: "running" as ResearchRunStatus,
-  } as unknown as Partial<ResearchRunRow>);
+    for (const domain of domains.items) {
+      if (!domain.research_schedule) continue;
 
-  let fullContent = "";
-  let sessionId: string | null = null;
+      const hasActive = Array.from(activeRuns.values()).some((r) => r.domainId === domain.id);
+      if (hasActive) continue;
 
-  try {
-    // Create agent session
-    const result = await wrapper.createExpertSession(domainId, modelId);
-    sessionId = result.sessionId;
-
-    // Start tracking real token usage from turn_end events
-    startTracking(sessionId, runId);
-
-    // Subscribe to events for content collection
-    const unsubscribe = result.session.subscribe((event) => {
-      if (abortSignal.aborted) return;
-      if (event.type === "message_update") {
-        const assistantEvent = event.assistantMessageEvent;
-        if (assistantEvent && "textDelta" in assistantEvent) {
-          fullContent += (assistantEvent as { textDelta: string }).textDelta;
+      if (shouldRunNow(domain.research_schedule, now)) {
+        try {
+          await triggerResearch(domain.id, "scheduled");
+          log.info(`Triggered scheduled research for domain: ${domain.name}`);
+        } catch (err) {
+          log.error(
+            `Failed to trigger for ${domain.name}`,
+            err instanceof Error ? err : undefined,
+          );
         }
       }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Public API
+  // -------------------------------------------------------------------------
+
+  async function triggerResearch(
+    domainId: string,
+    triggerType: ResearchTriggerType = "manual",
+  ): Promise<ResearchStatus> {
+    const existing = Array.from(activeRuns.values()).find((r) => r.domainId === domainId);
+    if (existing) {
+      const row = db.researchRuns.findById(existing.runId);
+      if (row) return rowToStatus(row);
+    }
+
+    const startedAt = new Date().toISOString();
+    const row = db.researchRuns.create({
+      domain_id: domainId,
+      trigger_type: triggerType,
+      model_id: null,
+      status: "running" as ResearchRunStatus,
+      query: null,
+      findings_summary: null,
+      knowledge_nodes_created: 0,
+      cost_usd: 0,
+      token_count: 0,
+      error_message: null,
+      started_at: startedAt,
+      completed_at: null,
+    } as unknown as Partial<ResearchRunRow> & Record<string, unknown>);
+
+    const runId = row.id;
+    const abortController = new AbortController();
+    activeRuns.set(runId, { runId, domainId, abortController, startedAt });
+
+    executeResearchRun(domainId, triggerType, runId, abortController.signal)
+      .catch((err) => {
+        log.error(`Run ${runId} failed`, err instanceof Error ? err : undefined);
+      })
+      .finally(() => {
+        activeRuns.delete(runId);
+      });
+
+    return rowToStatus(row);
+  }
+
+  function getResearchStatus(runId: string): ResearchStatus {
+    const row = db.researchRuns.findById(runId);
+    if (!row) throw new Error(`Research run not found: ${runId}`);
+    return rowToStatus(row);
+  }
+
+  function listResearchHistory(domainId: string): { items: ResearchStatus[]; total: number } {
+    const result = db.researchRuns.listByDomain({ domainId, limit: 100, offset: 0 });
+    return {
+      items: result.items.map(rowToStatus),
+      total: result.total,
+    };
+  }
+
+  function getResearchDashboard(): ResearchDashboardResponse {
+    const recentResult = db.researchRuns.list({
+      limit: 10,
+      offset: 0,
+      orderBy: "started_at",
+      orderDir: "DESC",
     });
 
-    // Execute the research
-    await result.session.prompt(prompt);
-    unsubscribe();
+    const recentResearch = recentResult.items.map(rowToStatus);
 
-    // Collect aggregated usage from turn_end hook, then clean up
-    const usage: AggregatedUsage | null = sessionId ? stopTracking(sessionId) : null;
-    wrapper.destroySession(sessionId);
+    const today = new Date().toISOString().slice(0, 10);
+    const todayRuns = db.researchRuns.list({
+      where: "date(started_at) = ?",
+      params: [today],
+      limit: 100,
+      offset: 0,
+    });
 
-    if (abortSignal.aborted) {
+    const todayCompleted = todayRuns.items.filter((r) => r.status === "completed");
+    const todaySummary =
+      todayCompleted.length > 0
+        ? `${todayCompleted.length} research run(s) completed today, ${todayRuns.items.length} total.`
+        : "No research runs today.";
+
+    const allRuns = db.researchRuns.list({ limit: 10000, offset: 0 });
+    let totalCost = 0;
+    const modelDistribution: Record<string, number> = {};
+    for (const run of allRuns.items) {
+      totalCost += run.cost_usd;
+      if (run.model_id) {
+        modelDistribution[run.model_id] = (modelDistribution[run.model_id] ?? 0) + run.cost_usd;
+      }
+    }
+
+    return {
+      todaySummary,
+      recentResearch,
+      costTracking: { totalCost, modelDistribution },
+    };
+  }
+
+  function cancelResearch(runId: string): void {
+    const active = activeRuns.get(runId);
+    if (active) {
+      active.abortController.abort();
+      activeRuns.delete(runId);
+    }
+
+    const row = db.researchRuns.findById(runId);
+    if (row && row.status === "running") {
       db.researchRuns.update(runId, {
         status: "cancelled" as ResearchRunStatus,
         completed_at: new Date().toISOString(),
       } as unknown as Partial<ResearchRunRow>);
-      return;
     }
+  }
 
-    const tokenCount = usage?.inputTokens ?? 0 + (usage?.outputTokens ?? 0);
-    const costUsd = usage?.costUsd ?? 0;
+  function startScheduler(): void {
+    if (schedulerInterval) return;
 
-    // Post-completion budget check — mark over_budget but keep results
-    const budgetStatus = resolveBudgetStatus(costUsd, config.research.maxCostPerRunUsd);
-
-    // Process results: create knowledge node(s) from findings
-    let nodesCreated = 0;
-    if (fullContent.trim()) {
-      const node = createNode({
-        domainId,
-        title: `Research: ${config.name} — ${new Date().toLocaleDateString()}`,
-        type: "resource",
-        content: fullContent,
-        sources: config.sources.map((s) => s.url),
+    schedulerInterval = setInterval(() => {
+      const now = new Date();
+      checkAllSchedules(now).catch((err) => {
+        log.error("Scheduler tick error", err instanceof Error ? err : undefined);
       });
-      nodesCreated = 1;
-    }
+    }, 60_000);
 
-    // Update run with real cost data and budget status
-    db.researchRuns.update(runId, {
-      status: budgetStatus as ResearchRunStatus,
-      findings_summary: fullContent.slice(0, 1000),
-      knowledge_nodes_created: nodesCreated,
-      cost_usd: costUsd,
-      token_count: tokenCount,
-      completed_at: new Date().toISOString(),
-    } as unknown as Partial<ResearchRunRow>);
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
-
-    // Collect any usage gathered before failure, then clean up
-    const usage: AggregatedUsage | null = sessionId ? stopTracking(sessionId) : null;
-    if (sessionId) wrapper.destroySession(sessionId);
-
-    db.researchRuns.update(runId, {
-      status: "failed" as ResearchRunStatus,
-      error_message: errorMessage,
-      cost_usd: usage?.costUsd ?? 0,
-      token_count: (usage?.inputTokens ?? 0) + (usage?.outputTokens ?? 0),
-      completed_at: new Date().toISOString(),
-    } as unknown as Partial<ResearchRunRow>);
-
-    throw err;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/** Trigger a research run for a domain (manual or scheduled). */
-export async function triggerResearch(
-  domainId: string,
-  triggerType: ResearchTriggerType = "manual",
-): Promise<ResearchStatus> {
-  const db = getDatabaseService();
-
-  // Check if domain already has an active run
-  const existing = Array.from(activeRuns.values()).find((r) => r.domainId === domainId);
-  if (existing) {
-    const row = db.researchRuns.findById(existing.runId);
-    if (row) return rowToStatus(row);
+    log.info("Started — checking schedules every 60s");
   }
 
-  // Create run record
-  const startedAt = new Date().toISOString();
-  const row = db.researchRuns.create({
-    domain_id: domainId,
-    trigger_type: triggerType,
-    model_id: null,
-    status: "running" as ResearchRunStatus,
-    query: null,
-    findings_summary: null,
-    knowledge_nodes_created: 0,
-    cost_usd: 0,
-    token_count: 0,
-    error_message: null,
-    started_at: startedAt,
-    completed_at: null,
-  } as unknown as Partial<ResearchRunRow> & Record<string, unknown>);
-
-  const runId = row.id;
-  const abortController = new AbortController();
-  activeRuns.set(runId, { runId, domainId, abortController, startedAt });
-
-  // Execute asynchronously
-  executeResearchRun(domainId, triggerType, runId, abortController.signal)
-    .catch((err) => {
-      log.error(`Run ${runId} failed`, err instanceof Error ? err : undefined);
-    })
-    .finally(() => {
-      activeRuns.delete(runId);
-    });
-
-  return rowToStatus(row);
-}
-
-/** Get status of a specific research run. */
-export function getResearchStatus(runId: string): ResearchStatus {
-  const db = getDatabaseService();
-  const row = db.researchRuns.findById(runId);
-  if (!row) throw new Error(`Research run not found: ${runId}`);
-  return rowToStatus(row);
-}
-
-/** List research history for a domain. */
-export function listResearchHistory(domainId: string): { items: ResearchStatus[]; total: number } {
-  const db = getDatabaseService();
-  const result = db.researchRuns.listByDomain({ domainId, limit: 100, offset: 0 });
-  return {
-    items: result.items.map(rowToStatus),
-    total: result.total,
-  };
-}
-
-/** Get research dashboard data. */
-export function getResearchDashboard(): ResearchDashboardResponse {
-  const db = getDatabaseService();
-
-  const recentResult = db.researchRuns.list({
-    limit: 10,
-    offset: 0,
-    orderBy: "started_at",
-    orderDir: "DESC",
-  });
-
-  const recentResearch = recentResult.items.map(rowToStatus);
-
-  // Today's summary
-  const today = new Date().toISOString().slice(0, 10);
-  const todayRuns = db.researchRuns.list({
-    where: "date(started_at) = ?",
-    params: [today],
-    limit: 100,
-    offset: 0,
-  });
-
-  const todayCompleted = todayRuns.items.filter((r) => r.status === "completed");
-  const todaySummary =
-    todayCompleted.length > 0
-      ? `${todayCompleted.length} research run(s) completed today, ${todayRuns.items.length} total.`
-      : "No research runs today.";
-
-  // Cost tracking
-  const allRuns = db.researchRuns.list({ limit: 10000, offset: 0 });
-  let totalCost = 0;
-  const modelDistribution: Record<string, number> = {};
-  for (const run of allRuns.items) {
-    totalCost += run.cost_usd;
-    if (run.model_id) {
-      modelDistribution[run.model_id] = (modelDistribution[run.model_id] ?? 0) + run.cost_usd;
+  function stopScheduler(): void {
+    if (schedulerInterval) {
+      clearInterval(schedulerInterval);
+      schedulerInterval = null;
     }
+
+    for (const timer of cronTimers.values()) {
+      clearInterval(timer);
+    }
+    cronTimers.clear();
+
+    log.info("Stopped");
+  }
+
+  function getActiveRunForDomain(domainId: string): ResearchStatus | null {
+    const active = Array.from(activeRuns.values()).find((r) => r.domainId === domainId);
+    if (!active) return null;
+    const row = db.researchRuns.findById(active.runId);
+    return row ? rowToStatus(row) : null;
   }
 
   return {
-    todaySummary,
-    recentResearch,
-    costTracking: { totalCost, modelDistribution },
+    triggerResearch,
+    getResearchStatus,
+    listResearchHistory,
+    getResearchDashboard,
+    cancelResearch,
+    startScheduler,
+    stopScheduler,
+    getActiveRunForDomain,
   };
 }
 
-/** Cancel an active research run. */
-export function cancelResearch(runId: string): void {
-  const active = activeRuns.get(runId);
-  if (active) {
-    active.abortController.abort();
-    activeRuns.delete(runId);
-  }
-
-  // Update DB status
-  const db = getDatabaseService();
-  const row = db.researchRuns.findById(runId);
-  if (row && row.status === "running") {
-    db.researchRuns.update(runId, {
-      status: "cancelled" as ResearchRunStatus,
-      completed_at: new Date().toISOString(),
-    } as unknown as Partial<ResearchRunRow>);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Cron scheduler — tick every minute, check all domain schedules
-// ---------------------------------------------------------------------------
-
-let schedulerInterval: ReturnType<typeof setInterval> | null = null;
-
-export function startScheduler(): void {
-  if (schedulerInterval) return;
-
-  // Check every 60 seconds
-  schedulerInterval = setInterval(() => {
-    const now = new Date();
-    checkAllSchedules(now).catch((err) => {
-      log.error("Scheduler tick error", err instanceof Error ? err : undefined);
-    });
-  }, 60_000);
-
-  log.info("Started — checking schedules every 60s");
-}
-
-export function stopScheduler(): void {
-  if (schedulerInterval) {
-    clearInterval(schedulerInterval);
-    schedulerInterval = null;
-  }
-
-  for (const timer of cronTimers.values()) {
-    clearInterval(timer);
-  }
-  cronTimers.clear();
-
-  log.info("Stopped");
-}
-
-async function checkAllSchedules(now: Date): Promise<void> {
-  const db = getDatabaseService();
-  const domains = db.domains.list({ limit: 1000, offset: 0 });
-
-  for (const domain of domains.items) {
-    if (!domain.research_schedule) continue;
-
-    // Skip if already running for this domain
-    const hasActive = Array.from(activeRuns.values()).some((r) => r.domainId === domain.id);
-    if (hasActive) continue;
-
-    if (shouldRunNow(domain.research_schedule, now)) {
-      try {
-        await triggerResearch(domain.id, "scheduled");
-        log.info(`Triggered scheduled research for domain: ${domain.name}`);
-      } catch (err) {
-        log.error(
-          `Failed to trigger for ${domain.name}`,
-          err instanceof Error ? err : undefined,
-        );
-      }
-    }
-  }
-}
-
-/** Get all currently active runs (useful for UI). */
-export function getActiveRunForDomain(domainId: string): ResearchStatus | null {
-  const db = getDatabaseService();
-  const active = Array.from(activeRuns.values()).find((r) => r.domainId === domainId);
-  if (!active) return null;
-  const row = db.researchRuns.findById(active.runId);
-  return row ? rowToStatus(row) : null;
-}
+export type ResearchScheduler = ReturnType<typeof createResearchScheduler>;

@@ -446,6 +446,19 @@ function nullableYaml(val: string | null): string {
 }
 
 // ---------------------------------------------------------------------------
+// Slug extraction helper
+// ---------------------------------------------------------------------------
+
+export function extractSlugFromConfigPath(configPath: string): string {
+  const parts = configPath.replace(/\\/g, "/").split("/");
+  const domainsIdx = parts.lastIndexOf("domains");
+  if (domainsIdx >= 0 && parts.length > domainsIdx + 1) {
+    return parts[domainsIdx + 1];
+  }
+  return parts[parts.length - 2] ?? "";
+}
+
+// ---------------------------------------------------------------------------
 // Type helpers
 // ---------------------------------------------------------------------------
 

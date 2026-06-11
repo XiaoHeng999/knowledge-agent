@@ -280,20 +280,14 @@ agentclaw/
 │   ├── ipc/                      # IPC Handler（主进程端）
 │   │   ├── register.ts           # 注册所有 handler
 │   │   ├── handler.ts            # handler 基础设施
-│   │   └── handlers/             # 各模块 handler
-│   │       ├── domain-handler.ts
-│   │       ├── model-handler.ts
-│   │       ├── knowledge-handler.ts
-│   │       ├── chat-handler.ts          # 对话 IPC handler
-│   │       ├── search-handler.ts        # 搜索 IPC handler（混合搜索）
-│   │       ├── inbox-handler.ts         # 收件箱 IPC handler
-│   │       ├── research-handler.ts      # 研究 IPC handler（4.1）
-│   │       ├── import-handler.ts        # 导入管道 IPC handler（4.2）
-│   │       ├── framework-handler.ts     # 框架分析 IPC handler（4.3）
-│   │       ├── timeline-handler.ts      # 时间线与预测 IPC handler（4.4）
-│   │       ├── skill-handler.ts         # 技能系统 IPC handler（4.5）
-│   │       ├── security-handler.ts
-│   │       └── version-control-handler.ts
+│   │   ├── router.ts             # 声明式 IPC 路由注册
+│   │   ├── routes.ts             # 声明式路由定义（透传 channel map）
+│   │   └── handlers/             # 编排型 handler（安全门/流式等）
+│   │       ├── domain-handler.ts       # create/updateConfig 技能注册
+│   │       ├── knowledge-handler.ts    # 写入安全门
+│   │       ├── chat-handler.ts         # sendMessage 流式桥
+│   │       ├── inbox-handler.ts        # suggestDomains DB 组合
+│   │       └── security-handler.ts     # assessWrite 审核编排
 │   │
 │   ├── pi-mono/                  # Pi Mono SDK 集成（Agent 核心）
 │   │   ├── index.ts              # 导出入口
@@ -332,9 +326,15 @@ agentclaw/
 │       ├── inbox-processor.ts    # 收件箱处理（AI 摘要 + 领域建议 + 确认/拒绝）
 │       ├── research-scheduler.ts # 定时研究调度器（4.1：cron 调度 + Agent 执行 + 结果入库）
 │       ├── research-cost-tracker.ts # 研究成本追踪（token 用量 + 费用估算）
+│       ├── cost-estimator.ts     # 成本估算接口（HeuristicCostEstimator + TrackerCostEstimator 适配器）
+│       ├── session-runner.ts     # Session 生命周期封装（create→subscribe→prompt→destroy + 成本估算）
 │       ├── import-pipeline.ts    # 导入管道（4.2：URL/PDF/RSS 导入 + AI 摘要 + 来源追踪）
-│       ├── framework-engine.ts   # 框架分析引擎（4.3：内置框架 + ADR + 三层记忆 + 领域摘要）
+│       ├── framework-engine.ts   # 框架分析引擎（4.3：内置框架）
+│       ├── framework-definitions.ts # 框架定义（内置框架模板 + 自定义框架构建器）
+│       ├── decision-service.ts    # ADR 决策记录 CRUD + 相关决策检索（从 framework-engine 抽取）
+│       ├── domain-summary-service.ts # 领域摘要生成 + 三层记忆统计（从 framework-engine 抽取）
 │       ├── timeline-engine.ts    # 时间线引擎（4.4：时间线CRUD + 趋势分析 + 预测生成 + 准确率追踪）
+│       ├── types.ts              # Service 共用依赖接口（DbDeps, FullDeps）
 │       ├── skill-engine.ts       # 技能引擎（4.5：SKILL.md解析 + 注册 + 执行 + 沙箱 + 效果追踪）
 │       ├── embedding-service.ts  # 嵌入向量生成服务
 │       ├── version-control.ts    # 版本控制服务
@@ -370,7 +370,9 @@ agentclaw/
     │   ├── lib/lru-cache.test.ts
     │   ├── services/
     │   │   ├── budget-check.test.ts
+    │   │   ├── cost-estimator.test.ts
     │   │   ├── custom-framework.test.ts
+    │   │   ├── domain-config.test.ts
     │   │   ├── logger.test.ts
     │   │   ├── research-cost-tracker.test.ts
     │   │   ├── security-gate.test.ts
@@ -424,7 +426,7 @@ useIpc('channel', params)
   → preload.ts (contextBridge)
     → ipcRenderer.invoke()
       ──── IPC ────→
-                        register.ts → handler.ts → handlers/<module>-handler.ts
+                        register.ts → routes.ts (auto) + handlers/ (explicit)
                                                           ↓
                                                     services/<module>.ts
                                                           ↓

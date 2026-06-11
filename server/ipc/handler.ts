@@ -28,7 +28,6 @@ export class IpcError extends Error {
   }
 }
 
-// Reconstruct an IpcError from the serialized form the renderer receives.
 export function isIpcError(val: unknown): val is IpcError {
   return typeof val === "object" && val !== null && "__ipcError" in val;
 }
@@ -47,27 +46,27 @@ export type IpcHandlerFn<C extends ChannelName> = (
 // ---------------------------------------------------------------------------
 
 export interface IpcHandlerOptions {
-  /** Max time in ms before the handler is aborted (default: 30 000) */
   timeout?: number;
 }
 
 // ---------------------------------------------------------------------------
 // registerHandler — wraps every IPC handler with logging, error handling,
-// and optional timeout.
+// and optional timeout. Tracks registered channels for cleanup.
 // ---------------------------------------------------------------------------
 
 const DEFAULT_TIMEOUT = 30_000;
+const registeredChannels: string[] = [];
 
 export function registerHandler<C extends ChannelName>(
   channel: C,
   handler: IpcHandlerFn<C>,
   options: IpcHandlerOptions = {},
 ): void {
+  registeredChannels.push(channel);
   const timeoutMs = options.timeout ?? DEFAULT_TIMEOUT;
 
   ipcMain.handle(channel, async (event, request: ChannelRequest<C>) => {
     const start = performance.now();
-    const logPrefix = `[IPC ${channel}]`;
 
     try {
       const result = await withTimeout(
@@ -117,82 +116,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
 // ---------------------------------------------------------------------------
 
 export function unregisterAll(): void {
-  ipcMain.removeHandler("app:ping");
-  ipcMain.removeHandler("app:getVersion");
-  ipcMain.removeHandler("app:getPlatform");
-  ipcMain.removeHandler("db:initialize");
-  ipcMain.removeHandler("db:migrate");
-  ipcMain.removeHandler("db:getVersion");
-  ipcMain.removeHandler("db:backup");
-  ipcMain.removeHandler("model:listProviders");
-  ipcMain.removeHandler("model:listModels");
-  ipcMain.removeHandler("model:addApiKey");
-  ipcMain.removeHandler("model:validateApiKey");
-  ipcMain.removeHandler("model:removeApiKey");
-  ipcMain.removeHandler("model:setDefault");
-  ipcMain.removeHandler("model:getDefault");
-  ipcMain.removeHandler("domain:create");
-  ipcMain.removeHandler("domain:list");
-  ipcMain.removeHandler("domain:get");
-  ipcMain.removeHandler("domain:update");
-  ipcMain.removeHandler("domain:delete");
-  ipcMain.removeHandler("domain:getConfig");
-  ipcMain.removeHandler("domain:updateConfig");
-  ipcMain.removeHandler("knowledge:createNode");
-  ipcMain.removeHandler("knowledge:updateNode");
-  ipcMain.removeHandler("knowledge:deleteNode");
-  ipcMain.removeHandler("knowledge:getNode");
-  ipcMain.removeHandler("knowledge:listNodes");
-  ipcMain.removeHandler("knowledge:createEdge");
-  ipcMain.removeHandler("knowledge:deleteEdge");
-  ipcMain.removeHandler("knowledge:getGraph");
-  ipcMain.removeHandler("knowledge:search");
-  ipcMain.removeHandler("inbox:addItem");
-  ipcMain.removeHandler("inbox:listItems");
-  ipcMain.removeHandler("inbox:processItem");
-  ipcMain.removeHandler("inbox:rejectItem");
-  ipcMain.removeHandler("inbox:getStats");
-  ipcMain.removeHandler("inbox:suggestDomains");
-  ipcMain.removeHandler("research:trigger");
-  ipcMain.removeHandler("research:getStatus");
-  ipcMain.removeHandler("research:listHistory");
-  ipcMain.removeHandler("research:getDashboard");
-  ipcMain.removeHandler("research:cancel");
-  ipcMain.removeHandler("settings:get");
-  ipcMain.removeHandler("settings:set");
-  ipcMain.removeHandler("settings:getTheme");
-  ipcMain.removeHandler("settings:setTheme");
-  ipcMain.removeHandler("import:importUrl");
-  ipcMain.removeHandler("import:importFile");
-  ipcMain.removeHandler("import:getStatus");
-  ipcMain.removeHandler("window:minimize");
-  ipcMain.removeHandler("window:maximize");
-  ipcMain.removeHandler("window:close");
-  ipcMain.removeHandler("window:isMaximized");
-  ipcMain.removeHandler("window:toggleMaximize");
-  // Version Control
-  ipcMain.removeHandler("vc:init");
-  ipcMain.removeHandler("vc:getStatus");
-  ipcMain.removeHandler("vc:getHistory");
-  ipcMain.removeHandler("vc:getDiff");
-  ipcMain.removeHandler("vc:rollback");
-  // Security
-  ipcMain.removeHandler("security:assessWrite");
-  ipcMain.removeHandler("security:getPendingAudits");
-  ipcMain.removeHandler("security:resolveAudit");
-  ipcMain.removeHandler("security:bulkResolve");
-  ipcMain.removeHandler("security:getAuditLog");
-  ipcMain.removeHandler("security:generateDiff");
-  // Timeline
-  ipcMain.removeHandler("timeline:listPredictions");
-  ipcMain.removeHandler("timeline:getPrediction");
-  ipcMain.removeHandler("timeline:createPrediction");
-  ipcMain.removeHandler("timeline:updatePrediction");
-  ipcMain.removeHandler("timeline:verifyPrediction");
-  ipcMain.removeHandler("timeline:deletePrediction");
-  ipcMain.removeHandler("timeline:analyzeTrends");
-  ipcMain.removeHandler("timeline:generatePredictions");
-  ipcMain.removeHandler("timeline:getAccuracy");
-  ipcMain.removeHandler("timeline:expireOverdue");
-  ipcMain.removeHandler("timeline:getEvents");
+  for (const channel of registeredChannels) {
+    ipcMain.removeHandler(channel);
+  }
+  registeredChannels.length = 0;
 }

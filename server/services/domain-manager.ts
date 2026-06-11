@@ -11,6 +11,7 @@ import {
   readConfig,
   writeConfig,
   toIpcDomainConfig,
+  extractSlugFromConfigPath,
   type DomainConfigFile,
 } from "./domain-config";
 
@@ -73,7 +74,7 @@ export async function createDomain(req: {
   // Generate unique slug for directory
   const allDomains = db.domains.listAll();
   const existingSlugs = new Set(
-    allDomains.map((d) => d.config_path?.split("/").filter(Boolean).pop() ?? ""),
+    allDomains.map((d) => extractSlugFromConfigPath(d.config_path ?? "")),
   );
   const slug = uniqueSlug(req.name, existingSlugs);
 
@@ -192,7 +193,7 @@ export async function updateDomain(req: {
   const updated = db.domains.update(req.id, updateData);
 
   // Sync config.yaml name/color if they changed
-  const slug = existing.config_path?.split("/").filter(Boolean).pop() ?? "";
+  const slug = extractSlugFromConfigPath(existing.config_path ?? "");
   if (slug && (req.name || req.color || req.icon)) {
     try {
       const config = await readConfig(slug);
@@ -237,7 +238,7 @@ export async function getDomainConfig(id: string): Promise<DomainConfig> {
   const row = db.domains.findById(id);
   if (!row) throw new Error(`Domain not found: ${id}`);
 
-  const slug = row.config_path?.split("/").filter(Boolean).pop() ?? "";
+  const slug = extractSlugFromConfigPath(row.config_path ?? "");
   if (!slug) {
     return { models: {}, sources: [], frameworks: [], skills: [], tags: [] };
   }
@@ -258,7 +259,7 @@ export async function updateDomainConfig(
   const row = db.domains.findById(id);
   if (!row) throw new Error(`Domain not found: ${id}`);
 
-  const slug = row.config_path?.split("/").filter(Boolean).pop() ?? "";
+  const slug = extractSlugFromConfigPath(row.config_path ?? "");
   if (!slug) throw new Error("Domain has no valid config path");
 
   let config = await readConfig(slug);

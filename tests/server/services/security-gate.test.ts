@@ -22,6 +22,8 @@ import {
   bulkResolve,
   logAuditEntry,
   getAuditLog,
+  guardedWrite,
+  guardedDelete,
 } from "@server/services/security-gate";
 import type { WriteOperation, PendingAudit, AuditTrailEntry } from "@/lib/ipc/channels/security";
 
@@ -235,5 +237,139 @@ describe("audit trail", () => {
     // o2 is newer than o1, so it comes first in the reversed list
     const idx1 = all.entries.findIndex((e) => e.id === "o1");
     expect(idx).toBeLessThan(idx1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// guardedWrite / guardedDelete
+// ---------------------------------------------------------------------------
+
+describe("guardedWrite", () => {
+  beforeEach(() => {
+    clearAllPending();
+    mockFindById.mockReset();
+  });
+
+  it("throws when operation is blocked", async () => {
+    // targetPath outside domain → blocked
+    const operation: WriteOperation = {
+      type: "create",
+      targetPath: "/tmp/evil/path.txt",
+      domainId: DOMAIN_ID,
+    };
+
+    await expect(guardedWrite(operation, async () => "never")).rejects.toThrow(
+      /blocked/i,
+    );
+  });
+
+  it("logs a blocked audit entry when throwing", async () => {
+    const operation: WriteOperation = {
+      type: "create",
+      targetPath: "/tmp/evil/path.txt",
+      domainId: DOMAIN_ID,
+    };
+
+    await expect(guardedWrite(operation, async () => "never")).rejects.toThrow();
+    const log = getAuditLog(9999);
+    const blocked = log.entries.find(
+      (e) => e.decision === "blocked",
+    );
+    expect(blocked).toBeDefined();
+    expect(blocked!.operation).toEqual(operation);
+  });
+
+  it("auto-approves low-risk create, executes callback, returns result", async () => {
+    setupDomainDir();
+    const operation: WriteOperation = {
+      type: "create",
+      targetPath: `/tmp/agentclaw-test/domains/my-domain/file.txt`,
+      domainId: DOMAIN_ID,
+    };
+    const callback = vi.fn().mockResolvedValue({ id: "node-1" });
+
+    const result = await guardedWrite(operation, callback);
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ result: { id: "node-1" }, pendingAudit: false });
+
+    const log = getAuditLog(9999);
+    const approved = log.entries.find(
+      (e) => e.decision === "auto_approved" && e.operation === operation,
+    );
+    expect(approved).toBeDefined();
+  });
+
+  it("pends medium-risk update without calling executeFn", async () => {
+    setupDomainDir();
+    const operation: WriteOperation = {
+      type: "update",
+      targetPath: `/tmp/agentclaw-test/domains/my-domain/file.txt`,
+      domainId: DOMAIN_ID,
+    };
+    const callback = vi.fn().mockResolvedValue("should-not-run");
+
+    const result = await guardedWrite(operation, callback);
+
+    expect(callback).not.toHaveBeenCalled();
+    expect(result.pendingAudit).toBe(true);
+    if (result.pendingAudit) {
+      expect(result.result).toBeNull();
+      expect(result.auditId).toBeTruthy();
+      expect(result.risk.level).toBe("medium");
+    }
+
+    // Pending audit should be retrievable
+    const pending = getPendingAudits();
+    expect(pending.some((a) => a.id === (result as any).auditId)).toBe(true);
+  });
+});
+
+describe("guardedDelete", () => {
+  beforeEach(() => {
+    clearAllPending();
+    mockFindById.mockReset();
+  });
+
+  it("throws when operation is blocked", () => {
+    const operation: WriteOperation = {
+      type: "delete",
+      targetPath: "/tmp/evil/path.txt",
+      domainId: DOMAIN_ID,
+    };
+
+    expect(() => guardedDelete(operation)).toThrow(/blocked/i);
+  });
+
+  it("logs a blocked audit entry when throwing", () => {
+    const operation: WriteOperation = {
+      type: "delete",
+      targetPath: "/tmp/evil/path.txt",
+      domainId: DOMAIN_ID,
+    };
+
+    expect(() => guardedDelete(operation)).toThrow();
+    const log = getAuditLog(9999);
+    const blocked = log.entries.find((e) => e.decision === "blocked");
+    expect(blocked).toBeDefined();
+    expect(blocked!.operation).toEqual(operation);
+  });
+
+  it("creates pending audit for high-risk delete (never autoApprove)", () => {
+    setupDomainDir();
+    const operation: WriteOperation = {
+      type: "delete",
+      targetPath: `/tmp/agentclaw-test/domains/my-domain/file.txt`,
+      domainId: DOMAIN_ID,
+    };
+
+    const result = guardedDelete(operation);
+
+    expect(result.pendingAudit).toBe(true);
+    if (result.pendingAudit) {
+      expect(result.auditId).toBeTruthy();
+      expect(result.risk.level).toBe("high");
+    }
+    expect(getPendingCount()).toBe(1);
   });
 });

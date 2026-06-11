@@ -5,8 +5,9 @@ vi.mock("electron", () => ({
   app: { getPath: vi.fn(() => "/tmp/test-electron") },
 }));
 
-import { parseConfigYaml, serializeConfigYaml } from "@server/services/domain-config";
-import { buildCustomFrameworkDefinition, listFrameworks, extractSlugFromConfigPath } from "@server/services/framework-engine";
+import { parseConfigYaml, serializeConfigYaml, extractSlugFromConfigPath } from "@server/services/domain-config";
+import { createFrameworkEngine } from "@server/services/framework-engine";
+import { buildCustomFrameworkDefinition } from "@server/services/framework-definitions";
 import type { CustomFrameworkConfig } from "@server/services/domain-config";
 
 describe("Custom framework config parsing", () => {
@@ -156,7 +157,8 @@ describe("buildCustomFrameworkDefinition", () => {
 
 describe("listFrameworks conditional custom", () => {
   it("excludes custom when no domainId provided (backward compat)", async () => {
-    const frameworks = await listFrameworks();
+    const engine = createFrameworkEngine({ db: {} as never });
+    const frameworks = await engine.listFrameworks();
     const types = frameworks.map((f) => f.type);
     expect(types).not.toContain("custom");
     expect(types).toContain("trl");

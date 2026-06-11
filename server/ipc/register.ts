@@ -1,38 +1,79 @@
-import { APP_CHANNELS, DB_CHANNELS, WINDOW_CHANNELS, WORKER_CHANNELS, UPDATE_CHANNELS, SETTINGS_CHANNELS } from "../../src/lib/ipc/channels";
+import { APP_CHANNELS, DB_CHANNELS, WINDOW_CHANNELS } from "../../src/lib/ipc/channels";
 import { BrowserWindow } from "electron";
 import { registerHandler } from "./handler";
+import { registerRoutes, createServiceRegistry, type ServiceRegistry } from "./router";
+import { getAutoRoutes } from "./routes";
 import {
   initializeDatabase,
   getDatabaseService,
-  shutdownDatabase,
   backupDatabase,
 } from "../db/index";
 import { loadMigrations } from "../db/migrations/index";
-import { registerModelHandlers as registerModelHandlersFromModule } from "./handlers/model-handler";
-import { registerDomainHandlers as registerDomainHandlersFromModule } from "./handlers/domain-handler";
-import { registerVersionControlHandlers as registerVersionControlHandlersFromModule } from "./handlers/version-control-handler";
-import { registerSecurityHandlers as registerSecurityHandlersFromModule } from "./handlers/security-handler";
-import { registerKnowledgeHandlers as registerKnowledgeHandlersFromModule } from "./handlers/knowledge-handler";
-import { registerChatHandlers as registerChatHandlersFromModule } from "./handlers/chat-handler";
-import { registerSearchHandlers as registerSearchHandlersFromModule } from "./handlers/search-handler";
-import { registerInboxHandlers as registerInboxHandlersFromModule } from "./handlers/inbox-handler";
-import { registerResearchHandlers as registerResearchHandlersFromModule } from "./handlers/research-handler";
-import { registerImportHandlers as registerImportHandlersFromModule } from "./handlers/import-handler";
-import { registerFrameworkHandlers as registerFrameworkHandlersFromModule } from "./handlers/framework-handler";
-import { registerTimelineHandlers as registerTimelineHandlersFromModule } from "./handlers/timeline-handler";
-import { registerSkillHandlers as registerSkillHandlersFromModule } from "./handlers/skill-handler";
 import { getWorkerBridge } from "../worker/worker-bridge";
 import {
-  initializeAutoUpdater,
-  shutdownAutoUpdater,
   getUpdateStatus,
   downloadUpdate,
   quitAndInstall,
 } from "../services/auto-updater";
+import { createSkillEngine, type SkillEngine } from "../services/skill-engine";
+import { createFrameworkEngine, type FrameworkEngine } from "../services/framework-engine";
+import { createTimelineEngine, type TimelineEngine } from "../services/timeline-engine";
+import { createResearchScheduler, type ResearchScheduler } from "../services/research-scheduler";
+import { createConversationService, type ConversationService } from "../services/conversation-service";
+import { createModelManager, type ModelManager } from "../services/model-manager";
+import { getPiMonoWrapper } from "../pi-mono/instance";
+import { registerDomainHandlers as registerDomainExplicitHandlers } from "./handlers/domain-handler";
+import { registerInboxHandlers as registerInboxExplicitHandlers } from "./handlers/inbox-handler";
+import { registerSecurityHandlers as registerSecurityExplicitHandlers } from "./handlers/security-handler";
+import { registerKnowledgeHandlers as registerKnowledgeExplicitHandlers } from "./handlers/knowledge-handler";
+import { registerChatHandlers as registerChatExplicitHandlers } from "./handlers/chat-handler";
 
 // ---------------------------------------------------------------------------
-// Placeholder handlers — will be replaced by real service handlers later.
-// These exist so the IPC bridge is fully wired end-to-end from day one.
+// Service registry — maps service names to service objects for auto-routes
+// ---------------------------------------------------------------------------
+
+function buildServiceRegistry(): ServiceRegistry {
+  const registry = createServiceRegistry();
+
+  const db = getDatabaseService();
+  const skillEngine = createSkillEngine({ db });
+  const frameworkEngine = createFrameworkEngine({ db });
+  const timelineEngine = createTimelineEngine({ db });
+  const researchScheduler = createResearchScheduler({ db, piMono: getPiMonoWrapper() });
+  const conversationService = createConversationService({ db, piMono: getPiMonoWrapper() });
+  const modelManager = createModelManager({ db, piMono: getPiMonoWrapper() });
+
+  registry.set("version-control", require("../services/version-control"));
+  registry.set("search-engine", require("../services/search-engine"));
+  registry.set("research-scheduler", researchScheduler);
+  registry.set("import-pipeline", require("../services/import-pipeline"));
+  registry.set("timeline-engine", timelineEngine);
+  registry.set("skill-engine", skillEngine);
+  registry.set("model-manager", modelManager);
+  registry.set("inbox-processor", require("../services/inbox-processor"));
+  registry.set("framework-engine", frameworkEngine);
+  registry.set("decision-service", require("../services/decision-service"));
+  registry.set("domain-summary-service", require("../services/domain-summary-service"));
+  registry.set("domain-manager", require("../services/domain-manager"));
+  registry.set("security-gate", require("../services/security-gate"));
+  registry.set("diff-service", require("../services/diff-service"));
+  registry.set("conversation-service", conversationService);
+  registry.set("knowledge-graph", require("../services/knowledge-graph"));
+
+  // Inline service adapters
+  registry.set("db-settings", getDatabaseService().settings);
+  registry.set("auto-updater", {
+    getUpdateStatus,
+    downloadUpdate,
+    quitAndInstall,
+  });
+  registry.set("worker-bridge", getWorkerBridge());
+
+  return registry;
+}
+
+// ---------------------------------------------------------------------------
+// App handlers (inline — simple, no service)
 // ---------------------------------------------------------------------------
 
 function registerAppHandlers(): void {
@@ -47,6 +88,10 @@ function registerAppHandlers(): void {
     return { platform: process.platform };
   });
 }
+
+// ---------------------------------------------------------------------------
+// DB handlers (inline — lifecycle management)
+// ---------------------------------------------------------------------------
 
 function registerDbHandlers(): void {
   registerHandler(DB_CHANNELS.INITIALIZE, async (_event, req) => {
@@ -74,111 +119,8 @@ function registerDbHandlers(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Stubs for domains that will be implemented in later phases.
-// Each returns a placeholder response so the renderer never crashes on
-// an unhandled channel.
+// Window handlers (inline — BrowserWindow operations)
 // ---------------------------------------------------------------------------
-
-function registerModelHandlers(): void {
-  // Delegated to handlers/model-handler.ts
-  registerModelHandlersFromModule();
-}
-
-function registerDomainHandlers(): void {
-  registerDomainHandlersFromModule();
-}
-
-function registerKnowledgeHandlers(): void {
-  registerKnowledgeHandlersFromModule();
-}
-
-function registerChatHandlers(): void {
-  registerChatHandlersFromModule();
-}
-
-function registerSearchHandlers(): void {
-  registerSearchHandlersFromModule();
-}
-
-function registerInboxHandlers(): void {
-  registerInboxHandlersFromModule();
-}
-
-function registerResearchHandlers(): void {
-  registerResearchHandlersFromModule();
-}
-
-function registerSettingsHandlers(): void {
-  registerHandler(SETTINGS_CHANNELS.GET, async (_event, req) => {
-    const db = getDatabaseService();
-    return db.settings.get(req.key);
-  });
-
-  registerHandler(SETTINGS_CHANNELS.SET, async (_event, req) => {
-    const db = getDatabaseService();
-    db.settings.set(req.key, req.value);
-  });
-
-  registerHandler(SETTINGS_CHANNELS.GET_THEME, async () => {
-    const db = getDatabaseService();
-    return db.settings.get("theme") ?? "tokyo-night";
-  });
-
-  registerHandler(SETTINGS_CHANNELS.SET_THEME, async (_event, req) => {
-    const db = getDatabaseService();
-    db.settings.set("theme", req.value);
-  });
-}
-
-function registerImportHandlers(): void {
-  registerImportHandlersFromModule();
-}
-
-function registerFrameworkHandlers(): void {
-  registerFrameworkHandlersFromModule();
-}
-
-function registerTimelineHandlers(): void {
-  registerTimelineHandlersFromModule();
-}
-
-function registerSkillHandlers(): void {
-  registerSkillHandlersFromModule();
-}
-
-function registerWorkerHandlers(): void {
-  registerHandler(WORKER_CHANNELS.SUBMIT_TASK, async (_event, req) => {
-    const bridge = getWorkerBridge();
-    const taskId = bridge.submitTask({
-      type: req.type as import("../worker/types").WorkerTaskType,
-      priority: req.priority,
-      payload: req.payload,
-      timeout: req.timeout,
-    });
-    return { taskId, status: "submitted" as const, progress: 0 };
-  });
-
-  registerHandler(WORKER_CHANNELS.CANCEL_TASK, async (_event, req) => {
-    const bridge = getWorkerBridge();
-    bridge.cancelTask(req.taskId);
-  });
-
-  registerHandler(WORKER_CHANNELS.GET_STATUS, async () => {
-    const bridge = getWorkerBridge();
-    return {
-      pendingCount: bridge.getPendingCount(),
-      isReady: true,
-    };
-  });
-}
-
-function registerVersionControlHandlers(): void {
-  registerVersionControlHandlersFromModule();
-}
-
-function registerSecurityHandlers(): void {
-  registerSecurityHandlersFromModule();
-}
 
 function registerWindowHandlers(): void {
   registerHandler(WINDOW_CHANNELS.MINIMIZE, async (event) => {
@@ -213,49 +155,28 @@ function registerWindowHandlers(): void {
   });
 }
 
-function registerUpdateHandlers(): void {
-  registerHandler(UPDATE_CHANNELS.CHECK, async () => {
-    const status = getUpdateStatus();
-    return { available: status.available, version: status.version };
-  });
-
-  registerHandler(UPDATE_CHANNELS.DOWNLOAD, async () => {
-    await downloadUpdate();
-    return { started: true };
-  });
-
-  registerHandler(UPDATE_CHANNELS.INSTALL, async () => {
-    quitAndInstall();
-    return { started: true };
-  });
-
-  registerHandler(UPDATE_CHANNELS.GET_STATUS, async () => {
-    return getUpdateStatus();
-  });
-}
-
-// ---------------------------------------------------------------------------
+// ===========================================================================
 // Public entry point — called once from electron/main.ts
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 export function registerAllIpcHandlers(): void {
+  // 1. Auto-routes — declarative service dispatch for passthrough channels
+  const registry = buildServiceRegistry();
+  const skillEngine = registry.get("skill-engine") as SkillEngine;
+  const timelineEngine = registry.get("timeline-engine") as TimelineEngine;
+  const conversationService = registry.get("conversation-service") as ConversationService;
+  registerRoutes(getAutoRoutes(), registry);
+
+  // 2. Service initialization
+  timelineEngine.initializeTimelineExecutor();
+
+  // 3. Explicit handlers — channels with orchestration logic
   registerAppHandlers();
   registerDbHandlers();
-  registerModelHandlers();
-  registerDomainHandlers();
-  registerVersionControlHandlers();
-  registerSecurityHandlers();
-  registerKnowledgeHandlers();
-  registerChatHandlers();
-  registerSearchHandlers();
-  registerInboxHandlers();
-  registerResearchHandlers();
-  registerSettingsHandlers();
-  registerImportHandlers();
-  registerFrameworkHandlers();
-  registerTimelineHandlers();
-  registerSkillHandlers();
-  registerWorkerHandlers();
+  registerDomainExplicitHandlers(skillEngine);
+  registerInboxExplicitHandlers();
+  registerSecurityExplicitHandlers();
+  registerKnowledgeExplicitHandlers();
+  registerChatExplicitHandlers(conversationService);
   registerWindowHandlers();
-  registerUpdateHandlers();
 }

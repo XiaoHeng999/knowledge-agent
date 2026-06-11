@@ -7,12 +7,17 @@
 import path from "path";
 import { getDataDir, getDomainsDir, getDomainDir } from "../fs/paths";
 import { getDatabaseService } from "../db/index";
+import { extractSlugFromConfigPath } from "./domain-config";
 import type {
   RiskLevel,
   WriteOperation,
   RiskAssessment,
   PendingAudit,
   AuditTrailEntry,
+} from "../../src/lib/ipc/channels";
+import type {
+  KnowledgeWriteResponse,
+  KnowledgeWriteVoidResponse,
 } from "../../src/lib/ipc/channels";
 
 // ---------------------------------------------------------------------------
@@ -37,7 +42,7 @@ function resolveDomainDir(domainId: string): string | null {
   const db = getDatabaseService();
   const domain = db.domains.findById(domainId);
   if (!domain) return null;
-  const slug = domain.config_path?.split("/").filter(Boolean).pop() ?? "";
+  const slug = extractSlugFromConfigPath(domain.config_path ?? "");
   if (!slug) return null;
   return path.resolve(getDomainDir(slug));
 }
@@ -205,4 +210,69 @@ export function getAuditLog(
     entries: sorted.slice(offset, offset + limit),
     total: sorted.length,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Guarded write/delete — higher-level orchestration
+// ---------------------------------------------------------------------------
+
+function makeAuditEntry(
+  operation: WriteOperation,
+  riskLevel: RiskLevel,
+  decision: "auto_approved" | "blocked",
+): AuditTrailEntry {
+  return {
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+    operation,
+    riskLevel,
+    decision,
+  };
+}
+
+export async function guardedWrite<T>(
+  operation: WriteOperation,
+  executeFn: () => Promise<T>,
+): Promise<KnowledgeWriteResponse<T>> {
+  const risk = assessWriteRisk(operation);
+
+  if (risk.level === "blocked") {
+    logAuditEntry(makeAuditEntry(operation, risk.level, "blocked"));
+    throw new Error(`Write blocked: ${risk.reasons.join(", ")}`);
+  }
+
+  if (risk.autoApprove) {
+    logAuditEntry(makeAuditEntry(operation, risk.level, "auto_approved"));
+    const result = await executeFn();
+    return { result, pendingAudit: false };
+  }
+
+  const audit: PendingAudit = {
+    id: crypto.randomUUID(),
+    operation,
+    risk,
+    createdAt: new Date().toISOString(),
+  };
+  addPendingAudit(audit);
+  return { result: null, pendingAudit: true, auditId: audit.id, risk };
+}
+
+export function guardedDelete(
+  operation: WriteOperation,
+): KnowledgeWriteVoidResponse {
+  const risk = assessWriteRisk(operation);
+
+  if (risk.level === "blocked") {
+    logAuditEntry(makeAuditEntry(operation, risk.level, "blocked"));
+    throw new Error(`Write blocked: ${risk.reasons.join(", ")}`);
+  }
+
+  const audit: PendingAudit = {
+    id: crypto.randomUUID(),
+    operation,
+    risk,
+    createdAt: new Date().toISOString(),
+  };
+  addPendingAudit(audit);
+  return { pendingAudit: true, auditId: audit.id, risk };
 }
