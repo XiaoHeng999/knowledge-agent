@@ -17,7 +17,7 @@ const PROVIDERS = [
 type ValidationState = 'idle' | 'validating' | 'success' | 'error';
 
 export function ApiKeySetup() {
-  const { nextStep, prevStep, skip, setHasApiKey } = useOnboardingStore();
+  const { nextStep, prevStep, setHasApiKey } = useOnboardingStore();
   const [selectedOption, setSelectedOption] = useState<ApiSetupOption>(null);
   const [provider, setProvider] = useState(PROVIDERS[0]);
   const [apiKey, setApiKey] = useState('');
@@ -264,7 +264,7 @@ export function ApiKeySetup() {
         <button className="onboarding__btn-ghost" onClick={prevStep}>
           Back
         </button>
-        <button className="onboarding__btn-ghost" onClick={skip}>
+        <button className="onboarding__btn-ghost" onClick={nextStep}>
           Skip →
         </button>
       </div>

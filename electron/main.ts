@@ -2,15 +2,17 @@ import { app, BrowserWindow, dialog, globalShortcut } from "electron";
 import path from "path";
 import { createWindow } from "./window";
 import { registerAllIpcHandlers } from "../server/ipc/register";
-import { initializeDatabase, shutdownDatabase } from "../server/db/index";
-import { initializePiMono, shutdownPiMono } from "../server/pi-mono/instance";
-import { startScheduler, stopScheduler } from "../server/services/research-scheduler";
-import { initializeSkillEngine } from "../server/services/skill-engine";
+import { initializeDatabase, getDatabaseService, shutdownDatabase } from "../server/db/index";
+import { initializePiMono, shutdownPiMono, getPiMonoWrapper } from "../server/pi-mono/instance";
+import { createResearchScheduler, type ResearchScheduler } from "../server/services/research-scheduler";
+import { createSkillEngine, type SkillEngine } from "../server/services/skill-engine";
 import { initializeWorker, shutdownWorker } from "../server/worker/worker-bridge";
 import { initializeAutoUpdater, shutdownAutoUpdater } from "../server/services/auto-updater";
 import { logger } from "../server/services/logger";
 
 let mainWindow: BrowserWindow | null = null;
+let researchScheduler: ResearchScheduler | null = null;
+let skillEngine: SkillEngine | null = null;
 
 // ---------------------------------------------------------------------------
 // Global error handlers — catch uncaught exceptions & unhandled rejections
@@ -58,7 +60,23 @@ if (!gotTheLock) {
     }
 
     registerAllIpcHandlers();
-    initializeSkillEngine();
+
+    // Create service instances via factory pattern
+    const db = getDatabaseService();
+    let piMono: ReturnType<typeof getPiMonoWrapper> | null = null;
+    try {
+      piMono = getPiMonoWrapper();
+    } catch {
+      console.warn("[Main] PiMono not available — research scheduler will run without LLM");
+    }
+    skillEngine = createSkillEngine({ db });
+    researchScheduler = createResearchScheduler({ db, piMono: piMono! });
+
+    try {
+      await skillEngine.initializeSkillEngine();
+    } catch (err) {
+      console.error("[SkillEngine] Initialization failed:", err);
+    }
 
     // Note: Logger not yet available during early init
     try {
@@ -68,7 +86,7 @@ if (!gotTheLock) {
       console.error("[Worker] Initialization failed:", err);
     }
 
-    startScheduler();
+    researchScheduler.startScheduler();
     initializeAutoUpdater();
     mainWindow = createWindow();
 
@@ -93,7 +111,7 @@ if (!gotTheLock) {
   });
 
   app.on("will-quit", () => {
-    stopScheduler();
+    researchScheduler?.stopScheduler();
     shutdownWorker();
     shutdownAutoUpdater();
     shutdownPiMono();

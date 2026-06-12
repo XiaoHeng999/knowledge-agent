@@ -73,10 +73,10 @@ function useDashboardData(): DashboardData {
 
   const researchSummary = useMemo(() => {
     if (!researchDashboard) return null;
-    const totalRuns = researchDashboard.recentResearch.length;
+    const totalRuns = researchDashboard.recentResearch?.length ?? 0;
     return {
       todaySummary: researchDashboard.todaySummary,
-      totalCost: researchDashboard.costTracking.totalCost,
+      totalCost: researchDashboard.costTracking?.totalCost ?? 0,
       totalRuns,
     };
   }, [researchDashboard]);

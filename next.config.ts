@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   turbopack: {},
 
+  // Hide the floating dev build indicator (red circle with "N")
+  // in development mode — it overlaps app content unnecessarily.
+  devIndicators: false,
+
   // Transpile native ESM packages that need bundling
   transpilePackages: ["d3-force", "d3-selection", "d3-zoom", "d3-drag"],
 

@@ -6,7 +6,12 @@ import { useLayout } from './layout-context';
 export function Titlebar() {
   const { toggleSidebar } = useLayout();
   const [isMaximized, setIsMaximized] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const isElectron = typeof window !== 'undefined' && window.api;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isElectron) return;
@@ -51,7 +56,7 @@ export function Titlebar() {
         <span className="titlebar__shortcut-hint">
           <kbd>&#8984;</kbd><kbd>K</kbd>
         </span>
-        {isElectron && (
+        {mounted && isElectron && (
           <div className="titlebar__controls">
             <button
               className="titlebar__control"

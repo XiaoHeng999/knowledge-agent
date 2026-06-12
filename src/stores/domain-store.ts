@@ -34,6 +34,10 @@ export const useDomainStore = create<DomainState & DomainActions>()(
     error: null,
 
     fetchDomains: async () => {
+      if (typeof window === 'undefined' || !window.api) {
+        set({ loading: false, error: 'Electron API not available' });
+        return;
+      }
       set({ loading: true, error: null });
       try {
         const result = await window.api.domain.list();
@@ -51,6 +55,9 @@ export const useDomainStore = create<DomainState & DomainActions>()(
     },
 
     createDomain: async (req) => {
+      if (typeof window === 'undefined' || !window.api) {
+        throw new Error('Electron API not available');
+      }
       set({ loading: true, error: null });
       try {
         const domain = await window.api.domain.create(req);
@@ -69,6 +76,9 @@ export const useDomainStore = create<DomainState & DomainActions>()(
     },
 
     updateDomain: async (req) => {
+      if (typeof window === 'undefined' || !window.api) {
+        throw new Error('Electron API not available');
+      }
       set({ loading: true, error: null });
       try {
         const updated = await window.api.domain.update(req);
@@ -86,6 +96,9 @@ export const useDomainStore = create<DomainState & DomainActions>()(
     },
 
     deleteDomain: async (id) => {
+      if (typeof window === 'undefined' || !window.api) {
+        throw new Error('Electron API not available');
+      }
       set({ loading: true, error: null });
       try {
         await window.api.domain.delete({ id });

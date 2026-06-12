@@ -19,6 +19,7 @@ export function DomainList({ collapsed, onDomainSelect }: DomainListProps) {
   const fetchDomains = useDomainStore((s) => s.fetchDomains);
   const currentDomainId = useAppStore((s) => s.currentDomainId);
   const setCurrentDomain = useAppStore((s) => s.setCurrentDomain);
+  const storeError = useDomainStore((s) => s.error);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -35,10 +36,11 @@ export function DomainList({ collapsed, onDomainSelect }: DomainListProps) {
   );
 
   const handleCreated = useCallback(
-    (domain: DomainInfo) => {
+    async (domain: DomainInfo) => {
+      await fetchDomains();
       handleSelect(domain);
     },
-    [handleSelect],
+    [handleSelect, fetchDomains],
   );
 
   if (loading && domains.length === 0) {
@@ -60,6 +62,9 @@ export function DomainList({ collapsed, onDomainSelect }: DomainListProps) {
   if (collapsed) {
     return (
       <>
+        {storeError && (
+          <div className="domain-list__bridge-error" role="alert" title={storeError}>⚠</div>
+        )}
         <div className="domain-list domain-list--collapsed">
           {domains.map((domain) => (
             <button
@@ -93,6 +98,9 @@ export function DomainList({ collapsed, onDomainSelect }: DomainListProps) {
 
   return (
     <>
+      {storeError && (
+        <div className="domain-list__bridge-error" role="alert">{storeError}</div>
+      )}
       <div className="domain-list" role="tree" aria-label="Domains">
         {domains.length === 0 ? (
           <div className="domain-list__empty">

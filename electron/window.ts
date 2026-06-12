@@ -11,6 +11,9 @@ function createWindow(): BrowserWindow {
     minHeight: 768,
     frame: false,
     titleBarStyle: "hidden",
+    // Explicitly position macOS traffic lights so they don't overlap
+    // custom titlebar content.  x/y matches the native inset position.
+    trafficLightPosition: { x: 16, y: 10 },
     backgroundColor: "#0a0a0f",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),

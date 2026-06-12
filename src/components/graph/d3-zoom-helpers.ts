@@ -12,15 +12,15 @@ interface AttachZoomOptions {
 // D3's .call() on both Selection and Transition has incomplete generic
 // signatures — the overload for `(callback, ...args)` is too narrow.
 // This internal helper centralises the necessary cast.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 function callOnSelection<S extends Selection<any, any, any, any>>(
   selection: S,
   fn: (...args: any[]) => void,
   ...args: any[]
 ): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (selection as any).call(fn, ...args);
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export function attachZoomBehavior(
   svg: SVGSelection,
@@ -68,10 +68,11 @@ export function zoomReset(svg: SVGSelection, duration = 500): void {
 
 // D3's .merge() has a known type incompatibility between enter and update
 // selections. This helper centralises the cast so callers stay clean.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function mergeSelections<GElement extends Element, Datum>(
   enter: Selection<GElement, Datum, any, any>,
   update: Selection<GElement, Datum, any, any>,
 ): Selection<GElement, Datum, any, any> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return enter.merge(update as any);
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */

@@ -11,7 +11,6 @@ const FEATURES = [
 
 export function WelcomeScreen() {
   const nextStep = useOnboardingStore((s) => s.nextStep);
-  const skip = useOnboardingStore((s) => s.skip);
 
   return (
     <div className="onboarding__content">
@@ -35,7 +34,7 @@ export function WelcomeScreen() {
         Get Started
       </button>
 
-      <button className="onboarding__skip-link" onClick={skip}>
+      <button className="onboarding__skip-link" onClick={nextStep}>
         Skip
       </button>
     </div>

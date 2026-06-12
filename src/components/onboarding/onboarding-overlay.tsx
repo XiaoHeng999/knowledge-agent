@@ -15,14 +15,14 @@ const STEP_INDICATORS: { step: OnboardingStep; index: number }[] = [
 ];
 
 export function OnboardingOverlay() {
-  const { isOpen, completed, currentStep, skip } = useOnboardingStore();
+  const { isOpen, completed, skipped, currentStep, skip } = useOnboardingStore();
 
-  // Auto-open onboarding if not completed
+  // Auto-open onboarding if not completed and not skipped
   useEffect(() => {
-    if (!completed && !isOpen) {
+    if (!completed && !skipped && !isOpen) {
       useOnboardingStore.getState().start();
     }
-  }, [completed, isOpen]);
+  }, [completed, skipped, isOpen]);
 
   if (!isOpen || completed) return null;
 

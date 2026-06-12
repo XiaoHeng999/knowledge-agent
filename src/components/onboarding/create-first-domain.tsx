@@ -56,7 +56,7 @@ const TEMPLATES: DomainTemplate[] = [
 ];
 
 export function CreateFirstDomain() {
-  const { nextStep, prevStep, skip } = useOnboardingStore();
+  const { nextStep, prevStep } = useOnboardingStore();
   const [selected, setSelected] = useState<string>('ai-ml');
   const [domainName, setDomainName] = useState('AI & Machine Learning');
   const [isCreating, setIsCreating] = useState(false);
@@ -135,7 +135,7 @@ export function CreateFirstDomain() {
         <button className="onboarding__btn-ghost" onClick={prevStep}>
           Back
         </button>
-        <button className="onboarding__btn-ghost" onClick={skip}>
+        <button className="onboarding__btn-ghost" onClick={nextStep}>
           Skip →
         </button>
         <button

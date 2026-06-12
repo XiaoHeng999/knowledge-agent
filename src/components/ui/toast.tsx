@@ -41,6 +41,12 @@ export function useToast() {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  // 挂载后才渲染 portal，避免 hydration mismatch
+  useEffect(() => {
+    setPortalTarget(document.getElementById('toast-portal'));
+  }, []);
 
   const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
     const id = `toast-${++toastCounter}`;
@@ -55,10 +61,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext value={{ addToast, removeToast }}>
       {children}
-      {typeof window !== 'undefined' &&
+      {portalTarget &&
         createPortal(
           <ToastContainer toasts={toasts} onRemove={removeToast} />,
-          document.body,
+          portalTarget,
         )}
     </ToastContext>
   );

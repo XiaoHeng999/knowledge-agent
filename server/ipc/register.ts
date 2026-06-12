@@ -36,12 +36,21 @@ function buildServiceRegistry(): ServiceRegistry {
   const registry = createServiceRegistry();
 
   const db = getDatabaseService();
+
+  // PiMono may not be available (e.g. no API key configured); degrade gracefully
+  let piMono: ReturnType<typeof getPiMonoWrapper> | null = null;
+  try {
+    piMono = getPiMonoWrapper();
+  } catch {
+    console.warn("[ServiceRegistry] PiMono not available — LLM-dependent features disabled");
+  }
+
   const skillEngine = createSkillEngine({ db });
   const frameworkEngine = createFrameworkEngine({ db });
   const timelineEngine = createTimelineEngine({ db });
-  const researchScheduler = createResearchScheduler({ db, piMono: getPiMonoWrapper() });
-  const conversationService = createConversationService({ db, piMono: getPiMonoWrapper() });
-  const modelManager = createModelManager({ db, piMono: getPiMonoWrapper() });
+  const researchScheduler = createResearchScheduler({ db, piMono: piMono! });
+  const conversationService = createConversationService({ db, piMono: piMono! });
+  const modelManager = createModelManager({ db, piMono: piMono! });
 
   registry.set("version-control", require("../services/version-control"));
   registry.set("search-engine", require("../services/search-engine"));
